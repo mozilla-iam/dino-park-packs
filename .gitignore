@@ -1,3 +1,7 @@
 /target
 **/*.rs.bk
-/.vscode
+.settings*.json
+.vscode
+.dev.env
+secret-*.yaml
+.terraform

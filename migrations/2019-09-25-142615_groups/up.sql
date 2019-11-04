@@ -1,13 +1,20 @@
+CREATE TYPE group_type AS ENUM ('closed', 'reviewd', 'open');
 CREATE TYPE role_type AS ENUM ('member', 'curator', 'admin');
 CREATE TYPE capability_type AS ENUM ('gdrive', 'discourse');
-CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'change_name', 'delete_group', 'remove_member');
+CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'change_name', 'delete_group', 'remove_member', 'edit_terms');
 
 CREATE TABLE groups (
     group_id SERIAL PRIMARY KEY,
     name VARCHAR UNIQUE NOT NULL,
     path VARCHAR NOT NULL,
     description TEXT NOT NULL,
-    capabilities capability_type[] NOT NULL
+    capabilities capability_type[] NOT NULL,
+    typ group_type NOT NULL DEFAULT 'closed'
+);
+
+CREATE TABLE terms (
+    group_id SERIAL PRIMARY KEY REFERENCES groups,
+    text TEXT
 );
 
 CREATE TABLE roles (
@@ -15,15 +22,18 @@ CREATE TABLE roles (
     group_id SERIAL REFERENCES groups,
     typ role_type NOT NULL DEFAULT 'member',
     name VARCHAR NOT NULL,
-    permissions permission_type[] NOT NULL
+    permissions permission_type[] NOT NULL,
+    UNIQUE (group_id, typ)
 );
 
 CREATE TABLE memberships (
     user_uuid UUID NOT NULL,
     group_id SERIAL REFERENCES groups,
     role_id SERIAL REFERENCES roles,
-    PRIMARY KEY (user_uuid, group_id),
-    expiration TIMESTAMP
+    expiration TIMESTAMP,
+    added_by UUID,
+    added_ts TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_uuid, group_id)
 );
 
 CREATE TABLE invitations (
@@ -32,5 +42,6 @@ CREATE TABLE invitations (
     user_uuid UUID NOT NULL,
     code UUID NOT NULL,
     invitation_expiration TIMESTAMP DEFAULT (NOW() + INTERVAL '1 week'),
-    group_expiration TIMESTAMP
+    group_expiration TIMESTAMP,
+    added_by UUID
 );

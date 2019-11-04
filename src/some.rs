@@ -1,9 +1,9 @@
-use crate::db::establish_connection;
-use crate::groups::group::*;
-use crate::groups::operations::add_new_group;
-use crate::groups::operations::add_user_to_group;
-use crate::groups::schema;
-use crate::groups::schema::groups::dsl::*;
+use crate::db::db::establish_connection;
+use crate::db::group::*;
+use crate::db::operations::add_new_group;
+use crate::db::operations::add_user_to_group;
+use crate::db::schema;
+use crate::db::schema::groups::dsl::*;
 use crate::types::*;
 use crate::user::User;
 use actix_cors::Cors;
@@ -24,21 +24,6 @@ fn some(_: HttpRequest, connection: web::Data<PgConnection>) -> HttpResponse {
     for group in results {
         println!("{}", group.name);
     }
-    HttpResponse::Ok().finish()
-}
-
-fn add_some(
-    _: HttpRequest,
-    connection: web::Data<PgConnection>,
-    group_name: web::Path<String>,
-) -> HttpResponse {
-    add_new_group(
-        &*connection,
-        group_name.clone(),
-        String::from("something"),
-        User::default(),
-    );
-
     HttpResponse::Ok().finish()
 }
 
@@ -69,6 +54,5 @@ pub fn some_app() -> impl HttpServiceFactory {
         )
         .data(connection)
         .service(web::resource("").to(some))
-        .service(web::resource("add/group/{group_name}").to(add_some))
         .service(web::resource("add/member/{group_name}/{user_uuid}").to(add_some_user))
 }

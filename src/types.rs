@@ -24,3 +24,11 @@ pub enum RoleType {
     Curator,
     Admin,
 }
+
+#[derive(DbEnum, Debug, PartialEq)]
+#[DieselType = "Group_type"]
+pub enum GroupType {
+    Open,
+    Reviewd,
+    Closed,
+}

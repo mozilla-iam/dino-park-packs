@@ -1,23 +1,33 @@
-use crate::user::User;
-use failure::Error;
-use diesel::prelude::*;
+use crate::db::db::Pool;
+use crate::db::group::*;
+use crate::db::schema;
+use crate::db::schema::groups::dsl::*;
 use crate::types::*;
-use crate::groups::group::*;
-use crate::groups::schema;
-use crate::groups::schema::groups::dsl::*;
+use crate::user::User;
+use diesel::prelude::*;
+use failure::Error;
+use log::info;
 
-pub fn add_new_group(connection: &PgConnection, group_name: String, group_description: String, creator: User) -> Result<(), Error> {
+pub fn add_new_group(
+    pool: &Pool,
+    group_name: String,
+    group_description: String,
+    creator: User,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
     let group = InsertGroup {
         name: group_name,
         path: String::from("/access_information/mozillians/"),
         description: group_description,
-        capabilities: vec!(),
+        capabilities: vec![],
+        typ: GroupType::Closed,
     };
     let new_group = diesel::insert_into(schema::groups::table)
         .values(&group)
         .on_conflict_do_nothing()
-        .get_result::<Group>(connection)
+        .get_result::<Group>(&connection)
         .expect("Error saving group");
+    info!("Group: {:#?}", new_group);
     let member = InsertRole {
         group_id: new_group.id,
         typ: None,
@@ -26,9 +36,9 @@ pub fn add_new_group(connection: &PgConnection, group_name: String, group_descri
     };
     let group_member = diesel::insert_into(schema::roles::table)
         .values(member)
-        .get_result::<Role>(&*connection)
+        .get_result::<Role>(&connection)
         .expect("Error saving roles");
-    println!("Role: {:#?}", group_member);
+    info!("Role: {:#?}", group_member);
     let admin = InsertRole {
         group_id: new_group.id,
         typ: Some(RoleType::Admin),
@@ -39,21 +49,27 @@ pub fn add_new_group(connection: &PgConnection, group_name: String, group_descri
         .values(admin)
         .get_result::<Role>(&*connection)
         .expect("Error saving roles");
-    println!("Role: {:#?}", group_admin);
+    info!("Role: {:#?}", group_admin);
     let creator_membership = InsertMembership {
         group_id: new_group.id,
         user_uuid: creator.user_uuid.clone(),
         role_id: Some(group_admin.id),
+        added_by: None,
     };
     let group_creator = diesel::insert_into(schema::memberships::table)
         .values(creator_membership)
         .get_result::<Membership>(&*connection)
         .expect("Error saving roles");
-    println!("Membership: {:#?}", group_creator);
+    info!("Membership: {:#?}", group_creator);
     Ok(())
 }
 
-pub fn add_user_to_group(connection: &PgConnection, group_name: String, creator: User, user: User) -> Result<(), Error> {
+pub fn add_user_to_group(
+    connection: &PgConnection,
+    group_name: String,
+    creator: User,
+    user: User,
+) -> Result<(), Error> {
     let group = groups
         .filter(name.eq(&group_name))
         .first::<Group>(&*connection)
@@ -62,13 +78,14 @@ pub fn add_user_to_group(connection: &PgConnection, group_name: String, creator:
         user_uuid: user.user_uuid,
         group_id: group.id.clone(),
         role_id: None,
+        added_by: None,
     };
     let rows_inserted = diesel::insert_into(schema::memberships::table)
         .values(&membership)
         .on_conflict_do_nothing()
         .execute(&*connection)
         .expect("Error saving group");
-    println!("Inserted {} rows", rows_inserted);
+    info!("Inserted {} rows", rows_inserted);
 
     Ok(())
 }
