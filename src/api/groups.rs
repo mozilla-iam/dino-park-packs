@@ -1,11 +1,8 @@
 use crate::cis::operations::add_group_to_profile;
-use crate::db::db::establish_connection;
 use crate::db::db::Pool;
 use crate::db::group::*;
-use crate::db::operations::add_new_group;
-use crate::db::schema;
+use crate::db::operations;
 use crate::db::schema::groups::dsl::*;
-use crate::db::types::*;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
@@ -14,6 +11,7 @@ use actix_web::web;
 use actix_web::Error;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
+use actix_web::Responder;
 use cis_client::getby::GetBy;
 use cis_client::AsyncCisClientTrait;
 use cis_client::CisClient;
@@ -23,11 +21,9 @@ use failure::format_err;
 use futures::Future;
 use serde_derive::Deserialize;
 use std::convert::TryFrom;
-use std::sync::Arc;
-use uuid::Uuid;
 
 #[derive(Deserialize)]
-struct NewGroup {
+struct GroupUpdate {
     description: String,
 }
 
@@ -45,10 +41,12 @@ fn list_groups(_: HttpRequest, connection: web::Data<PgConnection>) -> HttpRespo
 
 fn get_group(
     _: HttpRequest,
-    connection: web::Data<PgConnection>,
+    pool: web::Data<Pool>,
     group_name: web::Path<String>,
-) -> HttpResponse {
-    HttpResponse::Ok().finish()
+) -> impl Responder {
+    operations::get_group(&pool, group_name.into_inner())
+        .map(|group| HttpResponse::Ok().json(group))
+        .map_err(|_| HttpResponse::NotFound().finish())
 }
 
 fn update_group(
@@ -64,7 +62,7 @@ fn add_group(
     cis_client: web::Data<CisClient>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
-    new_group: web::Json<NewGroup>,
+    new_group: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let group_name = group_name.into_inner();
@@ -78,9 +76,12 @@ fn add_group(
             (User::try_from(profile.clone()).map(|user| (user, profile))).map_err(Into::into)
         })
         .and_then(|(user, profile)| {
-            web::block(move || add_new_group(&pool, group_name, new_group.description, user))
-                .map(move |_| profile)
-                .map_err(|e| format_err!("{}", e))
+            web::block(move || {
+                operations::add_new_group(&pool, group_name, new_group.description, user)
+                    .and_then(|_| operations::update_user_cache(&pool, &profile))
+                    .map(|_| profile)
+            })
+            .map_err(|e| format_err!("{}", e))
         })
         .and_then(move |profile| add_group_to_profile(&cis_client, group_name_update, profile))
         .map(|_| HttpResponse::Ok().finish())

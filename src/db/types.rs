@@ -1,4 +1,6 @@
-#[derive(DbEnum, Debug, PartialEq)]
+use serde_derive::Serialize;
+
+#[derive(DbEnum, Debug,PartialEq, Serialize)]
 #[DieselType = "Trust_type"]
 pub enum TrustType {
     Public,
@@ -9,7 +11,7 @@ pub enum TrustType {
     Private,
 }
 
-#[derive(DbEnum, Debug, PartialEq)]
+#[derive(DbEnum, Debug,PartialEq, Serialize)]
 #[DieselType = "Permission_type"]
 pub enum PermissionType {
     InviteMember,
@@ -21,14 +23,14 @@ pub enum PermissionType {
     DeleteGroup,
 }
 
-#[derive(DbEnum, Debug, PartialEq)]
+#[derive(DbEnum, Debug,PartialEq, Serialize)]
 #[DieselType = "Capability_type"]
 pub enum CapabilityType {
     Gdrive,
     Deiscourse,
 }
 
-#[derive(DbEnum, Debug, PartialEq)]
+#[derive(DbEnum, Debug,PartialEq, Serialize)]
 #[DieselType = "Role_type"]
 pub enum RoleType {
     Member,
@@ -36,7 +38,7 @@ pub enum RoleType {
     Admin,
 }
 
-#[derive(DbEnum, Debug, PartialEq)]
+#[derive(DbEnum, Debug,PartialEq, Serialize)]
 #[DieselType = "Group_type"]
 pub enum GroupType {
     Open,

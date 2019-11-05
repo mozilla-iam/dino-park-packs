@@ -8,7 +8,6 @@ mod cis;
 mod db;
 mod healthz;
 mod settings;
-mod some;
 mod user;
 
 use actix_web::middleware::Logger;
@@ -43,7 +42,6 @@ fn main() -> Result<(), Error> {
             .service(
                 web::scope("/api/v1/")
                     .wrap(scope_middleware)
-                    .service(some::some_app())
                     .service(api::groups::groups_app()),
             )
     })

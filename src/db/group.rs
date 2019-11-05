@@ -2,8 +2,9 @@ use crate::db::schema::*;
 use crate::db::types::*;
 use std::time::SystemTime;
 use uuid::Uuid;
+use serde_derive::Serialize;
 
-#[derive(Identifiable, Queryable, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, PartialEq, Debug, Serialize)]
 #[table_name = "groups"]
 pub struct Group {
     pub id: i32,
