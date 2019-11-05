@@ -8,8 +8,8 @@ mod db;
 mod healthz;
 mod settings;
 mod some;
-mod types;
 mod user;
+mod cis;
 
 use actix_web::middleware::Logger;
 use actix_web::web;

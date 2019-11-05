@@ -1,4 +1,15 @@
 #[derive(DbEnum, Debug, PartialEq)]
+#[DieselType = "Trust_type"]
+pub enum TrustType {
+    Public,
+    Authenticated,
+    Vouched,
+    Ndaed,
+    Staff,
+    Private,
+}
+
+#[derive(DbEnum, Debug, PartialEq)]
 #[DieselType = "Permission_type"]
 pub enum PermissionType {
     InviteMember,

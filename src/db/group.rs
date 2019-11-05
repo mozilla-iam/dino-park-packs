@@ -1,5 +1,5 @@
 use crate::db::schema::*;
-use crate::types::*;
+use crate::db::types::*;
 use std::time::SystemTime;
 use uuid::Uuid;
 

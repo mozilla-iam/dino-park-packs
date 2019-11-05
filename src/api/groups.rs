@@ -4,7 +4,7 @@ use crate::db::group::*;
 use crate::db::operations::add_new_group;
 use crate::db::schema;
 use crate::db::schema::groups::dsl::*;
-use crate::types::*;
+use crate::db::types::*;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
@@ -23,6 +23,8 @@ use serde_derive::Deserialize;
 use std::convert::TryFrom;
 use std::sync::Arc;
 use uuid::Uuid;
+use crate::cis::operations::add_group_to_profile;
+use failure::format_err;
 
 #[derive(Deserialize)]
 struct NewGroup {
@@ -66,18 +68,21 @@ fn add_group(
     group_name: web::Path<String>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let group_name = group_name.into_inner();
+    let group_name_update = group_name.clone();
     let new_group = new_group.into_inner();
     let pool = pool.clone();
+    let cis_client = cis_client.clone();
     cis_client
         .get_user_by(&scope_and_user.user_id, &GetBy::UserId, None)
-        .map_err(Into::into)
-        .and_then(|profile| User::try_from(profile))
-        .map_err(Into::into)
-        .and_then(|user| {
+        .and_then(|profile| (User::try_from(profile.clone()).map(|user| (user, profile))).map_err(Into::into))
+        .and_then(|(user, profile)| {
             web::block(move || add_new_group(&pool, group_name, new_group.description, user))
-                .map(|_| HttpResponse::Ok().finish())
-                .map_err(Into::into)
+                .map(move |_| profile)
+                .map_err(|e| format_err!("{}", e))
         })
+        .and_then(move |profile| add_group_to_profile(&cis_client, group_name_update, profile))
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| Error::from(e))
 }
 
 pub fn groups_app() -> impl HttpServiceFactory {

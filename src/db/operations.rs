@@ -2,7 +2,7 @@ use crate::db::db::Pool;
 use crate::db::group::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl::*;
-use crate::types::*;
+use crate::db::types::*;
 use crate::user::User;
 use diesel::prelude::*;
 use failure::Error;

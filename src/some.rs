@@ -4,7 +4,7 @@ use crate::db::operations::add_new_group;
 use crate::db::operations::add_user_to_group;
 use crate::db::schema;
 use crate::db::schema::groups::dsl::*;
-use crate::types::*;
+use crate::db::types::*;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;

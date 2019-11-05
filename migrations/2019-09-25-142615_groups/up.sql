@@ -2,6 +2,7 @@ CREATE TYPE group_type AS ENUM ('closed', 'reviewd', 'open');
 CREATE TYPE role_type AS ENUM ('member', 'curator', 'admin');
 CREATE TYPE capability_type AS ENUM ('gdrive', 'discourse');
 CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'change_name', 'delete_group', 'remove_member', 'edit_terms');
+CREATE TYPE trust_type AS ENUM ('public', 'authenticated', 'vouched', 'ndaed', 'staff');
 
 CREATE TABLE groups (
     group_id SERIAL PRIMARY KEY,
@@ -44,4 +45,49 @@ CREATE TABLE invitations (
     invitation_expiration TIMESTAMP DEFAULT (NOW() + INTERVAL '1 week'),
     group_expiration TIMESTAMP,
     added_by UUID
+);
+
+CREATE TABLE users_staff (
+    user_uuid UUID PRIMARY KEY,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    username VARCHAR,
+    email VARCHAR,
+    trust trust_type NOT NULL
+);
+
+CREATE TABLE users_ndaed (
+    user_uuid UUID PRIMARY KEY,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    username VARCHAR,
+    email VARCHAR,
+    trust trust_type NOT NULL
+);
+
+CREATE TABLE users_vouched (
+    user_uuid UUID PRIMARY KEY,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    username VARCHAR,
+    email VARCHAR,
+    trust trust_type NOT NULL
+);
+
+CREATE TABLE users_authenticated (
+    user_uuid UUID PRIMARY KEY,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    username VARCHAR,
+    email VARCHAR,
+    trust trust_type NOT NULL
+);
+
+CREATE TABLE users_public (
+    user_uuid UUID PRIMARY KEY,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    username VARCHAR,
+    email VARCHAR,
+    trust trust_type NOT NULL
 );
