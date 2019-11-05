@@ -4,12 +4,12 @@ extern crate diesel;
 extern crate diesel_derive_enum;
 
 mod api;
+mod cis;
 mod db;
 mod healthz;
 mod settings;
 mod some;
 mod user;
-mod cis;
 
 use actix_web::middleware::Logger;
 use actix_web::web;

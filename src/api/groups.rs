@@ -1,3 +1,4 @@
+use crate::cis::operations::add_group_to_profile;
 use crate::db::db::establish_connection;
 use crate::db::db::Pool;
 use crate::db::group::*;
@@ -18,13 +19,12 @@ use cis_client::AsyncCisClientTrait;
 use cis_client::CisClient;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
+use failure::format_err;
 use futures::Future;
 use serde_derive::Deserialize;
 use std::convert::TryFrom;
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::cis::operations::add_group_to_profile;
-use failure::format_err;
 
 #[derive(Deserialize)]
 struct NewGroup {
@@ -74,7 +74,9 @@ fn add_group(
     let cis_client = cis_client.clone();
     cis_client
         .get_user_by(&scope_and_user.user_id, &GetBy::UserId, None)
-        .and_then(|profile| (User::try_from(profile.clone()).map(|user| (user, profile))).map_err(Into::into))
+        .and_then(|profile| {
+            (User::try_from(profile.clone()).map(|user| (user, profile))).map_err(Into::into)
+        })
         .and_then(|(user, profile)| {
             web::block(move || add_new_group(&pool, group_name, new_group.description, user))
                 .map(move |_| profile)
