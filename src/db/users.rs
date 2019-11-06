@@ -5,6 +5,15 @@ use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
 use uuid::Uuid;
 
+
+#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[primary_key(user_id)]
+#[table_name = "user_ids"]
+pub struct UserIdUuid {
+    pub user_id: String,
+    pub user_uuid: Uuid,
+}
+
 fn field_for_display(field: &StandardAttributeString, display: &Display) -> Option<String> {
     match &field.metadata.display {
         Some(field_display) if field_display <= display => field.value.clone(),
@@ -36,6 +45,7 @@ macro_rules! user_t {
         #[table_name = $table]
         pub struct $user_typ {
             pub user_uuid: Uuid,
+            pub picture: Option<String>,
             pub first_name: Option<String>,
             pub last_name: Option<String>,
             pub username: Option<String>,
@@ -46,6 +56,7 @@ macro_rules! user_t {
             fn from(user: $user_typ) -> DisplayUser {
                 DisplayUser {
                     user_uuid: user.user_uuid,
+                    picture: user.picture,
                     first_name: user.first_name,
                     last_name: user.last_name,
                     username: user.username,
@@ -60,6 +71,7 @@ macro_rules! user_t {
                     user_uuid: Uuid::parse_str(
                         &profile.uuid.value.clone().unwrap_or_default()
                     ).unwrap_or_default(),
+                    picture: field_for_display(&profile.picture, &$display),
                     first_name: field_for_display(&profile.first_name, &$display),
                     last_name: field_for_display(&profile.last_name, &$display),
                     username: field_for_display(&profile.primary_username, &$display),
@@ -74,6 +86,7 @@ macro_rules! user_t {
 
 pub struct DisplayUser {
     pub user_uuid: Uuid,
+    pub picture: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub username: Option<String>,

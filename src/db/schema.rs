@@ -16,8 +16,7 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
-    invitations (invitation_id) {
-        invitation_id -> Int4,
+    invitations (group_id, user_uuid) {
         group_id -> Int4,
         user_uuid -> Uuid,
         code -> Uuid,
@@ -68,8 +67,19 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
+    user_ids (user_id) {
+        user_id -> Varchar,
+        user_uuid -> Uuid,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
     users_authenticated (user_uuid) {
         user_uuid -> Uuid,
+        picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
         username -> Nullable<Varchar>,
@@ -84,6 +94,7 @@ table! {
 
     users_ndaed (user_uuid) {
         user_uuid -> Uuid,
+        picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
         username -> Nullable<Varchar>,
@@ -98,6 +109,7 @@ table! {
 
     users_public (user_uuid) {
         user_uuid -> Uuid,
+        picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
         username -> Nullable<Varchar>,
@@ -112,6 +124,7 @@ table! {
 
     users_staff (user_uuid) {
         user_uuid -> Uuid,
+        picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
         username -> Nullable<Varchar>,
@@ -126,6 +139,7 @@ table! {
 
     users_vouched (user_uuid) {
         user_uuid -> Uuid,
+        picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
         username -> Nullable<Varchar>,
@@ -146,6 +160,7 @@ allow_tables_to_appear_in_same_query!(
     memberships,
     roles,
     terms,
+    user_ids,
     users_authenticated,
     users_ndaed,
     users_public,

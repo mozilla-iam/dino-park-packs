@@ -8,6 +8,7 @@ use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::http;
 use actix_web::web;
+use actix_web::error;
 use actix_web::Error;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
@@ -44,7 +45,7 @@ fn get_group(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
 ) -> impl Responder {
-    operations::get_group(&pool, group_name.into_inner())
+    operations::groups::get_group(&pool, group_name.into_inner())
         .map(|group| HttpResponse::Ok().json(group))
         .map_err(|_| HttpResponse::NotFound().finish())
 }
@@ -77,8 +78,8 @@ fn add_group(
         })
         .and_then(|(user, profile)| {
             web::block(move || {
-                operations::add_new_group(&pool, group_name, new_group.description, user)
-                    .and_then(|_| operations::update_user_cache(&pool, &profile))
+                operations::groups::add_new_group(&pool, group_name, new_group.description, user)
+                    .and_then(|_| operations::users::update_user_cache(&pool, &profile))
                     .map(|_| profile)
             })
             .map_err(|e| format_err!("{}", e))
@@ -87,6 +88,18 @@ fn add_group(
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| Error::from(e))
 }
+
+fn get_group_details(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+) -> impl Responder {
+    match operations::members::member_count(&*pool, group_name.into_inner()) {
+        Ok(member_count) => Ok(HttpResponse::Ok().json(member_count)),
+        _ => Err(error::ErrorNotFound("")),
+    }
+}
+
 
 pub fn groups_app() -> impl HttpServiceFactory {
     web::scope("/groups")
@@ -103,5 +116,9 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .route(web::post().to_async(add_group))
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group)),
+        )
+        .service(
+            web::resource("/{group_name}/details")
+                .route(web::get().to(get_group_details))
         )
 }

@@ -38,17 +38,23 @@ CREATE TABLE memberships (
 );
 
 CREATE TABLE invitations (
-    invitation_id SERIAL PRIMARY KEY,
     group_id SERIAL REFERENCES groups,
     user_uuid UUID NOT NULL,
     code UUID NOT NULL,
     invitation_expiration TIMESTAMP DEFAULT (NOW() + INTERVAL '1 week'),
     group_expiration TIMESTAMP,
-    added_by UUID
+    added_by UUID,
+    PRIMARY KEY (group_id, user_uuid)
+);
+
+CREATE TABLE user_ids (
+    user_id VARCHAR PRIMARY KEY,
+    user_uuid UUID UNIQUE NOT NULL
 );
 
 CREATE TABLE users_staff (
     user_uuid UUID PRIMARY KEY,
+    picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
     username VARCHAR,
@@ -58,6 +64,7 @@ CREATE TABLE users_staff (
 
 CREATE TABLE users_ndaed (
     user_uuid UUID PRIMARY KEY,
+    picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
     username VARCHAR,
@@ -67,6 +74,7 @@ CREATE TABLE users_ndaed (
 
 CREATE TABLE users_vouched (
     user_uuid UUID PRIMARY KEY,
+    picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
     username VARCHAR,
@@ -76,6 +84,7 @@ CREATE TABLE users_vouched (
 
 CREATE TABLE users_authenticated (
     user_uuid UUID PRIMARY KEY,
+    picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
     username VARCHAR,
@@ -85,6 +94,7 @@ CREATE TABLE users_authenticated (
 
 CREATE TABLE users_public (
     user_uuid UUID PRIMARY KEY,
+    picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
     username VARCHAR,

@@ -43,9 +43,8 @@ pub struct Membership {
     pub added_ts: SystemTime,
 }
 
-#[derive(Queryable, Associations, PartialEq, Debug)]
+#[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 pub struct Invitation {
-    pub id: i32,
     pub user_uuid: Uuid,
     pub group_id: i32,
     pub invitation_expiration: Option<SystemTime>,
@@ -85,14 +84,4 @@ pub struct InsertRole {
     pub typ: Option<RoleType>,
     pub name: String,
     pub permissions: Vec<PermissionType>,
-}
-
-#[derive(Insertable)]
-#[table_name = "invitations"]
-pub struct InsertInvitation {
-    pub user_uuid: Uuid,
-    pub group_id: i32,
-    pub invitation_expiration: Option<SystemTime>,
-    pub group_expiration: Option<SystemTime>,
-    pub added_by: Option<Uuid>,
 }
