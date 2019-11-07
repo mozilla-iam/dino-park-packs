@@ -6,9 +6,9 @@ use crate::db::schema::groups::dsl::*;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
+use actix_web::error;
 use actix_web::http;
 use actix_web::web;
-use actix_web::error;
 use actix_web::Error;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
@@ -94,12 +94,13 @@ fn get_group_details(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
 ) -> impl Responder {
-    match operations::members::member_count(&*pool, group_name.into_inner()) {
-        Ok(member_count) => Ok(HttpResponse::Ok().json(member_count)),
-        _ => Err(error::ErrorNotFound("")),
-    }
+    let member_count = match operations::members::member_count(&*pool, &*group_name) {
+        Ok(member_count) => member_count,
+        _ => return Err(error::ErrorNotFound("")),
+    };
+    let members = operations::members::scoped_members(&*pool, &*group_name, String::default())?;
+    Ok(HttpResponse::Ok().json(members))
 }
-
 
 pub fn groups_app() -> impl HttpServiceFactory {
     web::scope("/groups")
@@ -117,8 +118,5 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group)),
         )
-        .service(
-            web::resource("/{group_name}/details")
-                .route(web::get().to(get_group_details))
-        )
+        .service(web::resource("/{group_name}/details").route(web::get().to(get_group_details)))
 }

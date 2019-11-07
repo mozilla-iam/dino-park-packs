@@ -3,6 +3,7 @@ CREATE TYPE role_type AS ENUM ('member', 'curator', 'admin');
 CREATE TYPE capability_type AS ENUM ('gdrive', 'discourse');
 CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'change_name', 'delete_group', 'remove_member', 'edit_terms');
 CREATE TYPE trust_type AS ENUM ('public', 'authenticated', 'vouched', 'ndaed', 'staff');
+CREATE TYPE rule_type AS ENUM ('staff', 'nda', 'group', 'custom');
 
 CREATE TABLE groups (
     group_id SERIAL PRIMARY KEY,
@@ -45,6 +46,19 @@ CREATE TABLE invitations (
     group_expiration TIMESTAMP,
     added_by UUID,
     PRIMARY KEY (group_id, user_uuid)
+);
+
+CREATE TABLE rules (
+    rule_id SERIAL PRIMARY KEY,
+    typ rule_type NOT NULL,
+    name VARCHAR NOT NULL,
+    payload TEXT
+);
+
+CREATE TABLE group_rules (
+    rule_id SERIAL REFERENCES rules,
+    group_id SERIAL REFERENCES groups,
+    PRIMARY KEY (rule_id, group_id)
 );
 
 CREATE TABLE user_ids (
@@ -101,3 +115,6 @@ CREATE TABLE users_public (
     email VARCHAR,
     trust trust_type NOT NULL
 );
+
+INSERT INTO rules ("typ", "name") VALUES ('staff', 'staff user');
+INSERT INTO rules ("typ", "name") VALUES ('nda', E'nda\'d user');

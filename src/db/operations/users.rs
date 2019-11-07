@@ -81,4 +81,3 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         .execute(&connection)?;
     Ok(())
 }
-

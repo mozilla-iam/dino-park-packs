@@ -5,7 +5,6 @@ use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
 use uuid::Uuid;
 
-
 #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_id)]
 #[table_name = "user_ids"]

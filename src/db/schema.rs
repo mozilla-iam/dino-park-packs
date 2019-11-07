@@ -2,6 +2,16 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
+    group_rules (rule_id, group_id) {
+        rule_id -> Int4,
+        group_id -> Int4,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
     groups (group_id) {
         group_id -> Int4,
         name -> Varchar,
@@ -50,6 +60,18 @@ table! {
         typ -> Role_type,
         name -> Varchar,
         permissions -> Array<Permission_type>,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
+    rules (rule_id) {
+        rule_id -> Int4,
+        typ -> Rule_type,
+        name -> Varchar,
+        payload -> Nullable<Text>,
     }
 }
 
@@ -148,6 +170,8 @@ table! {
     }
 }
 
+joinable!(group_rules -> groups (group_id));
+joinable!(group_rules -> rules (rule_id));
 joinable!(invitations -> groups (group_id));
 joinable!(memberships -> groups (group_id));
 joinable!(memberships -> roles (role_id));
@@ -155,10 +179,12 @@ joinable!(roles -> groups (group_id));
 joinable!(terms -> groups (group_id));
 
 allow_tables_to_appear_in_same_query!(
+    group_rules,
     groups,
     invitations,
     memberships,
     roles,
+    rules,
     terms,
     user_ids,
     users_authenticated,
