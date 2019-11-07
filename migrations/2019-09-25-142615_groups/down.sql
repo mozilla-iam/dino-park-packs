@@ -1,3 +1,4 @@
+DROP VIEW hosts_staff;
 DROP TABLE invitations;
 DROP TABLE memberships;
 DROP TABLE roles;

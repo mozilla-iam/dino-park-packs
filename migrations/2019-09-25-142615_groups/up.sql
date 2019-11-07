@@ -71,7 +71,7 @@ CREATE TABLE users_staff (
     picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
-    username VARCHAR,
+    username VARCHAR NOT NULL,
     email VARCHAR,
     trust trust_type NOT NULL
 );
@@ -81,7 +81,7 @@ CREATE TABLE users_ndaed (
     picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
-    username VARCHAR,
+    username VARCHAR NOT NULL,
     email VARCHAR,
     trust trust_type NOT NULL
 );
@@ -91,7 +91,7 @@ CREATE TABLE users_vouched (
     picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
-    username VARCHAR,
+    username VARCHAR NOT NULL,
     email VARCHAR,
     trust trust_type NOT NULL
 );
@@ -101,7 +101,7 @@ CREATE TABLE users_authenticated (
     picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
-    username VARCHAR,
+    username VARCHAR NOT NULL,
     email VARCHAR,
     trust trust_type NOT NULL
 );
@@ -111,16 +111,18 @@ CREATE TABLE users_public (
     picture VARCHAR,
     first_name VARCHAR,
     last_name VARCHAR,
-    username VARCHAR,
+    username VARCHAR NOT NULL,
     email VARCHAR,
     trust trust_type NOT NULL
 );
 
+CREATE VIEW hosts_staff AS SELECT user_uuid, first_name, last_name, username FROM users_staff;
+
 INSERT INTO rules ("typ", "name") VALUES ('staff', 'staff user');
 INSERT INTO rules ("typ", "name") VALUES ('nda', E'nda\'d user');
 
-INSERT INTO users_staff ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
-INSERT INTO users_ndaed ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
-INSERT INTO users_vouched ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
-INSERT INTO users_authenticated ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
-INSERT INTO users_public ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
+INSERT INTO users_staff ("user_uuid", "username", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'anonymous', 'public');
+INSERT INTO users_ndaed ("user_uuid", "username", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'anonymous', 'public');
+INSERT INTO users_vouched ("user_uuid", "username", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'anonymous', 'public');
+INSERT INTO users_authenticated ("user_uuid", "username", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'anonymous', 'public');
+INSERT INTO users_public ("user_uuid", "username", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'anonymous', 'public');

@@ -10,10 +10,9 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
-use serde_json::json;
 use failure::Error;
 use serde_derive::Deserialize;
-
+use serde_json::json;
 
 #[derive(Deserialize)]
 pub struct GetMembersQuery {
@@ -29,7 +28,7 @@ fn get_members(
 ) -> impl Responder {
     let page_size = 20;
     let next = query.next;
-    match operations::members::scoped_members(
+    match operations::members::scoped_members_and_host(
         &*pool,
         &*group_name,
         &scope_and_user.scope,
@@ -38,7 +37,7 @@ fn get_members(
         next,
     ) {
         Ok(members) => Ok(HttpResponse::Ok().json(members)),
-        Err(_) => Err(error::ErrorNotFound(""))
+        Err(_) => Err(error::ErrorNotFound("")),
     }
 }
 
@@ -51,8 +50,5 @@ pub fn members_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(
-            web::resource("/{group_name}")
-                .route(web::get().to(get_members))
-        )
+        .service(web::resource("/{group_name}").route(web::get().to(get_members)))
 }

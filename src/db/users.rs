@@ -47,7 +47,7 @@ macro_rules! user_t {
             pub picture: Option<String>,
             pub first_name: Option<String>,
             pub last_name: Option<String>,
-            pub username: Option<String>,
+            pub username: String,
             pub email: Option<String>,
             pub trust: TrustType,
         }
@@ -73,7 +73,7 @@ macro_rules! user_t {
                     picture: field_for_display(&profile.picture, &$display),
                     first_name: field_for_display(&profile.first_name, &$display),
                     last_name: field_for_display(&profile.last_name, &$display),
-                    username: field_for_display(&profile.primary_username, &$display),
+                    username: profile.primary_username.value.clone().unwrap_or_default(),
                     email: field_for_display(&profile.primary_email, &$display),
                     trust: trust_for_profile(profile)
                 }
@@ -88,7 +88,7 @@ pub struct DisplayUser {
     pub picture: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
-    pub username: Option<String>,
+    pub username: String,
     pub email: Option<String>,
     pub trust: TrustType,
 }
@@ -138,31 +138,31 @@ mod test {
         assert_eq!(public.user_uuid, uuid);
         assert_eq!(public.first_name, None);
         assert_eq!(public.last_name, None);
-        assert_eq!(public.username, None);
+        assert_eq!(public.username, USERNAME);
         assert_eq!(public.email, Some(EMAIL.to_owned()));
 
         assert_eq!(authenticated.user_uuid, uuid);
         assert_eq!(authenticated.first_name, None);
         assert_eq!(authenticated.last_name, None);
-        assert_eq!(authenticated.username, None);
+        assert_eq!(authenticated.username, USERNAME);
         assert_eq!(authenticated.email, Some(EMAIL.to_owned()));
 
         assert_eq!(vouched.user_uuid, uuid);
         assert_eq!(vouched.first_name, None);
         assert_eq!(vouched.last_name, None);
-        assert_eq!(vouched.username, None);
+        assert_eq!(vouched.username, USERNAME);
         assert_eq!(vouched.email, Some(EMAIL.to_owned()));
 
         assert_eq!(ndaed.user_uuid, uuid);
         assert_eq!(ndaed.first_name, None);
         assert_eq!(ndaed.last_name, None);
-        assert_eq!(ndaed.username, Some(USERNAME.to_owned()));
+        assert_eq!(ndaed.username, USERNAME);
         assert_eq!(ndaed.email, Some(EMAIL.to_owned()));
 
         assert_eq!(staff.user_uuid, uuid);
         assert_eq!(staff.first_name, None);
         assert_eq!(staff.last_name, Some(LAST_NAME.to_owned()));
-        assert_eq!(staff.username, Some(USERNAME.to_owned()));
+        assert_eq!(staff.username, USERNAME);
         assert_eq!(staff.email, Some(EMAIL.to_owned()));
     }
 }

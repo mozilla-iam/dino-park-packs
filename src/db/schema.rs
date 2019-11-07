@@ -104,7 +104,7 @@ table! {
         picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
-        username -> Nullable<Varchar>,
+        username -> Varchar,
         email -> Nullable<Varchar>,
         trust -> Trust_type,
     }
@@ -119,7 +119,7 @@ table! {
         picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
-        username -> Nullable<Varchar>,
+        username -> Varchar,
         email -> Nullable<Varchar>,
         trust -> Trust_type,
     }
@@ -134,7 +134,7 @@ table! {
         picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
-        username -> Nullable<Varchar>,
+        username -> Varchar,
         email -> Nullable<Varchar>,
         trust -> Trust_type,
     }
@@ -149,7 +149,7 @@ table! {
         picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
-        username -> Nullable<Varchar>,
+        username -> Varchar,
         email -> Nullable<Varchar>,
         trust -> Trust_type,
     }
@@ -164,7 +164,7 @@ table! {
         picture -> Nullable<Varchar>,
         first_name -> Nullable<Varchar>,
         last_name -> Nullable<Varchar>,
-        username -> Nullable<Varchar>,
+        username -> Varchar,
         email -> Nullable<Varchar>,
         trust -> Trust_type,
     }
