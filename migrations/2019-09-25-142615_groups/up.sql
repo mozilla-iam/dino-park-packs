@@ -33,7 +33,7 @@ CREATE TABLE memberships (
     group_id SERIAL REFERENCES groups,
     role_id SERIAL REFERENCES roles,
     expiration TIMESTAMP,
-    added_by UUID,
+    added_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
     added_ts TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_uuid, group_id)
 );
@@ -44,7 +44,7 @@ CREATE TABLE invitations (
     code UUID NOT NULL,
     invitation_expiration TIMESTAMP DEFAULT (NOW() + INTERVAL '1 week'),
     group_expiration TIMESTAMP,
-    added_by UUID,
+    added_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
     PRIMARY KEY (group_id, user_uuid)
 );
 
@@ -118,3 +118,9 @@ CREATE TABLE users_public (
 
 INSERT INTO rules ("typ", "name") VALUES ('staff', 'staff user');
 INSERT INTO rules ("typ", "name") VALUES ('nda', E'nda\'d user');
+
+INSERT INTO users_staff ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
+INSERT INTO users_ndaed ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
+INSERT INTO users_vouched ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
+INSERT INTO users_authenticated ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');
+INSERT INTO users_public ("user_uuid", "trust") VALUES ('00000000-0000-0000-0000-000000000000', 'public');

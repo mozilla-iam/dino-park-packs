@@ -39,7 +39,7 @@ pub struct Membership {
     pub group_id: i32,
     pub role_id: i32,
     pub expiration: Option<SystemTime>,
-    pub added_by: Option<Uuid>,
+    pub added_by: Uuid,
     pub added_ts: SystemTime,
 }
 
@@ -74,7 +74,7 @@ pub struct InsertMembership {
     pub user_uuid: Uuid,
     pub group_id: i32,
     pub role_id: Option<i32>,
-    pub added_by: Option<Uuid>,
+    pub added_by: Uuid,
 }
 
 #[derive(Insertable)]

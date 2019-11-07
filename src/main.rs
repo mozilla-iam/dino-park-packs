@@ -42,7 +42,8 @@ fn main() -> Result<(), Error> {
             .service(
                 web::scope("/api/v1/")
                     .wrap(scope_middleware)
-                    .service(api::groups::groups_app()),
+                    .service(api::groups::groups_app())
+                    .service(api::members::members_app()),
             )
     })
     .bind("0.0.0.0:8085")?

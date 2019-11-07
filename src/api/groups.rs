@@ -3,6 +3,7 @@ use crate::db::db::Pool;
 use crate::db::group::*;
 use crate::db::operations;
 use crate::db::schema::groups::dsl::*;
+use crate::db::types::RoleType;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
@@ -21,6 +22,7 @@ use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
 use futures::Future;
 use serde_derive::Deserialize;
+use serde_json::json;
 use std::convert::TryFrom;
 
 #[derive(Deserialize)]
@@ -45,7 +47,7 @@ fn get_group(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
 ) -> impl Responder {
-    operations::groups::get_group(&pool, group_name.into_inner())
+    operations::groups::get_group(&pool, &group_name)
         .map(|group| HttpResponse::Ok().json(group))
         .map_err(|_| HttpResponse::NotFound().finish())
 }
@@ -93,13 +95,30 @@ fn get_group_details(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
 ) -> impl Responder {
     let member_count = match operations::members::member_count(&*pool, &*group_name) {
         Ok(member_count) => member_count,
         _ => return Err(error::ErrorNotFound("")),
     };
-    let members = operations::members::scoped_members(&*pool, &*group_name, String::default())?;
-    Ok(HttpResponse::Ok().json(members))
+    let group = operations::groups::get_group(&pool, &group_name)?;
+    let curators = operations::members::scoped_members(
+        &*pool,
+        &*group_name,
+        &scope_and_user.scope,
+        &[RoleType::Admin, RoleType::Curator],
+        20,
+        None,
+    )?;
+    let members = operations::members::scoped_members(
+        &*pool,
+        &*group_name,
+        &scope_and_user.scope,
+        &[RoleType::Admin, RoleType::Curator, RoleType::Member],
+        20,
+        None,
+    )?;
+    Ok(HttpResponse::Ok().json(json!({ "members": members, "curators": curators, "group": group, "member_count": member_count })))
 }
 
 pub fn groups_app() -> impl HttpServiceFactory {

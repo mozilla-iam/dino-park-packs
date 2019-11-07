@@ -32,7 +32,7 @@ table! {
         code -> Uuid,
         invitation_expiration -> Nullable<Timestamp>,
         group_expiration -> Nullable<Timestamp>,
-        added_by -> Nullable<Uuid>,
+        added_by -> Uuid,
     }
 }
 
@@ -45,7 +45,7 @@ table! {
         group_id -> Int4,
         role_id -> Int4,
         expiration -> Nullable<Timestamp>,
-        added_by -> Nullable<Uuid>,
+        added_by -> Uuid,
         added_ts -> Timestamp,
     }
 }

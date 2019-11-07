@@ -7,11 +7,12 @@ use crate::user::User;
 use diesel::prelude::*;
 use failure::Error;
 use log::info;
+use uuid::Uuid;
 
-pub fn get_group(pool: &Pool, group_name: String) -> Result<Group, Error> {
+pub fn get_group(pool: &Pool, group_name: &str) -> Result<Group, Error> {
     let connection = pool.get()?;
     groups
-        .filter(name.eq(&group_name))
+        .filter(name.eq(group_name))
         .first::<Group>(&connection)
         .map_err(Into::into)
 }
@@ -59,7 +60,7 @@ pub fn add_new_group(
         group_id: new_group.id,
         user_uuid: creator.user_uuid.clone(),
         role_id: Some(group_admin.id),
-        added_by: None,
+        added_by: Uuid::nil(),
     };
     let group_creator = diesel::insert_into(schema::memberships::table)
         .values(creator_membership)
