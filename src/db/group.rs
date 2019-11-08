@@ -1,7 +1,7 @@
 use crate::db::schema::*;
 use crate::db::types::*;
 use serde_derive::Serialize;
-use std::time::SystemTime;
+use chrono::NaiveDateTime;
 use uuid::Uuid;
 
 #[derive(Identifiable, Queryable, PartialEq, Debug, Serialize)]
@@ -13,6 +13,7 @@ pub struct Group {
     pub description: String,
     pub capabilities: Vec<CapabilityType>,
     pub typ: GroupType,
+    pub group_expiration: Option<i32>,
 }
 
 #[derive(Identifiable, Queryable, PartialEq, Debug)]
@@ -38,18 +39,18 @@ pub struct Membership {
     pub user_uuid: Uuid,
     pub group_id: i32,
     pub role_id: i32,
-    pub expiration: Option<SystemTime>,
+    pub expiration: Option<NaiveDateTime>,
     pub added_by: Uuid,
-    pub added_ts: SystemTime,
+    pub added_ts: NaiveDateTime,
 }
 
 #[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 pub struct Invitation {
     pub user_uuid: Uuid,
     pub group_id: i32,
-    pub invitation_expiration: Option<SystemTime>,
-    pub group_expiration: Option<SystemTime>,
-    pub added_by: Option<Uuid>,
+    pub invitation_expiration: Option<NaiveDateTime>,
+    pub group_expiration: Option<NaiveDateTime>,
+    pub added_by: Uuid,
 }
 
 #[derive(Insertable)]
@@ -60,6 +61,7 @@ pub struct InsertGroup {
     pub description: String,
     pub capabilities: Vec<CapabilityType>,
     pub typ: GroupType,
+    pub group_expiration: Option<i32>,
 }
 
 #[derive(Insertable)]

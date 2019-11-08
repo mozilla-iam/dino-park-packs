@@ -91,36 +91,6 @@ fn add_group(
         .map_err(|e| Error::from(e))
 }
 
-fn get_group_details(
-    _: HttpRequest,
-    pool: web::Data<Pool>,
-    group_name: web::Path<String>,
-    scope_and_user: ScopeAndUser,
-) -> impl Responder {
-    let member_count = match operations::members::member_count(&*pool, &*group_name) {
-        Ok(member_count) => member_count,
-        _ => return Err(error::ErrorNotFound("")),
-    };
-    let group = operations::groups::get_group(&pool, &group_name)?;
-    let curators = operations::members::scoped_members(
-        &*pool,
-        &*group_name,
-        &scope_and_user.scope,
-        &[RoleType::Admin, RoleType::Curator],
-        20,
-        None,
-    )?;
-    let members = operations::members::scoped_members(
-        &*pool,
-        &*group_name,
-        &scope_and_user.scope,
-        &[RoleType::Admin, RoleType::Curator, RoleType::Member],
-        20,
-        None,
-    )?;
-    Ok(HttpResponse::Ok().json(json!({ "members": members, "curators": curators, "group": group, "member_count": member_count })))
-}
-
 pub fn groups_app() -> impl HttpServiceFactory {
     web::scope("/groups")
         .wrap(
@@ -137,5 +107,4 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group)),
         )
-        .service(web::resource("/{group_name}/details").route(web::get().to(get_group_details)))
 }

@@ -11,7 +11,8 @@ CREATE TABLE groups (
     path VARCHAR NOT NULL,
     description TEXT NOT NULL,
     capabilities capability_type[] NOT NULL,
-    typ group_type NOT NULL DEFAULT 'closed'
+    typ group_type NOT NULL DEFAULT 'closed',
+    group_expiration INTEGER
 );
 
 CREATE TABLE terms (
@@ -41,7 +42,6 @@ CREATE TABLE memberships (
 CREATE TABLE invitations (
     group_id SERIAL REFERENCES groups,
     user_uuid UUID NOT NULL,
-    code UUID NOT NULL,
     invitation_expiration TIMESTAMP DEFAULT (NOW() + INTERVAL '1 week'),
     group_expiration TIMESTAMP,
     added_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
@@ -117,6 +117,10 @@ CREATE TABLE users_public (
 );
 
 CREATE VIEW hosts_staff AS SELECT user_uuid, first_name, last_name, username FROM users_staff;
+CREATE VIEW hosts_ndaed AS SELECT user_uuid, first_name, last_name, username FROM users_ndaed;
+CREATE VIEW hosts_vouched AS SELECT user_uuid, first_name, last_name, username FROM users_vouched;
+CREATE VIEW hosts_authenticated AS SELECT user_uuid, first_name, last_name, username FROM users_authenticated;
+CREATE VIEW hosts_public AS SELECT user_uuid, first_name, last_name, username FROM users_public;
 
 INSERT INTO rules ("typ", "name") VALUES ('staff', 'staff user');
 INSERT INTO rules ("typ", "name") VALUES ('nda', E'nda\'d user');

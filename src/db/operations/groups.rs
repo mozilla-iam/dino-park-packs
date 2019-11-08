@@ -30,6 +30,7 @@ pub fn add_new_group(
         description: group_description,
         capabilities: vec![],
         typ: GroupType::Closed,
+        group_expiration: None,
     };
     let new_group = diesel::insert_into(schema::groups::table)
         .values(&group)

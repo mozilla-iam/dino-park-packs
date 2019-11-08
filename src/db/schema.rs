@@ -19,6 +19,7 @@ table! {
         description -> Text,
         capabilities -> Array<Capability_type>,
         typ -> Group_type,
+        group_expiration -> Nullable<Int4>,
     }
 }
 
@@ -29,7 +30,6 @@ table! {
     invitations (group_id, user_uuid) {
         group_id -> Int4,
         user_uuid -> Uuid,
-        code -> Uuid,
         invitation_expiration -> Nullable<Timestamp>,
         group_expiration -> Nullable<Timestamp>,
         added_by -> Uuid,

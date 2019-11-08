@@ -1,4 +1,8 @@
 DROP VIEW hosts_staff;
+DROP VIEW hosts_ndaed;
+DROP VIEW hosts_vouched;
+DROP VIEW hosts_authenticated;
+DROP VIEW hosts_public;
 DROP TABLE invitations;
 DROP TABLE memberships;
 DROP TABLE roles;

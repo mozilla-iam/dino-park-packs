@@ -13,18 +13,12 @@ use failure::Error;
 use log::info;
 use serde_derive::Serialize;
 use uuid::Uuid;
+use chrono::NaiveDateTime;
 
-fn users_for_scope(scope: &str) -> Result<impl Table, Error> {
-    match scope {
-        "staff" => Ok(schema::users_staff::table),
-        _ => Err(format_err!("invalid scope")),
-    }
-}
-
-pub fn add_user_to_group(
+pub fn add_member(
     pool: &Pool,
     group_name: &str,
-    creator: User,
+    curator: User,
     user: User,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
@@ -35,7 +29,7 @@ pub fn add_user_to_group(
         user_uuid: user.user_uuid,
         group_id: group.id.clone(),
         role_id: None,
-        added_by: Uuid::nil(),
+        added_by: curator.user_uuid,
     };
     let rows_inserted = diesel::insert_into(schema::memberships::table)
         .values(&membership)
@@ -48,25 +42,30 @@ pub fn add_user_to_group(
 
 #[derive(Queryable, Serialize)]
 pub struct DisplayMember {
+    pub user_uuid: Uuid,
     pub picture: Option<String>,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
+    pub name: Option<String>,
     pub username: String,
     pub email: Option<String>,
+    pub is_staff: bool,
+    pub since: NaiveDateTime,
+    pub expiration: Option<NaiveDateTime>,
     pub role: RoleType,
 }
 
 #[derive(Queryable, Serialize)]
 pub struct DisplayMemberAndHost {
+    pub user_uuid: Uuid,
     pub picture: Option<String>,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
+    pub name: Option<String>,
     pub username: String,
     pub email: Option<String>,
+    pub is_staff: bool,
+    pub since: NaiveDateTime,
+    pub expiration: Option<NaiveDateTime>,
     pub role: RoleType,
     pub host_uuid: Uuid,
-    pub host_first_name: Option<String>,
-    pub host_last_name: Option<String>,
+    pub host_name: Option<String>,
     pub host_username: String,
 }
 
@@ -105,11 +104,14 @@ macro_rules! scoped_members_for {
                         .inner_join(r::table)
                         .filter(r::typ.eq_any(roles))
                         .select((
+                            user_uuid,
                             u::picture,
-                            u::first_name,
-                            u::last_name,
+                            u::first_name.concat(" ").concat(u::last_name),
                             u::username,
                             u::email,
+                            u::trust.eq(TrustType::Staff),
+                            added_ts,
+                            expiration,
                             r::typ,
                         ))
                         .offset(offset)
@@ -153,15 +155,17 @@ macro_rules! scoped_members_and_host_for {
                         .inner_join(r::table)
                         .filter(r::typ.eq_any(roles))
                         .select((
+                            user_uuid,
                             u::picture,
-                            u::first_name,
-                            u::last_name,
+                            u::first_name.concat(" ").concat(u::last_name),
                             u::username,
                             u::email,
+                            u::trust.eq(TrustType::Staff),
+                            added_ts,
+                            expiration,
                             r::typ,
                             h::user_uuid,
-                            h::first_name,
-                            h::last_name,
+                            h::first_name.concat(" ").concat(h::last_name),
                             h::username,
                         ))
                         .offset(offset)

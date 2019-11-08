@@ -2,6 +2,8 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_derive_enum;
+#[macro_use]
+extern crate failure_derive;
 
 mod api;
 mod cis;
@@ -9,6 +11,8 @@ mod db;
 mod healthz;
 mod settings;
 mod user;
+mod utils;
+mod error;
 
 use actix_web::middleware::Logger;
 use actix_web::web;
@@ -43,7 +47,8 @@ fn main() -> Result<(), Error> {
                 web::scope("/api/v1/")
                     .wrap(scope_middleware)
                     .service(api::groups::groups_app())
-                    .service(api::members::members_app()),
+                    .service(api::members::members_app())
+                    .service(api::views::views_app()),
             )
     })
     .bind("0.0.0.0:8085")?
