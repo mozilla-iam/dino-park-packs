@@ -3,11 +3,9 @@ use crate::db::db::Pool;
 use crate::db::group::*;
 use crate::db::operations;
 use crate::db::schema::groups::dsl::*;
-use crate::db::types::RoleType;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::Error;
@@ -22,7 +20,6 @@ use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
 use futures::Future;
 use serde_derive::Deserialize;
-use serde_json::json;
 use std::convert::TryFrom;
 
 #[derive(Deserialize)]

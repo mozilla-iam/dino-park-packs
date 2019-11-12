@@ -107,7 +107,6 @@ pub fn pending(
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
 ) -> impl Responder {
-
 }
 
 pub fn members_app() -> impl HttpServiceFactory {

@@ -10,6 +10,7 @@ DROP TABLE terms;
 DROP TABLE group_rules;
 DROP TABLE groups;
 DROP TABLE user_ids;
+DROP TABLE profiles;
 DROP TABLE users_staff;
 DROP TABLE users_ndaed;
 DROP TABLE users_vouched;

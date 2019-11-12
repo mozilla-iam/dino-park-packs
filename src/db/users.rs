@@ -3,7 +3,43 @@ use crate::db::types::TrustType;
 use cis_profile::schema::Display;
 use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
+use serde_json::Value;
+use std::convert::TryFrom;
 use uuid::Uuid;
+
+#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[primary_key(user_uuid)]
+#[table_name = "profiles"]
+pub struct UserProfileValue {
+    pub user_uuid: Uuid,
+    pub profile: Value,
+}
+
+pub struct UserProfile {
+    pub user_uuid: Uuid,
+    pub profile: Profile,
+}
+
+impl TryFrom<UserProfile> for UserProfileValue {
+    type Error = serde_json::Error;
+
+    fn try_from(u: UserProfile) -> Result<Self, Self::Error> {
+        Ok(UserProfileValue {
+            user_uuid: u.user_uuid,
+            profile: serde_json::to_value(u.profile)?,
+        })
+    }
+}
+
+impl TryFrom<UserProfileValue> for UserProfile {
+    type Error = serde_json::Error;
+    fn try_from(u: UserProfileValue) -> Result<Self, Self::Error> {
+        Ok(UserProfile {
+            user_uuid: u.user_uuid,
+            profile: serde_json::from_value(u.profile)?,
+        })
+    }
+}
 
 #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_id)]

@@ -1,9 +1,8 @@
+use crate::api::models::DisplayGroupDetails;
+use crate::api::models::GroupInfo;
 use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::RoleType;
-use crate::error::PacksError;
-use crate::user::User;
-use crate::utils::to_expiration_ts;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::error;
@@ -13,13 +12,7 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
-use failure::Error;
-use futures::Future;
 use serde_derive::Deserialize;
-use serde_humantime::De;
-use serde_json::json;
-use std::time::Duration;
-use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct GetMembersQuery {
@@ -35,28 +28,42 @@ fn group_details(
     query: web::Query<GetMembersQuery>,
 ) -> impl Responder {
     let page_size = query.size.unwrap_or_else(|| 20);
-    let member_count = match operations::members::member_count(&*pool, &*group_name) {
+    let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
         _ => return Err(error::ErrorNotFound("")),
     };
     let group = operations::groups::get_group(&pool, &group_name)?;
     let curators = operations::members::scoped_members_and_host(
-        &*pool,
-        &*group_name,
+        &pool,
+        &group_name,
         &scope_and_user.scope,
         &[RoleType::Admin, RoleType::Curator],
         page_size,
-        None,
+        query.next,
     )?;
     let members = operations::members::scoped_members_and_host(
-        &*pool,
-        &*group_name,
+        &pool,
+        &group_name,
         &scope_and_user.scope,
         &[RoleType::Admin, RoleType::Curator, RoleType::Member],
         page_size,
         None,
     )?;
-    Ok(HttpResponse::Ok().json(json!({ "members": members, "curators": curators, "group": group, "member_count": member_count, "next": page_size })))
+    let invitation_count = operations::invitations::pending_invitations_count(&pool, &group_name)?;
+    let renewal_count = operations::members::renewal_count(&pool, &group_name, None)?;
+    let result = DisplayGroupDetails {
+        group: GroupInfo {
+            name: group.name,
+            description: group.description,
+            typ: group.typ,
+        },
+        members,
+        curators,
+        member_count,
+        invitation_count,
+        renewal_count,
+    };
+    Ok(HttpResponse::Ok().json(result))
 }
 
 pub fn views_app() -> impl HttpServiceFactory {
@@ -70,4 +77,3 @@ pub fn views_app() -> impl HttpServiceFactory {
         )
         .service(web::resource("/{group_name}/details").route(web::get().to(group_details)))
 }
-

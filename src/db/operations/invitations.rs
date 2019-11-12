@@ -6,6 +6,7 @@ use crate::db::schema::memberships::dsl::*;
 use crate::db::types::*;
 use crate::db::views;
 use crate::user::User;
+use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use failure::format_err;
@@ -13,11 +14,9 @@ use failure::Error;
 use log::info;
 use serde_derive::Serialize;
 use uuid::Uuid;
-use chrono::NaiveDateTime;
 
 #[derive(Queryable, Serialize)]
-pub struct PendingInvitations {
-}
+pub struct PendingInvitations {}
 
 pub fn invite_member(
     pool: &Pool,
@@ -47,8 +46,12 @@ pub fn invite_member(
     Ok(())
 }
 
-pub fn pending_invitations(
-    pool: &Pool,
-    group_name: &str,
-    scope: &str,
-) {}
+pub fn pending_invitations_count(pool: &Pool, group_name: &str) -> Result<i64, Error> {
+    let connection = pool.get()?;
+    let count = schema::invitations::table
+        .inner_join(groups::groups)
+        .filter(groups::name.eq(group_name))
+        .select(count(schema::invitations::user_uuid))
+        .first(&connection)?;
+    Ok(count)
+}

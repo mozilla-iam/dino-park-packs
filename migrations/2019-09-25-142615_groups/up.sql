@@ -61,9 +61,14 @@ CREATE TABLE group_rules (
     PRIMARY KEY (rule_id, group_id)
 );
 
+CREATE TABLE profiles (
+    user_uuid UUID PRIMARY KEY,
+    profile JSONB NOT NULL
+);
+
 CREATE TABLE user_ids (
     user_id VARCHAR PRIMARY KEY,
-    user_uuid UUID UNIQUE NOT NULL
+    user_uuid UUID UNIQUE NOT NULL REFERENCES profiles
 );
 
 CREATE TABLE users_staff (

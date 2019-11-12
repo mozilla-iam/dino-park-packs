@@ -36,17 +36,15 @@ pub fn add_new_group(
         .values(&group)
         .on_conflict_do_nothing()
         .get_result::<Group>(&connection)?;
-    info!("Group: {:#?}", new_group);
     let member = InsertRole {
         group_id: new_group.id,
         typ: None,
         name: String::from("curator"),
         permissions: vec![],
     };
-    let group_member = diesel::insert_into(schema::roles::table)
+    diesel::insert_into(schema::roles::table)
         .values(member)
-        .get_result::<Role>(&connection)?;
-    info!("Role: {:#?}", group_member);
+        .execute(&connection)?;
     let admin = InsertRole {
         group_id: new_group.id,
         typ: Some(RoleType::Admin),
@@ -56,16 +54,14 @@ pub fn add_new_group(
     let group_admin = diesel::insert_into(schema::roles::table)
         .values(admin)
         .get_result::<Role>(&*connection)?;
-    info!("Role: {:#?}", group_admin);
     let creator_membership = InsertMembership {
         group_id: new_group.id,
         user_uuid: creator.user_uuid.clone(),
         role_id: Some(group_admin.id),
         added_by: Uuid::nil(),
     };
-    let group_creator = diesel::insert_into(schema::memberships::table)
+    diesel::insert_into(schema::memberships::table)
         .values(creator_membership)
-        .get_result::<Membership>(&*connection)?;
-    info!("Membership: {:#?}", group_creator);
+        .execute(&*connection)?;
     Ok(())
 }

@@ -54,6 +54,16 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
+    profiles (user_uuid) {
+        user_uuid -> Uuid,
+        profile -> Jsonb,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
     roles (role_id) {
         role_id -> Int4,
         group_id -> Int4,
@@ -177,12 +187,14 @@ joinable!(memberships -> groups (group_id));
 joinable!(memberships -> roles (role_id));
 joinable!(roles -> groups (group_id));
 joinable!(terms -> groups (group_id));
+joinable!(user_ids -> profiles (user_uuid));
 
 allow_tables_to_appear_in_same_query!(
     group_rules,
     groups,
     invitations,
     memberships,
+    profiles,
     roles,
     rules,
     terms,

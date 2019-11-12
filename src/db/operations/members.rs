@@ -6,6 +6,8 @@ use crate::db::schema::memberships::dsl::*;
 use crate::db::types::*;
 use crate::db::views;
 use crate::user::User;
+use chrono::NaiveDateTime;
+use chrono::Utc;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use failure::format_err;
@@ -13,14 +15,10 @@ use failure::Error;
 use log::info;
 use serde_derive::Serialize;
 use uuid::Uuid;
-use chrono::NaiveDateTime;
 
-pub fn add_member(
-    pool: &Pool,
-    group_name: &str,
-    curator: User,
-    user: User,
-) -> Result<(), Error> {
+const DEFAULT_RENEWAL_DAYS: i64 = 14;
+
+pub fn add_member(pool: &Pool, group_name: &str, curator: User, user: User) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = groups::groups
         .filter(groups::name.eq(group_name))
@@ -53,8 +51,29 @@ pub struct DisplayMember {
     pub role: RoleType,
 }
 
-#[derive(Queryable, Serialize)]
+#[derive(Serialize)]
+pub struct DisplayHost {
+    pub uuid: Uuid,
+    pub name: Option<String>,
+    pub primary_username: String,
+}
+
+#[derive(Serialize)]
 pub struct DisplayMemberAndHost {
+    pub uuid: Uuid,
+    pub picture: Option<String>,
+    pub name: Option<String>,
+    pub primary_username: String,
+    pub primary_email: Option<String>,
+    pub is_staff: bool,
+    pub since: NaiveDateTime,
+    pub expiration: Option<NaiveDateTime>,
+    pub role: RoleType,
+    pub host: DisplayHost,
+}
+
+#[derive(Queryable, Serialize)]
+pub struct MemberAndHost {
     pub user_uuid: Uuid,
     pub picture: Option<String>,
     pub name: Option<String>,
@@ -67,6 +86,27 @@ pub struct DisplayMemberAndHost {
     pub host_uuid: Uuid,
     pub host_name: Option<String>,
     pub host_username: String,
+}
+
+impl From<MemberAndHost> for DisplayMemberAndHost {
+    fn from(m: MemberAndHost) -> Self {
+        DisplayMemberAndHost {
+            uuid: m.user_uuid,
+            picture: m.picture,
+            name: m.name,
+            primary_username: m.username,
+            primary_email: m.email,
+            is_staff: m.is_staff,
+            since: m.since,
+            expiration: m.expiration,
+            role: m.role,
+            host: DisplayHost {
+                uuid: m.host_uuid,
+                name: m.host_name,
+                primary_username: m.host_username,
+            },
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -170,9 +210,10 @@ macro_rules! scoped_members_and_host_for {
                         ))
                         .offset(offset)
                         .limit(limit)
-                        .get_results(connection)
+                        .get_results::<MemberAndHost>(connection)
+                        .map(|members| members.into_iter().map(|m| m.into()).collect())
                 })
-                .map(|members| {
+                .map(|members: Vec<DisplayMemberAndHost>| {
                     let next = match members.len() {
                         0 => None,
                         l => Some(offset + l as i64),
@@ -255,6 +296,23 @@ pub fn member_count(pool: &Pool, group_name: &str) -> Result<i64, Error> {
     let count = memberships
         .inner_join(groups::groups)
         .filter(groups::name.eq(group_name))
+        .select(count(user_uuid))
+        .first(&connection)?;
+    Ok(count)
+}
+
+pub fn renewal_count(
+    pool: &Pool,
+    group_name: &str,
+    expires_before: Option<NaiveDateTime>,
+) -> Result<i64, Error> {
+    let expires_before = expires_before
+        .unwrap_or_else(|| (Utc::now() + chrono::Duration::days(DEFAULT_RENEWAL_DAYS)).naive_utc());
+    let connection = pool.get()?;
+    let count = memberships
+        .inner_join(groups::groups)
+        .filter(groups::name.eq(group_name))
+        .filter(expiration.le(expires_before))
         .select(count(user_uuid))
         .first(&connection)?;
     Ok(count)

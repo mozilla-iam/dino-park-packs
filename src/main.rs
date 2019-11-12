@@ -8,11 +8,12 @@ extern crate failure_derive;
 mod api;
 mod cis;
 mod db;
+mod error;
 mod healthz;
+mod rules;
 mod settings;
 mod user;
 mod utils;
-mod error;
 
 use actix_web::middleware::Logger;
 use actix_web::web;

@@ -1,12 +1,14 @@
 use crate::db::db::Pool;
 use crate::db::schema;
 use crate::db::schema::user_ids::dsl::*;
+use crate::db::users::UserProfile;
 use crate::db::users::*;
 use cis_profile::schema::Profile;
 use diesel::prelude::*;
 use failure::format_err;
 use failure::Error;
 use log::error;
+use std::convert::TryFrom;
 use uuid::Uuid;
 
 pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
@@ -20,7 +22,7 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         .ok_or_else(|| format_err!("no user_id"))?;
 
     let profile_id_uuid = UserIdUuid {
-        user_uuid: profile_uuid,
+        user_uuid: profile_uuid.clone(),
         user_id: profile_id,
     };
 
@@ -39,6 +41,18 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         Err(e) => return Err(e.into()),
         _ => (),
     }
+
+    let user_profile = UserProfileValue::try_from(UserProfile {
+        user_uuid: profile_uuid,
+        profile: profile.clone(),
+    })?;
+
+    diesel::insert_into(schema::profiles::table)
+        .values(&user_profile)
+        .on_conflict(schema::profiles::user_uuid)
+        .do_update()
+        .set(&user_profile)
+        .execute(&connection)?;
 
     let staff_profile = UsersStaff::from(profile);
     diesel::insert_into(schema::users_staff::table)
