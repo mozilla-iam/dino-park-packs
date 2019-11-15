@@ -34,7 +34,7 @@ pub struct Role {
     pub permissions: Vec<PermissionType>,
 }
 
-#[derive(Queryable, Associations, PartialEq, Debug)]
+#[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 pub struct Membership {
     pub user_uuid: Uuid,
     pub group_id: i32,
@@ -70,7 +70,7 @@ pub struct InsertTerm {
     pub text: String,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, AsChangeset)]
 #[table_name = "memberships"]
 pub struct InsertMembership {
     pub user_uuid: Uuid,

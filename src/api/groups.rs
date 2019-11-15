@@ -3,6 +3,7 @@ use crate::db::db::Pool;
 use crate::db::group::*;
 use crate::db::operations;
 use crate::db::schema::groups::dsl::*;
+use crate::db::types::*;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
@@ -51,10 +52,20 @@ fn get_group(
 
 fn update_group(
     _: HttpRequest,
-    connection: web::Data<PgConnection>,
+    pool: web::Data<Pool>,
+    group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
-) -> HttpResponse {
-    HttpResponse::Ok().finish()
+) -> Result<HttpResponse, Error> {
+    operations::groups::update_group(
+        &pool,
+        group_name.into_inner(),
+        Some(group_update.description.clone()),
+        None,
+        None,
+        None,
+    )
+    .map(|_| HttpResponse::Created().finish())
+    .map_err(|e| Error::from(e))
 }
 
 fn add_group(
@@ -77,9 +88,15 @@ fn add_group(
         })
         .and_then(|(user, profile)| {
             web::block(move || {
-                operations::groups::add_new_group(&pool, group_name, new_group.description, user)
-                    .and_then(|_| operations::users::update_user_cache(&pool, &profile))
-                    .map(|_| profile)
+                operations::groups::add_new_group(
+                    &pool,
+                    group_name,
+                    new_group.description,
+                    user,
+                    GroupType::Closed,
+                )
+                .and_then(|_| operations::users::update_user_cache(&pool, &profile))
+                .map(|_| profile)
             })
             .map_err(|e| format_err!("{}", e))
         })

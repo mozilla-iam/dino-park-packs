@@ -1,0 +1,708 @@
+openapi: 3.0.0
+info:
+  description: Mozilla's IAM group API
+  version: 1.0.0-oas3
+  title: Groups
+  contact:
+    email: fiji@mozilla.com
+  license:
+    name: MPL 2.0
+    url: https://www.mozilla.org/media/MPL/2.0/index.txt
+paths:
+  "/groups/api/v1/groups":
+    post:
+      summary: creates a group
+      operationId: addGroup
+      description: creates a new acces group
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewGroup"
+        description: Inventory item to add
+      responses:
+        "201":
+          description: group created
+        "400":
+          description: invalid input, object invalid
+        "409":
+          description: an existing group already exists
+  "/groups/api/v1/groups/{groupName}":
+    get:
+      summary: group information
+      operationId: viewGroup
+      description: |
+        Retrieve information about a given group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: the group information requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          description: bad input parameter
+        "403":
+          description: forbidden
+    put:
+      summary: updates a group
+      description: |
+        Update information and settings for a given group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupUpdate"
+        description: Updates for a existing group
+      responses:
+        "201":
+          description: updates applied
+        "400":
+          description: invalid input, object invalid
+        "403":
+          description: forbidden
+    delete:
+      summary: deletes a group
+      description: |
+        Deletes a group and all related data
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: group deleted
+        "400":
+          description: invalid input, object invalid
+        "403":
+          description: forbidden
+  "/groups/api/v1/groups/{groupName}/details":
+    get:
+      summary: detailed group information
+      description: Detailed information for group view
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: a page of members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupDetails"
+  "/groups/api/v1/terms/{groupName}":
+    get:
+      summary: group terms
+      description: get the terms of condition for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: list of invitations
+          content:
+            application/json:
+              schema:
+                type: string
+                example: some terms
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+    post:
+      summary: create group terms
+      description: create terms of condition for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  example: some terms
+      responses:
+        "201":
+          description: terms created
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+    put:
+      summary: update group terms
+      description: update terms of condition for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  example: some terms
+      responses:
+        "201":
+          description: terms updated
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/invitations/{groupName}":
+    get:
+      summary: group invitations
+      description: get invitations for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: list of invitations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invitation"
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+    post:
+      summary: invite a member
+      description: invite a member to a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_uuid:
+                  type: string
+                  format: uuid
+                  example: 34a33a8e-d035-4051-acac-497a79235e73
+                invitation_expiration:
+                  type: string
+                  example: 5days
+                group_expiration:
+                  type: string
+                  example: 6months
+      responses:
+        "201":
+          description: member invited
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/invitations/{groupName}/{userUuid}":
+    put:
+      summary: update an invitation
+      description: update inviation of a user
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userUuid
+          description: user uuid of invitation to update
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invitation_expiration:
+                  type: string
+                  example: 5days
+                group_expiration:
+                  type: string
+                  example: 6months
+      responses:
+        "201":
+          description: invitation updated
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+    delete:
+      summary: delete an invitation
+      description: delete an invitation for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userUuid
+          description: user uuid of invitation to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: invitation deleted
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/members/{groupName}/{memberUuid}":
+    delete:
+      summary: delete a member
+      description: delete a member of a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberUuid
+          description: pass in the uuid of the member to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: member deleted
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/members/{groupName}":
+    get:
+      summary: paginated members
+      description: |
+        get paginated members of a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: q
+          description: search query to filter results
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: a page of members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DisplayMember"
+                  next:
+                    type: integer
+                    example: 20
+  "/groups/api/v1/curators/{groupName}":
+    post:
+      summary: add a curator
+      description: add a curator to a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - member_uuid
+              properties:
+                member_uuid:
+                  type: string
+                  format: uuid
+                  example: 34a33a8e-d035-4051-acac-497a79235e73
+      responses:
+        "201":
+          description: curator added
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/curators/{groupName}/{memberUuid}":
+    delete:
+      summary: delete a curator
+      description: delete a curator of a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberUuid
+          description: pass in the uuid of the curator to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: curator deleted
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/self/{groupName}":
+    delete:
+      summary: leave a group
+      description: leave a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: left group
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+  "/groups/api/v1/self/invitations":
+    get:
+      summary: inviations for the logged in user
+      description: get all invitations for the logged in user
+      responses:
+        "200":
+          description: list of inviatations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyInvitation"
+  "/groups/api/v1/self/join/{groupName}":
+    post:
+      summary: join a group
+      description: join a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        "200":
+          description: joining status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [pending, joined]
+                    example: joined
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
+servers:
+  - url: https://virtserver.swaggerhub.com/fiji/dinoparkgroups/1.0.0
+components:
+  schemas:
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - description
+      properties:
+        id:
+          type: integer
+          example: 1337
+        name:
+          type: string
+          example: dinopark-test
+        type:
+          type: string
+          enum:
+            - closed
+            - reviewed
+            - open
+          example: closed
+        description:
+          type: string
+          example: some fancy description in markdown
+        terms:
+          type: boolean
+          example: true
+    NewGroup:
+      type: object
+      required:
+        - type
+        - description
+      properties:
+        name:
+          type: string
+          example: dinos
+        type:
+          type: string
+          enum:
+            - closed
+            - reviewed
+            - open
+          example: closed
+        description:
+          type: string
+          example: some fancy description in markdown
+    GroupUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - closed
+            - reviewed
+            - open
+          example: reviewed
+        description:
+          type: string
+          example: another description in markdown
+    DisplayMember:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        picture:
+          type: string
+          nullable: true
+          example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
+        name:
+          type: string
+          nullable: true
+          example: Hans Knall
+        username:
+          type: string
+          example: hans
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: hans@knall.org
+        isStaff:
+          type: boolean
+          example: true
+        since:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        role:
+          type: string
+          enum:
+            - Admin
+            - Curator
+            - Member
+        added_by:
+          $ref: "#/components/schemas/AddedBy"
+    MyInvitation:
+      type: object
+      properties:
+        group_name:
+          type: string
+          example: dinos
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        invitation_expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        group_expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        terms:
+          type: boolean
+          example: true
+        added_by:
+          $ref: "#/components/schemas/AddedBy"
+    Invitation:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        picture:
+          type: string
+          nullable: true
+          example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
+        name:
+          type: string
+          nullable: true
+          example: Hans Knall
+        username:
+          type: string
+          example: hans
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: hans@knall.org
+        isStaff:
+          type: boolean
+          example: true
+        invitation_expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        group_expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        added_by:
+          $ref: "#/components/schemas/AddedBy"
+    AddedBy:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        name:
+          type: string
+          nullable: true
+          example: Hans Knall
+        username:
+          type: string
+          nullable: true
+          example: hans
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: hans@knall.org
+    GroupDetails:
+      type: object
+      properties:
+        members:
+          type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: "#/components/schemas/DisplayMember"
+            next:
+              type: integer
+              nullable: true
+              example: 20
+        curators:
+          type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: "#/components/schemas/DisplayMember"
+            next:
+              type: integer
+              nullable: true
+              example: 20
+        group:
+          $ref: "#/components/schemas/Group"
+        member_count:
+          type: integer
+          example: 50
+        invitation_count:
+          type: integer
+          example: 2
+        renewal_count:
+          type: integer
+          example: 3

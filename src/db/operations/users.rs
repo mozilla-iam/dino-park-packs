@@ -21,6 +21,18 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         .clone()
         .ok_or_else(|| format_err!("no user_id"))?;
 
+    let user_profile = UserProfileValue::try_from(UserProfile {
+        user_uuid: profile_uuid,
+        profile: profile.clone(),
+    })?;
+
+    diesel::insert_into(schema::profiles::table)
+        .values(&user_profile)
+        .on_conflict(schema::profiles::user_uuid)
+        .do_update()
+        .set(&user_profile)
+        .execute(&connection)?;
+
     let profile_id_uuid = UserIdUuid {
         user_uuid: profile_uuid.clone(),
         user_id: profile_id,
@@ -41,18 +53,6 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         Err(e) => return Err(e.into()),
         _ => (),
     }
-
-    let user_profile = UserProfileValue::try_from(UserProfile {
-        user_uuid: profile_uuid,
-        profile: profile.clone(),
-    })?;
-
-    diesel::insert_into(schema::profiles::table)
-        .values(&user_profile)
-        .on_conflict(schema::profiles::user_uuid)
-        .do_update()
-        .set(&user_profile)
-        .execute(&connection)?;
 
     let staff_profile = UsersStaff::from(profile);
     diesel::insert_into(schema::users_staff::table)
