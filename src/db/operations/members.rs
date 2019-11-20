@@ -15,27 +15,13 @@ use failure::Error;
 use log::info;
 use serde_derive::Serialize;
 use uuid::Uuid;
+use crate::db::operations::internal;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
 
 pub fn add_member(pool: &Pool, group_name: &str, curator: User, user: User) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = groups::groups
-        .filter(groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
-    let membership = InsertMembership {
-        user_uuid: user.user_uuid,
-        group_id: group.id.clone(),
-        role_id: None,
-        added_by: curator.user_uuid,
-    };
-    let rows_inserted = diesel::insert_into(schema::memberships::table)
-        .values(&membership)
-        .on_conflict_do_nothing()
-        .execute(&*connection)?;
-    info!("Inserted {} rows", rows_inserted);
-
-    Ok(())
+    let group = internal::group::get_group(pool, group_name)?;
+    internal::member::add_member(pool, group.id, user.user_uuid, curator.user_uuid).map(|_| ())
 }
 
 #[derive(Queryable, Serialize)]
@@ -317,3 +303,5 @@ pub fn renewal_count(
         .first(&connection)?;
     Ok(count)
 }
+
+pub use internal::member::member_role;

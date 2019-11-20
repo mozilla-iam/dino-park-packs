@@ -342,6 +342,13 @@ paths:
           schema:
             type: string
         - in: query
+          name: r
+          description: filter results based on role
+          required: false
+          schema:
+            type: string
+            enum: [member, curator]
+        - in: query
           name: q
           description: search query to filter results
           required: false
