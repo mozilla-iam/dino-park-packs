@@ -12,6 +12,7 @@ CREATE TABLE groups (
     description TEXT NOT NULL,
     capabilities capability_type[] NOT NULL,
     typ group_type NOT NULL DEFAULT 'closed',
+    trust trust_type NOT NULL DEFAULT 'ndaed',
     group_expiration INTEGER
 );
 

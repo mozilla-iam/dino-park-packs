@@ -1,6 +1,6 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::db::db::Pool;
-use crate::db::group::*;
+use crate::db::model::*;
 use crate::db::operations;
 use crate::db::schema::groups::dsl::*;
 use crate::db::types::*;
@@ -81,6 +81,7 @@ fn add_group(
     let new_group = new_group.into_inner();
     let pool = pool.clone();
     let cis_client = cis_client.clone();
+    let scope_and_user = scope_and_user.clone();
     cis_client
         .get_user_by(&scope_and_user.user_id, &GetBy::UserId, None)
         .and_then(|profile| {
@@ -90,10 +91,12 @@ fn add_group(
             web::block(move || {
                 operations::groups::add_new_group(
                     &pool,
+                    &scope_and_user,
                     group_name,
                     new_group.description,
                     user,
                     GroupType::Closed,
+                    TrustType::Ndaed,
                 )
                 .and_then(|_| operations::users::update_user_cache(&pool, &profile))
                 .map(|_| profile)

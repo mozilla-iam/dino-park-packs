@@ -90,6 +90,7 @@ fn invite_member(
     };
     match operations::invitations::invite_member(
         &pool,
+        &scope_and_user,
         &group_name,
         host,
         member,

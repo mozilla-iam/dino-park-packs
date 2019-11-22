@@ -1,5 +1,5 @@
 use crate::db::db::Pool;
-use crate::db::group::*;
+use crate::db::model::*;
 use crate::db::schema;
 use crate::db::types::*;
 use diesel::prelude::*;
@@ -44,6 +44,7 @@ pub fn add_admin(
         group_id,
         user_uuid,
         role_id: Some(role.id),
+        expiration: None,
         added_by,
     };
     diesel::insert_into(schema::memberships::table)

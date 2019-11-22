@@ -1,13 +1,21 @@
-use crate::db::db::Pool;
-use crate::db::operations;
-use crate::db::types::*;
-use cis_profile::schema::Profile;
-use dino_park_gate::scope::ScopeAndUser;
-use failure::Error;
-use uuid::Uuid;
+use log::info;
+use crate::rules::error::RuleError;
+use crate::rules::rules::*;
 
-const CREATE_GROUP: Engine = Engine {
+pub const CREATE_GROUP: Engine = Engine {
     rules: &[&rule_is_creator],
+};
+
+pub const INVITE_MEMBER: Engine = Engine {
+    rules: &[&rule_host_can_invite],
+};
+
+pub const HOST_IS_CURATOR: Engine = Engine {
+    rules: &[&rule_host_is_curator],
+};
+
+pub const HOST_IS_GROUP_ADMIN: Engine = Engine {
+    rules: &[&rule_host_is_group_admin],
 };
 
 pub struct Engine<'a> {
@@ -15,43 +23,15 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-    pub fn run(self: &Self, ctx: &RuleContext) -> Result<bool, Error> {
-        self.rules.iter().try_fold(true, |mut ok, rule| {
-            ok &= rule(ctx)?;
-            Ok(ok)
-        })
-    }
-}
-
-pub struct RuleContext<'a> {
-    pub pool: &'a Pool,
-    pub scope_and_user: &'a ScopeAndUser,
-    pub group: &'a str,
-    pub host_uuid: &'a Uuid,
-    pub host: Option<&'a Profile>,
-    pub member_uuid: Option<&'a Uuid>,
-    pub member: Option<&'a Profile>,
-}
-
-type Rule = Fn(&RuleContext) -> Result<bool, Error>;
-
-/// Check if curent user is allowed to create groups.
-pub fn rule_is_creator(ctx: &RuleContext) -> Result<bool, Error> {
-    match ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) {
-        Some("creator") | Some("admin") => Ok(true),
-        _ => Ok(false),
-    }
-}
-
-/// Check if the host is either `RoleTpye::Admin` or has `InviiteMember` permissions for the given
-/// group.
-pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<bool, Error> {
-    match operations::members::member_role(ctx.pool, ctx.host_uuid, ctx.group) {
-        Ok(role) => {
-            Ok(role.typ == RoleType::Admin
-                || role.permissions.contains(&PermissionType::InviteMember))
+    pub fn run(self: &Self, ctx: &RuleContext) -> Result<(), RuleError> {
+        let ok = self.rules.iter().try_for_each(|rule| {
+            rule(ctx)
+        });
+        if !ok.is_err() && ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) == Some("admin") {
+            info!("using admin priviledges for {}", ctx.host_uuid);
+            return Ok(());
         }
-        _ => Ok(false),
+        ok
     }
 }
 
@@ -59,6 +39,9 @@ pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<bool, Error> {
 mod test {
     use super::*;
     use crate::db;
+    use failure::Error;
+    use dino_park_gate::scope::ScopeAndUser;
+    use uuid::Uuid;
 
     #[test]
     fn simple_rule_stuct_creator_success() -> Result<(), Error> {
@@ -80,8 +63,8 @@ mod test {
         let engine = Engine {
             rules: &[&rule_is_creator],
         };
-        let ok = engine.run(&ctx)?;
-        assert!(ok);
+        let ok = engine.run(&ctx);
+        assert!(ok.is_ok());
         Ok(())
     }
 
@@ -105,8 +88,8 @@ mod test {
         let engine = Engine {
             rules: &[&rule_is_creator],
         };
-        let ok = engine.run(&ctx)?;
-        assert_eq!(ok, false);
+        let ok = engine.run(&ctx);
+        assert_eq!(ok, Err::<(), _>(RuleError::NotAllowedToCreateGroups));
         Ok(())
     }
 }

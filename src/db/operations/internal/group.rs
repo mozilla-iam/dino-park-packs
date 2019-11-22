@@ -1,5 +1,5 @@
 use crate::db::db::Pool;
-use crate::db::group::*;
+use crate::db::model::*;
 use crate::db::schema;
 use crate::db::types::*;
 use diesel::prelude::*;
@@ -19,6 +19,7 @@ pub fn add_group(
     description: String,
     capabilities: Vec<CapabilityType>,
     typ: GroupType,
+    trust: TrustType,
     group_expiration: Option<i32>,
 ) -> Result<Group, Error> {
     let connection = pool.get()?;
@@ -28,6 +29,7 @@ pub fn add_group(
         description,
         capabilities,
         typ,
+        trust,
         group_expiration,
     };
     diesel::insert_into(schema::groups::table)

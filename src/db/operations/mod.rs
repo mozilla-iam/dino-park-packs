@@ -1,5 +1,6 @@
-pub mod groups;
 mod internal;
+pub mod groups;
 pub mod invitations;
 pub mod members;
 pub mod users;
+pub mod admins;

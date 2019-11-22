@@ -27,6 +27,7 @@ fn group_details(
     scope_and_user: ScopeAndUser,
     query: web::Query<GetMembersQuery>,
 ) -> impl Responder {
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let page_size = query.size.unwrap_or_else(|| 20);
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
@@ -49,7 +50,7 @@ fn group_details(
         page_size,
         None,
     )?;
-    let invitation_count = operations::invitations::pending_invitations_count(&pool, &group_name)?;
+    let invitation_count = operations::invitations::pending_invitations_count(&pool,&scope_and_user, &group_name, &host)?;
     let renewal_count = operations::members::renewal_count(&pool, &group_name, None)?;
     let result = DisplayGroupDetails {
         group: GroupInfo {

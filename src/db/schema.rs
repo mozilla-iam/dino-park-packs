@@ -19,6 +19,7 @@ table! {
         description -> Text,
         capabilities -> Array<Capability_type>,
         typ -> Group_type,
+        trust -> Trust_type,
         group_expiration -> Nullable<Int4>,
     }
 }

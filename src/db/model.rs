@@ -13,6 +13,7 @@ pub struct Group {
     pub description: String,
     pub capabilities: Vec<CapabilityType>,
     pub typ: GroupType,
+    pub trust: TrustType,
     pub group_expiration: Option<i32>,
 }
 
@@ -46,8 +47,8 @@ pub struct Membership {
 
 #[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 pub struct Invitation {
-    pub user_uuid: Uuid,
     pub group_id: i32,
+    pub user_uuid: Uuid,
     pub invitation_expiration: Option<NaiveDateTime>,
     pub group_expiration: Option<NaiveDateTime>,
     pub added_by: Uuid,
@@ -61,6 +62,7 @@ pub struct InsertGroup {
     pub description: String,
     pub capabilities: Vec<CapabilityType>,
     pub typ: GroupType,
+    pub trust: TrustType,
     pub group_expiration: Option<i32>,
 }
 
@@ -76,6 +78,7 @@ pub struct InsertMembership {
     pub user_uuid: Uuid,
     pub group_id: i32,
     pub role_id: Option<i32>,
+    pub expiration: Option<NaiveDateTime>,
     pub added_by: Uuid,
 }
 

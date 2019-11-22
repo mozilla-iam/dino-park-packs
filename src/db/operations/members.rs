@@ -1,5 +1,5 @@
 use crate::db::db::Pool;
-use crate::db::group::*;
+use crate::db::model::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::schema::memberships::dsl::*;
@@ -18,11 +18,6 @@ use uuid::Uuid;
 use crate::db::operations::internal;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
-
-pub fn add_member(pool: &Pool, group_name: &str, curator: User, user: User) -> Result<(), Error> {
-    let group = internal::group::get_group(pool, group_name)?;
-    internal::member::add_member(pool, group.id, user.user_uuid, curator.user_uuid).map(|_| ())
-}
 
 #[derive(Queryable, Serialize)]
 pub struct DisplayMember {
