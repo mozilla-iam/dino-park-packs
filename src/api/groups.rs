@@ -22,9 +22,17 @@ use failure::format_err;
 use futures::Future;
 use serde_derive::Deserialize;
 use std::convert::TryFrom;
+use log::info;
 
 #[derive(Deserialize)]
 struct GroupUpdate {
+    description: String,
+}
+
+#[derive(Deserialize)]
+struct GroupCreate {
+    name: String,
+    typ: Option<GroupType>,
     description: String,
 }
 
@@ -73,15 +81,14 @@ fn add_group(
     cis_client: web::Data<CisClient>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
-    new_group: web::Json<GroupUpdate>,
-    group_name: web::Path<String>,
+    new_group: web::Json<GroupCreate>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let group_name = group_name.into_inner();
-    let group_name_update = group_name.clone();
     let new_group = new_group.into_inner();
+    let group_name_update = new_group.name.clone();
     let pool = pool.clone();
     let cis_client = cis_client.clone();
     let scope_and_user = scope_and_user.clone();
+    info!("trying to create new group: {}", new_group.name);
     cis_client
         .get_user_by(&scope_and_user.user_id, &GetBy::UserId, None)
         .and_then(|profile| {
@@ -92,10 +99,10 @@ fn add_group(
                 operations::groups::add_new_group(
                     &pool,
                     &scope_and_user,
-                    group_name,
+                    new_group.name,
                     new_group.description,
                     user,
-                    GroupType::Closed,
+                    new_group.typ.unwrap_or_else(|| GroupType::Closed),
                     TrustType::Ndaed,
                 )
                 .and_then(|_| operations::users::update_user_cache(&pool, &profile))
@@ -117,10 +124,12 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(web::resource("").route(web::get().to(list_groups)))
+        .service(
+            web::resource("")
+                .route(web::post().to_async(add_group))
+                .route(web::get().to(list_groups)))
         .service(
             web::resource("/{group_name}")
-                .route(web::post().to_async(add_group))
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group)),
         )

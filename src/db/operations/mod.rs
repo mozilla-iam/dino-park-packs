@@ -4,3 +4,4 @@ pub mod invitations;
 pub mod members;
 pub mod users;
 pub mod admins;
+pub mod models;

@@ -45,7 +45,9 @@ pub struct Membership {
     pub added_ts: NaiveDateTime,
 }
 
-#[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[belongs_to(Group)]
+#[primary_key(group_id, user_uuid)]
 pub struct Invitation {
     pub group_id: i32,
     pub user_uuid: Uuid,

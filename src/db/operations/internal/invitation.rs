@@ -49,6 +49,17 @@ pub fn pending_count(pool: &Pool, group_name: &str) -> Result<i64, Error> {
     Ok(count)
 }
 
+pub fn pending(pool: &Pool, group_name: &str) -> Result<Vec<Invitation>, Error> {
+    let connection = pool.get()?;
+    let group = groups::groups
+        .filter(groups::name.eq(group_name))
+        .first::<Group>(&*connection)?;
+    Invitation::belonging_to(&group)
+    .get_results(&connection)
+        .map_err(Into::into)
+}
+
+
 pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = groups::groups
@@ -64,6 +75,7 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
     let membership = InsertMembership {
         group_id: invitation.group_id,
         user_uuid: invitation.user_uuid,
+        // TODO: what's going on
         role_id: None,
         expiration: invitation.group_expiration,
         added_by: invitation.added_by,

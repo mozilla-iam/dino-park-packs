@@ -45,11 +45,13 @@ fn main() -> Result<(), Error> {
             .wrap(Logger::default().exclude("/healthz"))
             .service(healthz::healthz_app())
             .service(
-                web::scope("/api/v1/")
+                web::scope("/groups/api/v1/")
                     .wrap(scope_middleware)
                     .service(api::groups::groups_app())
                     .service(api::members::members_app())
-                    .service(api::views::views_app()),
+                    .service(api::views::views_app())
+                    .service(api::current::current_app())
+                    .service(api::invitations::invitations_app()),
             )
     })
     .bind("0.0.0.0:8085")?

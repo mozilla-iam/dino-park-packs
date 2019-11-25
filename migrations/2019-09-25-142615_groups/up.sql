@@ -122,11 +122,11 @@ CREATE TABLE users_public (
     trust trust_type NOT NULL
 );
 
-CREATE VIEW hosts_staff AS SELECT user_uuid, first_name, last_name, username FROM users_staff;
-CREATE VIEW hosts_ndaed AS SELECT user_uuid, first_name, last_name, username FROM users_ndaed;
-CREATE VIEW hosts_vouched AS SELECT user_uuid, first_name, last_name, username FROM users_vouched;
-CREATE VIEW hosts_authenticated AS SELECT user_uuid, first_name, last_name, username FROM users_authenticated;
-CREATE VIEW hosts_public AS SELECT user_uuid, first_name, last_name, username FROM users_public;
+CREATE VIEW hosts_staff AS SELECT user_uuid, first_name, last_name, username, email FROM users_staff;
+CREATE VIEW hosts_ndaed AS SELECT user_uuid, first_name, last_name, username, email FROM users_ndaed;
+CREATE VIEW hosts_vouched AS SELECT user_uuid, first_name, last_name, username, email FROM users_vouched;
+CREATE VIEW hosts_authenticated AS SELECT user_uuid, first_name, last_name, username, email FROM users_authenticated;
+CREATE VIEW hosts_public AS SELECT user_uuid, first_name, last_name, username, email FROM users_public;
 
 INSERT INTO rules ("typ", "name") VALUES ('staff', 'staff user');
 INSERT INTO rules ("typ", "name") VALUES ('nda', E'nda\'d user');

@@ -10,12 +10,14 @@ macro_rules! hosts_table {
                 first_name -> Nullable<Varchar>,
                 last_name -> Nullable<Varchar>,
                 username -> Varchar,
+                email -> Nullable<VarChar>,
             }
         }
         allow_tables_to_appear_in_same_query!($t, $u,);
         allow_tables_to_appear_in_same_query!($t, memberships,);
         allow_tables_to_appear_in_same_query!($t, groups,);
         allow_tables_to_appear_in_same_query!($t, roles,);
+        allow_tables_to_appear_in_same_query!($t, invitations,);
     };
 }
 hosts_table!(hosts_staff, users_staff);

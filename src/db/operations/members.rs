@@ -15,92 +15,10 @@ use failure::Error;
 use log::info;
 use serde_derive::Serialize;
 use uuid::Uuid;
+use crate::db::operations::models::*;
 use crate::db::operations::internal;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
-
-#[derive(Queryable, Serialize)]
-pub struct DisplayMember {
-    pub user_uuid: Uuid,
-    pub picture: Option<String>,
-    pub name: Option<String>,
-    pub username: String,
-    pub email: Option<String>,
-    pub is_staff: bool,
-    pub since: NaiveDateTime,
-    pub expiration: Option<NaiveDateTime>,
-    pub role: RoleType,
-}
-
-#[derive(Serialize)]
-pub struct DisplayHost {
-    pub uuid: Uuid,
-    pub name: Option<String>,
-    pub primary_username: String,
-}
-
-#[derive(Serialize)]
-pub struct DisplayMemberAndHost {
-    pub uuid: Uuid,
-    pub picture: Option<String>,
-    pub name: Option<String>,
-    pub primary_username: String,
-    pub primary_email: Option<String>,
-    pub is_staff: bool,
-    pub since: NaiveDateTime,
-    pub expiration: Option<NaiveDateTime>,
-    pub role: RoleType,
-    pub host: DisplayHost,
-}
-
-#[derive(Queryable, Serialize)]
-pub struct MemberAndHost {
-    pub user_uuid: Uuid,
-    pub picture: Option<String>,
-    pub name: Option<String>,
-    pub username: String,
-    pub email: Option<String>,
-    pub is_staff: bool,
-    pub since: NaiveDateTime,
-    pub expiration: Option<NaiveDateTime>,
-    pub role: RoleType,
-    pub host_uuid: Uuid,
-    pub host_name: Option<String>,
-    pub host_username: String,
-}
-
-impl From<MemberAndHost> for DisplayMemberAndHost {
-    fn from(m: MemberAndHost) -> Self {
-        DisplayMemberAndHost {
-            uuid: m.user_uuid,
-            picture: m.picture,
-            name: m.name,
-            primary_username: m.username,
-            primary_email: m.email,
-            is_staff: m.is_staff,
-            since: m.since,
-            expiration: m.expiration,
-            role: m.role,
-            host: DisplayHost {
-                uuid: m.host_uuid,
-                name: m.host_name,
-                primary_username: m.host_username,
-            },
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub struct PaginatedDisplayMembers {
-    pub members: Vec<DisplayMember>,
-    pub next: Option<i64>,
-}
-
-#[derive(Serialize)]
-pub struct PaginatedDisplayMembersAndHost {
-    pub members: Vec<DisplayMemberAndHost>,
-    pub next: Option<i64>,
-}
 
 macro_rules! scoped_members_for {
     ($t:ident, $f:ident) => {
@@ -188,6 +106,7 @@ macro_rules! scoped_members_and_host_for {
                             h::user_uuid,
                             h::first_name.concat(" ").concat(h::last_name),
                             h::username,
+                            h::email,
                         ))
                         .offset(offset)
                         .limit(limit)

@@ -1,4 +1,4 @@
-use crate::db::operations::members::PaginatedDisplayMembersAndHost;
+use crate::db::operations::models::PaginatedDisplayMembersAndHost;
 use crate::db::types::GroupType;
 use serde_derive::Serialize;
 

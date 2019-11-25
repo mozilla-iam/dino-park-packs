@@ -6,7 +6,6 @@ use failure::Error;
 use crate::db::operations::internal;
 use dino_park_gate::scope::ScopeAndUser;
 
-const DEFAULT_RENEWAL_DAYS: i64 = 14;
 
 pub fn add_admin(pool: &Pool, scope_and_user: &ScopeAndUser, group_name: &str, host: User, user: User) -> Result<(), Error> {
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(pool, scope_and_user, &group_name, &host.user_uuid))?;
