@@ -1,5 +1,6 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
+use crate::db::operations::internal;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::rules::engine::INVITE_MEMBER;
@@ -55,10 +56,9 @@ pub fn pending(pool: &Pool, group_name: &str) -> Result<Vec<Invitation>, Error> 
         .filter(groups::name.eq(group_name))
         .first::<Group>(&*connection)?;
     Invitation::belonging_to(&group)
-    .get_results(&connection)
+        .get_results(&connection)
         .map_err(Into::into)
 }
-
 
 pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error> {
     let connection = pool.get()?;
@@ -72,11 +72,12 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
                 .and(schema::invitations::group_id.eq(group.id)),
         )
         .first::<Invitation>(&connection)?;
+    let role = internal::member::member_role(pool, group_name)?;
     let membership = InsertMembership {
         group_id: invitation.group_id,
         user_uuid: invitation.user_uuid,
         // TODO: what's going on
-        role_id: None,
+        role_id: role.id,
         expiration: invitation.group_expiration,
         added_by: invitation.added_by,
     };
@@ -94,6 +95,7 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
             schema::invitations::user_uuid
                 .eq(member.user_uuid)
                 .and(schema::invitations::group_id.eq(group.id)),
-        ).execute(&connection)?;
+        )
+        .execute(&connection)?;
     Ok(())
 }

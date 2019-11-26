@@ -26,7 +26,7 @@ CREATE TABLE roles (
     group_id SERIAL REFERENCES groups,
     typ role_type NOT NULL DEFAULT 'member',
     name VARCHAR NOT NULL,
-    permissions permission_type[] NOT NULL,
+    permissions permission_type[] NOT NULL DEFAULT array[]::permission_type[],
     UNIQUE (group_id, typ)
 );
 

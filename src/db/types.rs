@@ -1,5 +1,5 @@
-use serde_derive::Serialize;
 use serde_derive::Deserialize;
+use serde_derive::Serialize;
 
 #[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Rule_type"]

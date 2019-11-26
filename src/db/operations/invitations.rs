@@ -1,18 +1,18 @@
-use crate::db::types::*;
 use crate::db::db::Pool;
 use crate::db::model::*;
-use crate::db::schema;
-use crate::db::views;
-use crate::user::User;
-use chrono::NaiveDateTime;
-use failure::Error;
-use diesel::prelude::*;
+use crate::db::operations::internal::invitation;
 use crate::db::operations::models::*;
-use serde_derive::Serialize;
-use dino_park_gate::scope::ScopeAndUser;
+use crate::db::schema;
+use crate::db::types::*;
+use crate::db::views;
 use crate::rules::engine::*;
 use crate::rules::rules::RuleContext;
-use crate::db::operations::internal::invitation;
+use crate::user::User;
+use chrono::NaiveDateTime;
+use diesel::prelude::*;
+use dino_park_gate::scope::ScopeAndUser;
+use failure::Error;
+use serde_derive::Serialize;
 
 #[derive(Queryable, Serialize)]
 pub struct PendingInvitations {}
@@ -31,7 +31,8 @@ macro_rules! scoped_invitations_for {
                 .filter(g::name.eq(group_name))
                 .first(connection)
                 .and_then(|group: Group| {
-                        i::table.filter(i::group_id.eq(group.id))
+                    i::table
+                        .filter(i::group_id.eq(group.id))
                         .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
                         .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
                         .select((
@@ -68,7 +69,11 @@ scoped_invitations_for!(
     hosts_authenticated,
     authenticated_scoped_invitations_and_host
 );
-scoped_invitations_for!(users_public, hosts_public, public_scoped_invitations_and_host);
+scoped_invitations_for!(
+    users_public,
+    hosts_public,
+    public_scoped_invitations_and_host
+);
 
 pub fn invite_member(
     pool: &Pool,
@@ -80,17 +85,49 @@ pub fn invite_member(
     group_expiration: Option<NaiveDateTime>,
 ) -> Result<(), Error> {
     // TODO: check db rules
-    INVITE_MEMBER.run(&RuleContext::minimal(pool, scope_and_user, &group_name, &host.user_uuid))?;
-    invitation::invite(pool, group_name, host, member, invitation_expiration, group_expiration)
+    INVITE_MEMBER.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    invitation::invite(
+        pool,
+        group_name,
+        host,
+        member,
+        invitation_expiration,
+        group_expiration,
+    )
 }
 
-pub fn pending_invitations_count(pool: &Pool, scope_and_user: &ScopeAndUser, group_name: &str, host: &User) -> Result<i64, Error> {
-    HOST_IS_CURATOR.run(&RuleContext::minimal(pool, scope_and_user, &group_name, &host.user_uuid))?;
+pub fn pending_invitations_count(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+) -> Result<i64, Error> {
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
     invitation::pending_count(pool, group_name)
 }
 
-pub fn pending_invitations(pool: &Pool, scope_and_user: &ScopeAndUser, group_name: &str, host: &User) -> Result<Vec<DisplayInvitation>, Error> {
-    HOST_IS_CURATOR.run(&RuleContext::minimal(pool, scope_and_user, &group_name, &host.user_uuid))?;
+pub fn pending_invitations(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+) -> Result<Vec<DisplayInvitation>, Error> {
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
     let connection = pool.get()?;
     match scope_and_user.scope.as_str() {
         "staff" => staff_scoped_invitations_and_host(&connection, group_name),
@@ -100,7 +137,6 @@ pub fn pending_invitations(pool: &Pool, scope_and_user: &ScopeAndUser, group_nam
         _ => public_scoped_invitations_and_host(&connection, group_name),
     }
 }
-
 
 pub fn accept_invitation(
     pool: &Pool,

@@ -26,7 +26,6 @@ pub struct Terms {
 }
 
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
-#[belongs_to(Group)]
 pub struct Role {
     pub id: i32,
     pub group_id: i32,
@@ -79,7 +78,7 @@ pub struct InsertTerm {
 pub struct InsertMembership {
     pub user_uuid: Uuid,
     pub group_id: i32,
-    pub role_id: Option<i32>,
+    pub role_id: i32,
     pub expiration: Option<NaiveDateTime>,
     pub added_by: Uuid,
 }
@@ -88,7 +87,7 @@ pub struct InsertMembership {
 #[table_name = "roles"]
 pub struct InsertRole {
     pub group_id: i32,
-    pub typ: Option<RoleType>,
+    pub typ: RoleType,
     pub name: String,
     pub permissions: Vec<PermissionType>,
 }

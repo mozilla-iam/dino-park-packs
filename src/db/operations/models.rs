@@ -53,8 +53,6 @@ impl From<InvitationAndHost> for DisplayInvitation {
     }
 }
 
-
-
 #[derive(Queryable, Serialize)]
 pub struct DisplayMember {
     pub user_uuid: Uuid,
@@ -140,4 +138,3 @@ pub struct PaginatedDisplayMembersAndHost {
     pub members: Vec<DisplayMemberAndHost>,
     pub next: Option<i64>,
 }
-

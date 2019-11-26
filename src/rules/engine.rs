@@ -1,6 +1,6 @@
-use log::info;
 use crate::rules::error::RuleError;
 use crate::rules::rules::*;
+use log::info;
 
 pub const CREATE_GROUP: Engine = Engine {
     rules: &[&rule_is_creator],
@@ -24,9 +24,7 @@ pub struct Engine<'a> {
 
 impl<'a> Engine<'a> {
     pub fn run(self: &Self, ctx: &RuleContext) -> Result<(), RuleError> {
-        let ok = self.rules.iter().try_for_each(|rule| {
-            rule(ctx)
-        });
+        let ok = self.rules.iter().try_for_each(|rule| rule(ctx));
         if !ok.is_err() && ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) == Some("admin") {
             info!("using admin priviledges for {}", ctx.host_uuid);
             return Ok(());
@@ -39,8 +37,8 @@ impl<'a> Engine<'a> {
 mod test {
     use super::*;
     use crate::db;
-    use failure::Error;
     use dino_park_gate::scope::ScopeAndUser;
+    use failure::Error;
     use uuid::Uuid;
 
     #[test]

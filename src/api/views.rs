@@ -50,7 +50,12 @@ fn group_details(
         page_size,
         None,
     )?;
-    let invitation_count = operations::invitations::pending_invitations_count(&pool,&scope_and_user, &group_name, &host)?;
+    let invitation_count = operations::invitations::pending_invitations_count(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+    )?;
     let renewal_count = operations::members::renewal_count(&pool, &group_name, None)?;
     let result = DisplayGroupDetails {
         group: GroupInfo {

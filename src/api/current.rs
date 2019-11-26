@@ -17,12 +17,7 @@ fn join(
     scope_and_user: ScopeAndUser,
 ) -> impl Responder {
     let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    match operations::invitations::accept_invitation(
-        &pool,
-        &scope_and_user,
-        &group_name,
-        &user,
-    ) {
+    match operations::invitations::accept_invitation(&pool, &scope_and_user, &group_name, &user) {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => Err(error::ErrorNotFound(e)),
     }
@@ -38,7 +33,4 @@ pub fn current_app() -> impl HttpServiceFactory {
                 .max_age(3600),
         )
         .service(web::resource("/join/{group_name}").route(web::post().to(join)))
-    
 }
-
-

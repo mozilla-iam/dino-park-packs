@@ -20,9 +20,9 @@ use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
 use futures::Future;
+use log::info;
 use serde_derive::Deserialize;
 use std::convert::TryFrom;
-use log::info;
 
 #[derive(Deserialize)]
 struct GroupUpdate {
@@ -127,7 +127,8 @@ pub fn groups_app() -> impl HttpServiceFactory {
         .service(
             web::resource("")
                 .route(web::post().to_async(add_group))
-                .route(web::get().to(list_groups)))
+                .route(web::get().to(list_groups)),
+        )
         .service(
             web::resource("/{group_name}")
                 .route(web::get().to(get_group))

@@ -12,7 +12,7 @@ pub fn add_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
     let connection = pool.get()?;
     let admin = InsertRole {
         group_id,
-        typ: Some(RoleType::Admin),
+        typ: RoleType::Admin,
         name: ROLE_ADMIN.to_owned(),
         permissions: vec![],
     };
@@ -43,7 +43,7 @@ pub fn add_admin(
     let admin_membership = InsertMembership {
         group_id,
         user_uuid,
-        role_id: Some(role.id),
+        role_id: role.id,
         expiration: None,
         added_by,
     };

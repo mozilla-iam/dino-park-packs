@@ -1,5 +1,7 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
+use crate::db::operations::internal;
+use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::schema::memberships::dsl::*;
@@ -15,8 +17,6 @@ use failure::Error;
 use log::info;
 use serde_derive::Serialize;
 use uuid::Uuid;
-use crate::db::operations::models::*;
-use crate::db::operations::internal;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
 
@@ -219,3 +219,4 @@ pub fn renewal_count(
 }
 
 pub use internal::member::member_role;
+pub use internal::member::role_for;
