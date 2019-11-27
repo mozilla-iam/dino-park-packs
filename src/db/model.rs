@@ -35,6 +35,8 @@ pub struct Role {
 }
 
 #[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[belongs_to(Group)]
+#[primary_key(group_id, user_uuid)]
 pub struct Membership {
     pub user_uuid: Uuid,
     pub group_id: i32,

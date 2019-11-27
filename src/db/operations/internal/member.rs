@@ -45,7 +45,7 @@ pub fn member_role(pool: &Pool, group_name: &str) -> Result<Role, Error> {
         .map_err(Into::into)
 }
 
-pub fn leave(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<(), Error> {
+pub fn remove_from_group(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<(), Error> {
     let connection = pool.get()?;
     diesel::delete(schema::memberships::table)
         .filter(schema::memberships::user_uuid.eq(user_uuid))

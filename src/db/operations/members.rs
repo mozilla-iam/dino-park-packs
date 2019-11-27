@@ -1,5 +1,6 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
+use crate::db::operations::error;
 use crate::db::operations::internal;
 use crate::db::operations::models::*;
 use crate::db::schema;
@@ -12,6 +13,7 @@ use chrono::NaiveDateTime;
 use chrono::Utc;
 use diesel::dsl::count;
 use diesel::prelude::*;
+use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
 use failure::Error;
 use log::info;
@@ -216,6 +218,20 @@ pub fn renewal_count(
         .select(count(user_uuid))
         .first(&connection)?;
     Ok(count)
+}
+
+pub fn leave(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    user: &User,
+    force: bool,
+) -> Result<(), Error> {
+    let group = internal::group::get_group(&pool, group_name)?;
+    if force || !internal::admin::is_last_admin(&pool, group.id, &user.user_uuid)? {
+        return internal::member::remove_from_group(&pool, &user.user_uuid, group_name)
+    }
+    Err(error::OperationError::LastAdmin.into())
 }
 
 pub use internal::member::member_role;

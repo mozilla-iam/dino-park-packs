@@ -58,3 +58,14 @@ pub fn add_admin(
         .get_result(&*connection)
         .map_err(Into::into)
 }
+
+pub fn is_last_admin(pool: &Pool, group_id: i32, user_uuid: &Uuid) -> Result<bool, Error> {
+    let role = get_admin_role(pool, group_id)?;
+    let connection = pool.get()?;
+    schema::memberships::table
+        .filter(schema::memberships::role_id.eq(role.id))
+        .select(schema::memberships::user_uuid)
+        .get_results(&connection)
+        .map(|admins: Vec<Uuid>| admins.contains(user_uuid) && admins.len() == 1)
+        .map_err(Into::into)
+}
