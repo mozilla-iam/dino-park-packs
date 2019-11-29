@@ -1,7 +1,6 @@
 use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::RoleType;
-use crate::error::PacksError;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use actix_cors::Cors;
@@ -14,12 +13,10 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use failure::Error;
 use futures::future::IntoFuture;
 use futures::Future;
 use serde_derive::Deserialize;
 use serde_humantime::De;
-use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
@@ -88,9 +85,7 @@ fn invite_member(
     let member = User {
         user_uuid: invitation.user_uuid,
     };
-    let host = User {
-        user_uuid: Uuid::nil(),
-    };
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::invitations::invite_member(
         &pool,
         &scope_and_user,
@@ -118,16 +113,19 @@ fn remove_member(
     let user = User {
         user_uuid: user_uuid,
     };
-    operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
-        .map(|user_profile| (user, user_profile))
+    operations::users::user_by_id(&pool, &scope_and_user.user_id)
+        .and_then(|host| {
+            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
+                .map(|user_profile| (host, user, user_profile))
+        })
         .into_future()
-        .and_then(move |(user, user_profile)| {
-            operations::members::leave(
+        .and_then(move |(host, user, user_profile)| {
+            operations::members::remove(
                 &pool_f,
                 &scope_and_user,
                 &group_name,
+                &host,
                 &user,
-                true,
                 Arc::clone(&*cis_client),
                 user_profile.profile,
             )

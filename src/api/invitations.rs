@@ -1,7 +1,5 @@
 use crate::db::db::Pool;
 use crate::db::operations;
-use crate::db::types::RoleType;
-use crate::error::PacksError;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use actix_cors::Cors;
@@ -13,11 +11,8 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
-use failure::Error;
-use futures::Future;
 use serde_derive::Deserialize;
 use serde_humantime::De;
-use serde_json::json;
 use std::time::Duration;
 use uuid::Uuid;
 

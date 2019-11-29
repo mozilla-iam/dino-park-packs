@@ -13,6 +13,7 @@ pub struct DisplayInvitation {
     pub is_staff: bool,
     pub invitation_expiration: Option<NaiveDateTime>,
     pub group_expiration: Option<NaiveDateTime>,
+    pub group_name: String,
     pub added_by: DisplayHost,
 }
 
@@ -26,6 +27,7 @@ pub struct InvitationAndHost {
     pub is_staff: bool,
     pub invitation_expiration: Option<NaiveDateTime>,
     pub group_expiration: Option<NaiveDateTime>,
+    pub group_name: String,
     pub host_uuid: Uuid,
     pub host_name: Option<String>,
     pub host_username: String,
@@ -43,6 +45,7 @@ impl From<InvitationAndHost> for DisplayInvitation {
             is_staff: m.is_staff,
             invitation_expiration: m.invitation_expiration,
             group_expiration: m.group_expiration,
+            group_name: m.group_name,
             added_by: DisplayHost {
                 uuid: m.host_uuid,
                 name: m.host_name,

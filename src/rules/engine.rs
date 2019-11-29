@@ -10,6 +10,10 @@ pub const INVITE_MEMBER: Engine = Engine {
     rules: &[&rule_host_can_invite],
 };
 
+pub const REMOVE_MEMBER: Engine = Engine {
+    rules: &[&rule_host_can_remove],
+};
+
 pub const HOST_IS_CURATOR: Engine = Engine {
     rules: &[&rule_host_is_curator],
 };

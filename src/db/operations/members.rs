@@ -9,6 +9,8 @@ use crate::db::schema::groups::dsl as groups;
 use crate::db::schema::memberships::dsl::*;
 use crate::db::types::*;
 use crate::db::views;
+use crate::rules::engine::REMOVE_MEMBER;
+use crate::rules::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
 use chrono::Utc;
@@ -226,18 +228,35 @@ pub fn renewal_count(
     Ok(count)
 }
 
-fn db_leave(
-    pool: &Pool,
-    scope_and_user: &ScopeAndUser,
-    group_name: &str,
-    user: &User,
-    force: bool,
-) -> Result<(), Error> {
+fn db_leave(pool: &Pool, group_name: &str, user: &User, force: bool) -> Result<(), Error> {
     let group = internal::group::get_group(&pool, group_name)?;
     if force || !internal::admin::is_last_admin(&pool, group.id, &user.user_uuid)? {
         return internal::member::remove_from_group(&pool, &user.user_uuid, group_name);
     }
     Err(error::OperationError::LastAdmin.into())
+}
+
+pub fn remove(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+    user: &User,
+    cis_client: Arc<CisClient>,
+    profile: Profile,
+) -> impl Future<Item = (), Error = Error> {
+    let group_name_f = group_name.to_owned();
+    REMOVE_MEMBER
+        .run(&RuleContext::minimal(
+            &pool.clone(),
+            scope_and_user,
+            &group_name,
+            &host.user_uuid,
+        ))
+        .map_err(Into::into)
+        .and_then(move |_| db_leave(&pool, &group_name, &user, true))
+        .into_future()
+        .and_then(move |_| remove_group_from_profile(cis_client, group_name_f, profile))
 }
 
 pub fn leave(
@@ -250,7 +269,7 @@ pub fn leave(
     profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
-    db_leave(pool, scope_and_user, group_name, user, force)
+    db_leave(pool, group_name, user, force)
         .into_future()
         .and_then(|_| remove_group_from_profile(cis_client, group_name_f, profile))
 }

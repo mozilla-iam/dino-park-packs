@@ -45,13 +45,27 @@ pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `InviiteMember` permissions for the given
+/// Check if the host is either `RoleTpye::Admin` or has `InviteMember` permissions for the given
 /// group.
 pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
         Ok(role)
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::InviteMember) =>
+        {
+            Ok(())
+        }
+        _ => Err(RuleError::NotAllowedToInviteMember),
+    }
+}
+
+/// Check if the host is either `RoleTpye::Admin` or has `RemoveMemebr` permissions for the given
+/// group.
+pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
+    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+        Ok(role)
+            if role.typ == RoleType::Admin
+                || role.permissions.contains(&PermissionType::RemoveMember) =>
         {
             Ok(())
         }

@@ -23,6 +23,40 @@ use std::sync::Arc;
 #[derive(Queryable, Serialize)]
 pub struct PendingInvitations {}
 
+macro_rules! scoped_invitations_for_user {
+    ($t:ident, $h:ident, $f:ident) => {
+        fn $f(connection: &PgConnection, user: &User) -> Result<Vec<DisplayInvitation>, Error> {
+            use schema::groups as g;
+            use schema::invitations as i;
+            use schema::$t as u;
+            use views::$h as h;
+            i::table
+                .filter(i::user_uuid.eq(user.user_uuid))
+                .inner_join(g::table.on(g::group_id.eq(i::group_id)))
+                .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
+                .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
+                .select((
+                    u::user_uuid,
+                    u::picture,
+                    u::first_name.concat(" ").concat(u::last_name),
+                    u::username,
+                    u::email,
+                    u::trust.eq(TrustType::Staff),
+                    i::invitation_expiration,
+                    i::group_expiration,
+                    g::name,
+                    h::user_uuid,
+                    h::first_name.concat(" ").concat(h::last_name),
+                    h::username,
+                    h::email,
+                ))
+                .get_results::<InvitationAndHost>(connection)
+                .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
+                .map_err(Into::into)
+        }
+    };
+}
+
 macro_rules! scoped_invitations_for {
     ($t:ident, $h:ident, $f:ident) => {
         fn $f(
@@ -35,29 +69,26 @@ macro_rules! scoped_invitations_for {
             use views::$h as h;
             g::table
                 .filter(g::name.eq(group_name))
-                .first(connection)
-                .and_then(|group: Group| {
-                    i::table
-                        .filter(i::group_id.eq(group.id))
-                        .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
-                        .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
-                        .select((
-                            u::user_uuid,
-                            u::picture,
-                            u::first_name.concat(" ").concat(u::last_name),
-                            u::username,
-                            u::email,
-                            u::trust.eq(TrustType::Staff),
-                            i::invitation_expiration,
-                            i::group_expiration,
-                            h::user_uuid,
-                            h::first_name.concat(" ").concat(h::last_name),
-                            h::username,
-                            h::email,
-                        ))
-                        .get_results::<InvitationAndHost>(connection)
-                        .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
-                })
+                .inner_join(i::table.on(i::group_id.eq(g::group_id)))
+                .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
+                .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
+                .select((
+                    u::user_uuid,
+                    u::picture,
+                    u::first_name.concat(" ").concat(u::last_name),
+                    u::username,
+                    u::email,
+                    u::trust.eq(TrustType::Staff),
+                    i::invitation_expiration,
+                    i::group_expiration,
+                    g::name,
+                    h::user_uuid,
+                    h::first_name.concat(" ").concat(h::last_name),
+                    h::username,
+                    h::email,
+                ))
+                .get_results::<InvitationAndHost>(connection)
+                .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
                 .map_err(Into::into)
         }
     };
@@ -79,6 +110,32 @@ scoped_invitations_for!(
     users_public,
     hosts_public,
     public_scoped_invitations_and_host
+);
+
+scoped_invitations_for_user!(
+    users_staff,
+    hosts_staff,
+    staff_scoped_invitations_and_host_for_user
+);
+scoped_invitations_for_user!(
+    users_ndaed,
+    hosts_ndaed,
+    ndaed_scoped_invitations_and_host_for_user
+);
+scoped_invitations_for_user!(
+    users_vouched,
+    hosts_vouched,
+    vouched_scoped_invitations_and_host_for_user
+);
+scoped_invitations_for_user!(
+    users_authenticated,
+    hosts_authenticated,
+    authenticated_scoped_invitations_and_host_for_user
+);
+scoped_invitations_for_user!(
+    users_public,
+    hosts_public,
+    public_scoped_invitations_and_host_for_user
 );
 
 pub fn invite_member(
@@ -144,9 +201,23 @@ pub fn pending_invitations(
     }
 }
 
-pub fn accept_invitation(
+pub fn pending_invitations_for_user(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
+    user: &User,
+) -> Result<Vec<DisplayInvitation>, Error> {
+    let connection = pool.get()?;
+    match scope_and_user.scope.as_str() {
+        "staff" => staff_scoped_invitations_and_host_for_user(&connection, user),
+        "ndaed" => ndaed_scoped_invitations_and_host_for_user(&connection, user),
+        "vouched" => vouched_scoped_invitations_and_host_for_user(&connection, user),
+        "authenticated" => authenticated_scoped_invitations_and_host_for_user(&connection, user),
+        _ => public_scoped_invitations_and_host_for_user(&connection, user),
+    }
+}
+
+pub fn accept_invitation(
+    pool: &Pool,
     group_name: &str,
     user: &User,
     cis_client: Arc<CisClient>,

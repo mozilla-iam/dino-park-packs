@@ -60,6 +60,14 @@ pub fn pending(pool: &Pool, group_name: &str) -> Result<Vec<Invitation>, Error> 
         .map_err(Into::into)
 }
 
+pub fn pending_for_user(pool: &Pool, user: &User) -> Result<Vec<Invitation>, Error> {
+    let connection = pool.get()?;
+    schema::invitations::table
+        .filter(schema::invitations::user_uuid.eq(user.user_uuid))
+        .get_results(&connection)
+        .map_err(Into::into)
+}
+
 pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = groups::groups
