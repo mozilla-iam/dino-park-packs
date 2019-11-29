@@ -8,9 +8,13 @@ use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
+use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
+use futures::future::Future;
+use futures::future::IntoFuture;
 use log::warn;
 use serde_derive::Deserialize;
+use std::sync::Arc;
 
 #[derive(Deserialize, Default)]
 struct ForceLeave {
@@ -22,12 +26,28 @@ fn join(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
-    let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    match operations::invitations::accept_invitation(&pool, &scope_and_user, &group_name, &user) {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => Err(error::ErrorNotFound(e)),
-    }
+    cis_client: web::Data<Arc<CisClient>>,
+) -> impl Future<Item = HttpResponse, Error = error::Error> {
+    let pool_f = pool.clone();
+    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
+        .into_future()
+        .and_then(move |user| {
+            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
+                .map(|user_profile| (user, user_profile))
+                .into_future()
+        })
+        .and_then(move |(user, user_profile)| {
+            operations::invitations::accept_invitation(
+                &pool_f,
+                &scope_and_user,
+                &group_name,
+                &user,
+                Arc::clone(&*cis_client),
+                user_profile.profile,
+            )
+        })
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| error::ErrorNotFound(e))
 }
 
 fn leave(
@@ -36,18 +56,29 @@ fn leave(
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     force: web::Query<ForceLeave>,
-) -> impl Responder {
-    let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    match operations::members::leave(&pool, &scope_and_user, &group_name, &user, force.force.unwrap_or_default()) {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => {
-            warn!(
-                "error leaving group {} for {}: {}",
-                &group_name, &scope_and_user.user_id, e
-            );
-            Err(error::ErrorNotFound(e))
-        }
-    }
+    cis_client: web::Data<Arc<CisClient>>,
+) -> impl Future<Item = HttpResponse, Error = error::Error> {
+    let pool_f = pool.clone();
+    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
+        .into_future()
+        .and_then(move |user| {
+            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
+                .map(|user_profile| (user, user_profile))
+                .into_future()
+        })
+        .and_then(move |(user, user_profile)| {
+            operations::members::leave(
+                &pool_f,
+                &scope_and_user,
+                &group_name,
+                &user,
+                force.force.unwrap_or_default(),
+                Arc::clone(&*cis_client),
+                user_profile.profile,
+            )
+        })
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| error::ErrorNotFound(e))
 }
 
 pub fn current_app() -> impl HttpServiceFactory {
@@ -59,6 +90,6 @@ pub fn current_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(web::resource("/join/{group_name}").route(web::post().to(join)))
-        .service(web::resource("/{group_name}").route(web::delete().to(leave)))
+        .service(web::resource("/join/{group_name}").route(web::post().to_async(join)))
+        .service(web::resource("/{group_name}").route(web::delete().to_async(leave)))
 }

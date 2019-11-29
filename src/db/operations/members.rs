@@ -1,3 +1,4 @@
+use crate::cis::operations::remove_group_from_profile;
 use crate::db::db::Pool;
 use crate::db::model::*;
 use crate::db::operations::error;
@@ -11,13 +12,18 @@ use crate::db::views;
 use crate::user::User;
 use chrono::NaiveDateTime;
 use chrono::Utc;
+use cis_client::CisClient;
+use cis_profile::schema::Profile;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
 use failure::Error;
+use futures::future::IntoFuture;
+use futures::Future;
 use log::info;
 use serde_derive::Serialize;
+use std::sync::Arc;
 use uuid::Uuid;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
@@ -220,7 +226,7 @@ pub fn renewal_count(
     Ok(count)
 }
 
-pub fn leave(
+fn db_leave(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     group_name: &str,
@@ -229,9 +235,24 @@ pub fn leave(
 ) -> Result<(), Error> {
     let group = internal::group::get_group(&pool, group_name)?;
     if force || !internal::admin::is_last_admin(&pool, group.id, &user.user_uuid)? {
-        return internal::member::remove_from_group(&pool, &user.user_uuid, group_name)
+        return internal::member::remove_from_group(&pool, &user.user_uuid, group_name);
     }
     Err(error::OperationError::LastAdmin.into())
+}
+
+pub fn leave(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    user: &User,
+    force: bool,
+    cis_client: Arc<CisClient>,
+    profile: Profile,
+) -> impl Future<Item = (), Error = Error> {
+    let group_name_f = group_name.to_owned();
+    db_leave(pool, scope_and_user, group_name, user, force)
+        .into_future()
+        .and_then(|_| remove_group_from_profile(cis_client, group_name_f, profile))
 }
 
 pub use internal::member::member_role;

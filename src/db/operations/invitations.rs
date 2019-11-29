@@ -1,3 +1,4 @@
+use crate::cis::operations::add_group_to_profile;
 use crate::db::db::Pool;
 use crate::db::model::*;
 use crate::db::operations::internal::invitation;
@@ -9,10 +10,15 @@ use crate::rules::engine::*;
 use crate::rules::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
+use cis_client::CisClient;
+use cis_profile::schema::Profile;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
+use futures::future::IntoFuture;
+use futures::Future;
 use serde_derive::Serialize;
+use std::sync::Arc;
 
 #[derive(Queryable, Serialize)]
 pub struct PendingInvitations {}
@@ -143,6 +149,11 @@ pub fn accept_invitation(
     scope_and_user: &ScopeAndUser,
     group_name: &str,
     user: &User,
-) -> Result<(), Error> {
+    cis_client: Arc<CisClient>,
+    profile: Profile,
+) -> impl Future<Item = (), Error = Error> {
+    let group_name_f = group_name.to_owned();
     invitation::accept(pool, group_name, user)
+        .into_future()
+        .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
 }

@@ -13,7 +13,9 @@ use failure::format_err;
 use failure::Error;
 use futures::future::IntoFuture;
 use futures::Future;
+use log::warn;
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 fn insert_kv_and_sign_values_field(
     field: &mut AccessInformationProviderSubObject,
@@ -38,8 +40,25 @@ fn insert_kv_and_sign_values_field(
     store.sign_attribute(field)
 }
 
+fn remove_kv_and_sign_values_field(
+    field: &mut AccessInformationProviderSubObject,
+    k: String,
+    store: &SecretStore,
+    now: &str,
+) -> Result<(), Error> {
+    if let Some(KeyValue(ref mut values)) = &mut field.values {
+        if values.remove(&k).is_some() {
+            field.metadata.last_modified = now.to_owned();
+            field.signature.publisher.name = PublisherAuthority::Mozilliansorg;
+            return store.sign_attribute(field);
+        }
+    }
+    warn!("group {} was not present when trying to delete", k);
+    Ok(())
+}
+
 pub fn add_group_to_profile(
-    cis_client: &CisClient,
+    cis_client: Arc<CisClient>,
     group_name: String,
     mut profile: Profile,
 ) -> Box<dyn Future<Item = (), Error = Error>> {
@@ -47,6 +66,29 @@ pub fn add_group_to_profile(
     match insert_kv_and_sign_values_field(
         &mut profile.access_information.mozilliansorg,
         (group_name, None),
+        cis_client.get_secret_store(),
+        now,
+    ) {
+        Ok(_) => {
+            if let Some(user_id) = profile.user_id.value.clone() {
+                Box::new(cis_client.update_user(&user_id, profile).map(|_| ()))
+            } else {
+                Box::new(Err(format_err!("invalid user_id")).into_future())
+            }
+        }
+        Err(e) => Box::new(Err(e).into_future()),
+    }
+}
+
+pub fn remove_group_from_profile(
+    cis_client: Arc<CisClient>,
+    group_name: String,
+    mut profile: Profile,
+) -> Box<dyn Future<Item = (), Error = Error>> {
+    let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+    match remove_kv_and_sign_values_field(
+        &mut profile.access_information.mozilliansorg,
+        group_name,
         cis_client.get_secret_store(),
         now,
     ) {

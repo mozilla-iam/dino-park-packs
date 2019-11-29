@@ -23,6 +23,7 @@ use futures::Future;
 use log::info;
 use serde_derive::Deserialize;
 use std::convert::TryFrom;
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 struct GroupUpdate {
@@ -78,7 +79,7 @@ fn update_group(
 
 fn add_group(
     _: HttpRequest,
-    cis_client: web::Data<CisClient>,
+    cis_client: web::Data<Arc<CisClient>>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     new_group: web::Json<GroupCreate>,
@@ -86,7 +87,7 @@ fn add_group(
     let new_group = new_group.into_inner();
     let group_name_update = new_group.name.clone();
     let pool = pool.clone();
-    let cis_client = cis_client.clone();
+    let cis_client = Arc::clone(&cis_client);
     let scope_and_user = scope_and_user.clone();
     info!("trying to create new group: {}", new_group.name);
     cis_client
@@ -110,7 +111,7 @@ fn add_group(
             })
             .map_err(|e| format_err!("{}", e))
         })
-        .and_then(move |profile| add_group_to_profile(&cis_client, group_name_update, profile))
+        .and_then(move |profile| add_group_to_profile(cis_client, group_name_update, profile))
         .map(|_| HttpResponse::Ok().finish())
         .map_err(|e| Error::from(e))
 }

@@ -12,12 +12,15 @@ use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
+use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
+use futures::future::IntoFuture;
 use futures::Future;
 use serde_derive::Deserialize;
 use serde_humantime::De;
 use serde_json::json;
+use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -102,6 +105,37 @@ fn invite_member(
     }
 }
 
+fn remove_member(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    path: web::Path<(String, Uuid)>,
+    scope_and_user: ScopeAndUser,
+    cis_client: web::Data<Arc<CisClient>>,
+) -> impl Future<Item = HttpResponse, Error = error::Error> {
+    // TODO: rules
+    let pool_f = pool.clone();
+    let (group_name, user_uuid) = path.into_inner();
+    let user = User {
+        user_uuid: user_uuid,
+    };
+    operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
+        .map(|user_profile| (user, user_profile))
+        .into_future()
+        .and_then(move |(user, user_profile)| {
+            operations::members::leave(
+                &pool_f,
+                &scope_and_user,
+                &group_name,
+                &user,
+                true,
+                Arc::clone(&*cis_client),
+                user_profile.profile,
+            )
+        })
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| error::ErrorNotFound(e))
+}
+
 pub fn pending(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -121,4 +155,7 @@ pub fn members_app() -> impl HttpServiceFactory {
         )
         .service(web::resource("/{group_name}").route(web::get().to(get_members)))
         .service(web::resource("/{group_name}/invite").route(web::post().to(invite_member)))
+        .service(
+            web::resource("/{group_name}/{user_uuid}").route(web::delete().to_async(remove_member)),
+        )
 }

@@ -24,6 +24,7 @@ use dino_park_gate::provider::Provider;
 use dino_park_gate::scope::ScopeAndUserAuth;
 use failure::Error;
 use log::info;
+use std::sync::Arc;
 
 fn main() -> Result<(), Error> {
     std::env::set_var("RUST_LOG", "info");
@@ -31,7 +32,7 @@ fn main() -> Result<(), Error> {
     info!("starting dino-park-whoami");
 
     let s = settings::Settings::new()?;
-    let cis_client = CisClient::from_settings(&s.cis)?;
+    let cis_client = Arc::new(CisClient::from_settings(&s.cis)?);
 
     let pool = db::db::establish_connection();
     let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")?;
@@ -40,7 +41,7 @@ fn main() -> Result<(), Error> {
             checker: provider.clone(),
         };
         App::new()
-            .data(cis_client.clone())
+            .data(Arc::clone(&cis_client))
             .data(pool.clone())
             .wrap(Logger::default().exclude("/healthz"))
             .service(healthz::healthz_app())
