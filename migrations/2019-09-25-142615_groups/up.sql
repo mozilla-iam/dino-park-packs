@@ -64,6 +64,9 @@ CREATE TABLE group_rules (
 
 CREATE TABLE profiles (
     user_uuid UUID PRIMARY KEY,
+    user_id VARCHAR UNIQUE NOT NULL,
+    email VARCHAR NOT NULL,
+    username VARCHAR UNIQUE NOT NULL,
     profile JSONB NOT NULL
 );
 

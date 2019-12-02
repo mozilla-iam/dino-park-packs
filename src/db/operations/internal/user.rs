@@ -5,7 +5,6 @@ use crate::db::users::*;
 use crate::user::User;
 use cis_profile::schema::Profile;
 use diesel::prelude::*;
-use failure::format_err;
 use failure::Error;
 use log::error;
 use std::convert::TryFrom;
@@ -34,17 +33,7 @@ pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile
 pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
     let connection = pool.get()?;
 
-    let profile_uuid = Uuid::parse_str(&profile.uuid.value.clone().unwrap_or_default())?;
-    let profile_id = profile
-        .user_id
-        .value
-        .clone()
-        .ok_or_else(|| format_err!("no user_id"))?;
-
-    let user_profile = UserProfileValue::try_from(UserProfile {
-        user_uuid: profile_uuid,
-        profile: profile.clone(),
-    })?;
+    let user_profile = UserProfileValue::try_from(UserProfile::try_from(profile.clone())?)?;
 
     diesel::insert_into(schema::profiles::table)
         .values(&user_profile)
@@ -54,9 +43,11 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         .execute(&connection)?;
 
     let profile_id_uuid = UserIdUuid {
-        user_uuid: profile_uuid.clone(),
-        user_id: profile_id,
+        user_uuid: user_profile.user_uuid.clone(),
+        user_id: user_profile.user_id.clone(),
     };
+
+    let profile_uuid = &user_profile.user_uuid;
 
     match schema::user_ids::table
         .filter(schema::user_ids::user_uuid.eq(profile_uuid))

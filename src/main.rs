@@ -45,6 +45,7 @@ fn main() -> Result<(), Error> {
             .data(pool.clone())
             .wrap(Logger::default().exclude("/healthz"))
             .service(healthz::healthz_app())
+            .service(api::internal::internal_app())
             .service(
                 web::scope("/groups/api/v1/")
                     .wrap(scope_middleware)

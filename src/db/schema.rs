@@ -57,6 +57,9 @@ table! {
 
     profiles (user_uuid) {
         user_uuid -> Uuid,
+        user_id -> Varchar,
+        email -> Varchar,
+        username -> Varchar,
         profile -> Jsonb,
     }
 }

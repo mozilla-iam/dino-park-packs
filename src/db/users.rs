@@ -1,3 +1,4 @@
+use crate::db::error::DBError;
 use crate::db::schema::*;
 use crate::db::types::TrustType;
 use cis_profile::schema::Display;
@@ -12,11 +13,17 @@ use uuid::Uuid;
 #[table_name = "profiles"]
 pub struct UserProfileValue {
     pub user_uuid: Uuid,
+    pub user_id: String,
+    pub email: String,
+    pub username: String,
     pub profile: Value,
 }
 
 pub struct UserProfile {
     pub user_uuid: Uuid,
+    pub user_id: String,
+    pub email: String,
+    pub username: String,
     pub profile: Profile,
 }
 
@@ -26,6 +33,9 @@ impl TryFrom<UserProfile> for UserProfileValue {
     fn try_from(u: UserProfile) -> Result<Self, Self::Error> {
         Ok(UserProfileValue {
             user_uuid: u.user_uuid,
+            user_id: u.user_id,
+            email: u.email,
+            username: u.username,
             profile: serde_json::to_value(u.profile)?,
         })
     }
@@ -36,7 +46,31 @@ impl TryFrom<UserProfileValue> for UserProfile {
     fn try_from(u: UserProfileValue) -> Result<Self, Self::Error> {
         Ok(UserProfile {
             user_uuid: u.user_uuid,
+            user_id: u.user_id,
+            email: u.email,
+            username: u.username,
             profile: serde_json::from_value(u.profile)?,
+        })
+    }
+}
+
+impl TryFrom<Profile> for UserProfile {
+    type Error = failure::Error;
+    fn try_from(p: Profile) -> Result<Self, Self::Error> {
+        Ok(UserProfile {
+            user_uuid: Uuid::parse_str(&p.uuid.value.clone().unwrap_or_default())?,
+            user_id: p.user_id.value.clone().ok_or(DBError::InvalidProfile)?,
+            email: p
+                .primary_email
+                .value
+                .clone()
+                .ok_or(DBError::InvalidProfile)?,
+            username: p
+                .primary_username
+                .value
+                .clone()
+                .ok_or(DBError::InvalidProfile)?,
+            profile: p,
         })
     }
 }
