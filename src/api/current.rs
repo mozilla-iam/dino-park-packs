@@ -89,7 +89,7 @@ pub fn current_app() -> impl HttpServiceFactory {
     web::scope("/self")
         .wrap(
             Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
+                .allowed_methods(vec!["GET", "PUT", "POST", "DELETE"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),

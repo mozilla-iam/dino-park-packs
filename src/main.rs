@@ -53,7 +53,8 @@ fn main() -> Result<(), Error> {
                     .service(api::members::members_app())
                     .service(api::views::views_app())
                     .service(api::current::current_app())
-                    .service(api::invitations::invitations_app()),
+                    .service(api::invitations::invitations_app())
+                    .service(api::terms::terms_app()),
             )
     })
     .bind("0.0.0.0:8085")?

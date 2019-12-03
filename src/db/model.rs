@@ -15,9 +15,11 @@ pub struct Group {
     pub typ: GroupType,
     pub trust: TrustType,
     pub group_expiration: Option<i32>,
+    pub created: NaiveDateTime,
 }
 
-#[derive(Identifiable, Queryable, PartialEq, Debug)]
+#[derive(Identifiable, Associations, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[belongs_to(Group)]
 #[primary_key(group_id)]
 #[table_name = "terms"]
 pub struct Terms {
@@ -67,12 +69,6 @@ pub struct InsertGroup {
     pub typ: GroupType,
     pub trust: TrustType,
     pub group_expiration: Option<i32>,
-}
-
-#[derive(Insertable)]
-#[table_name = "terms"]
-pub struct InsertTerm {
-    pub text: String,
 }
 
 #[derive(Insertable, AsChangeset)]

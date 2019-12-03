@@ -10,6 +10,7 @@ use actix_web::web;
 use actix_web::web::Bytes;
 use actix_web::Error;
 use actix_web::HttpResponse;
+use actix_web::Responder;
 use cis_profile::schema::Profile;
 use futures::future;
 use futures::future::IntoFuture;
@@ -20,6 +21,10 @@ use serde_derive::Serialize;
 #[derive(Serialize)]
 pub struct UpdatedProfiles {
     updated: usize,
+}
+
+fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Responder {
+    operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().finish())
 }
 
 fn bulk_update_users(
@@ -69,5 +74,6 @@ pub fn internal_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(web::resource("/bulk").route(web::post().to_async(bulk_update_users)))
+        .service(web::resource("/update/bulk").route(web::post().to_async(bulk_update_users)))
+        .service(web::resource("/update/user").route(web::post().to(update_user)))
 }

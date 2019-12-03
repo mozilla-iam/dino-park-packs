@@ -19,6 +19,7 @@ use cis_client::CisClient;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
+use futures::future::IntoFuture;
 use futures::Future;
 use log::info;
 use serde_derive::Deserialize;
@@ -37,18 +38,6 @@ struct GroupCreate {
     description: String,
 }
 
-fn list_groups(_: HttpRequest, connection: web::Data<PgConnection>) -> HttpResponse {
-    let results = groups
-        .load::<Group>(&*connection)
-        .expect("Error loading groups");
-
-    println!("Displaying {} groups", results.len());
-    for group in results {
-        println!("{}", group.name);
-    }
-    HttpResponse::Ok().finish()
-}
-
 fn get_group(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -64,7 +53,7 @@ fn update_group(
     pool: web::Data<Pool>,
     group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
-) -> Result<HttpResponse, Error> {
+) -> impl Responder {
     operations::groups::update_group(
         &pool,
         group_name.into_inner(),
@@ -90,29 +79,29 @@ fn add_group(
     let cis_client = Arc::clone(&cis_client);
     let scope_and_user = scope_and_user.clone();
     info!("trying to create new group: {}", new_group.name);
-    cis_client
-        .get_user_by(&scope_and_user.user_id, &GetBy::UserId, None)
-        .and_then(|profile| {
-            (User::try_from(profile.clone()).map(|user| (user, profile))).map_err(Into::into)
+    operations::users::user_profile_by_user_id(&pool, &scope_and_user.user_id)
+        .and_then(|user_profile| {
+            User::try_from(&user_profile.profile).map(|user| (user, user_profile))
         })
-        .and_then(|(user, profile)| {
-            web::block(move || {
-                operations::groups::add_new_group(
-                    &pool,
-                    &scope_and_user,
-                    new_group.name,
-                    new_group.description,
-                    user,
-                    new_group.typ.unwrap_or_else(|| GroupType::Closed),
-                    TrustType::Ndaed,
-                )
-                .and_then(|_| operations::users::update_user_cache(&pool, &profile))
-                .map(|_| profile)
-            })
-            .map_err(|e| format_err!("{}", e))
+        .map_err(Into::into)
+        .and_then(|(user, user_profile)| {
+            operations::groups::add_new_group(
+                &pool,
+                &scope_and_user,
+                new_group.name,
+                new_group.description,
+                user,
+                new_group.typ.unwrap_or_else(|| GroupType::Closed),
+                TrustType::Ndaed,
+            )
+            .and_then(|_| operations::users::update_user_cache(&pool, &user_profile.profile))
+            .map(|_| user_profile)
         })
-        .and_then(move |profile| add_group_to_profile(cis_client, group_name_update, profile))
-        .map(|_| HttpResponse::Ok().finish())
+        .into_future()
+        .and_then(move |user_profile| {
+            add_group_to_profile(cis_client, group_name_update, user_profile.profile)
+        })
+        .map(|_| HttpResponse::Created().finish())
         .map_err(|e| Error::from(e))
 }
 
@@ -125,11 +114,7 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(
-            web::resource("")
-                .route(web::post().to_async(add_group))
-                .route(web::get().to(list_groups)),
-        )
+        .service(web::resource("").route(web::post().to_async(add_group)))
         .service(
             web::resource("/{group_name}")
                 .route(web::get().to(get_group))

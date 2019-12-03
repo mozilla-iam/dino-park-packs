@@ -14,6 +14,10 @@ pub const REMOVE_MEMBER: Engine = Engine {
     rules: &[&rule_host_can_remove],
 };
 
+pub const EDIT_TERMS: Engine = Engine {
+    rules: &[&rule_host_can_edit_terms],
+};
+
 pub const HOST_IS_CURATOR: Engine = Engine {
     rules: &[&rule_host_is_curator],
 };

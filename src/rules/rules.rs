@@ -59,7 +59,7 @@ pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `RemoveMemebr` permissions for the given
+/// Check if the host is either `RoleTpye::Admin` or has `RemoveMember` permissions for the given
 /// group.
 pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
     match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
@@ -69,7 +69,7 @@ pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
         {
             Ok(())
         }
-        _ => Err(RuleError::NotAllowedToInviteMember),
+        _ => Err(RuleError::NotAllowedToRemoveMember),
     }
 }
 
@@ -86,5 +86,19 @@ pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
         Ok(role) if role.typ == RoleType::Admin => Ok(()),
         _ => Err(RuleError::NotAnAdmin),
+    }
+}
+
+/// Check if the host is either `RoleTpye::Admin` or has `EditTerms` permissions for the given
+/// group.
+pub fn rule_host_can_edit_terms(ctx: &RuleContext) -> Result<(), RuleError> {
+    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+        Ok(role)
+            if role.typ == RoleType::Admin
+                || role.permissions.contains(&PermissionType::EditTerms) =>
+        {
+            Ok(())
+        }
+        _ => Err(RuleError::NotAllowedToEditTerms),
     }
 }

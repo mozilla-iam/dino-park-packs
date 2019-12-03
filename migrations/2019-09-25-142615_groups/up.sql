@@ -1,7 +1,7 @@
 CREATE TYPE group_type AS ENUM ('closed', 'reviewd', 'open');
 CREATE TYPE role_type AS ENUM ('member', 'curator', 'admin');
 CREATE TYPE capability_type AS ENUM ('gdrive', 'discourse');
-CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'change_name', 'delete_group', 'remove_member', 'edit_terms');
+CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'delete_group', 'remove_member', 'edit_terms');
 CREATE TYPE trust_type AS ENUM ('public', 'authenticated', 'vouched', 'ndaed', 'staff');
 CREATE TYPE rule_type AS ENUM ('staff', 'nda', 'group', 'custom');
 
@@ -13,12 +13,13 @@ CREATE TABLE groups (
     capabilities capability_type[] NOT NULL,
     typ group_type NOT NULL DEFAULT 'closed',
     trust trust_type NOT NULL DEFAULT 'ndaed',
-    group_expiration INTEGER
+    group_expiration INTEGER,
+    created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE terms (
     group_id SERIAL PRIMARY KEY REFERENCES groups,
-    text TEXT
+    text TEXT NOT NULL
 );
 
 CREATE TABLE roles (

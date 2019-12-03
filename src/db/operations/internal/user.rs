@@ -30,6 +30,16 @@ pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile
         .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
 }
 
+pub fn user_profile_by_user_id(pool: &Pool, user_id: &str) -> Result<UserProfile, Error> {
+    let connection = pool.get()?;
+
+    schema::profiles::table
+        .filter(schema::profiles::user_id.eq(user_id))
+        .first::<UserProfileValue>(&connection)
+        .map_err(Error::from)
+        .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
+}
+
 pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
     let connection = pool.get()?;
 

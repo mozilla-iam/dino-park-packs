@@ -21,6 +21,7 @@ table! {
         typ -> Group_type,
         trust -> Trust_type,
         group_expiration -> Nullable<Int4>,
+        created -> Timestamp,
     }
 }
 
@@ -95,7 +96,7 @@ table! {
 
     terms (group_id) {
         group_id -> Int4,
-        text -> Nullable<Text>,
+        text -> Text,
     }
 }
 

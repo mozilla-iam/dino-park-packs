@@ -25,12 +25,12 @@ pub enum TrustType {
 #[DieselType = "Permission_type"]
 pub enum PermissionType {
     InviteMember,
-    RemoveMember,
+    EditDescription,
     AddCurator,
     RemoveCurator,
-    EditDescription,
-    ChangeName,
     DeleteGroup,
+    RemoveMember,
+    EditTerms,
 }
 
 #[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
