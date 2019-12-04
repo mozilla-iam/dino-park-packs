@@ -5,4 +5,5 @@ pub mod invitations;
 pub mod members;
 pub mod models;
 pub mod terms;
+pub mod users;
 pub mod views;

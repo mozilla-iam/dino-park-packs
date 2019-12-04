@@ -58,3 +58,8 @@ pub fn update_group(
         .get_result(&connection)
         .map_err(Into::into)
 }
+
+pub fn delete_group(pool: &Pool, name: &str) -> Result<(), Error> {
+    // TODO
+    Ok(())
+}

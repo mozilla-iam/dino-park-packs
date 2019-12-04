@@ -4,6 +4,7 @@ use crate::db::types::TrustType;
 use cis_profile::schema::Display;
 use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
+use serde_derive::Serialize;
 use serde_json::Value;
 use std::convert::TryFrom;
 use uuid::Uuid;
@@ -153,6 +154,7 @@ macro_rules! user_t {
     };
 }
 
+#[derive(Serialize)]
 pub struct DisplayUser {
     pub user_uuid: Uuid,
     pub picture: Option<String>,

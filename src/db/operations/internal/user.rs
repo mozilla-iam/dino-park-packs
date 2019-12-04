@@ -1,5 +1,7 @@
 use crate::db::db::Pool;
+use crate::db::error::DBError;
 use crate::db::schema;
+use crate::db::types::TrustType;
 use crate::db::users::UserProfile;
 use crate::db::users::*;
 use crate::user::User;
@@ -115,4 +117,62 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         .set(&public_profile)
         .execute(&connection)?;
     Ok(())
+}
+
+macro_rules! scoped_search_users {
+    ($t:ident, $typ:ident, $q:ident, $trust:ident, $limit:ident, $connection:ident) => {{
+        use schema::$t as u;
+        u::table
+            .filter(
+                u::first_name
+                    .concat(" ")
+                    .concat(u::last_name)
+                    .ilike($q)
+                    .or(u::first_name.ilike($q))
+                    .or(u::last_name.ilike($q))
+                    .or(u::username.ilike($q))
+                    .or(u::email.ilike($q)),
+            )
+            .filter(u::trust.ge($trust))
+            .limit($limit)
+            .get_results::<$typ>(&$connection)
+            .map(|users| users.into_iter().map(|u| u.into()).collect())
+            .map_err(Into::into)
+    }};
+}
+
+pub fn search_users(
+    pool: &Pool,
+    trust: Option<TrustType>,
+    scope: TrustType,
+    q: &str,
+    limit: i64,
+) -> Result<Vec<DisplayUser>, Error> {
+    let connection = pool.get()?;
+    use schema::users_staff as u;
+    let trust = trust.unwrap_or(TrustType::Staff);
+    let q: &str = &format!("{}%", q);
+    match scope {
+        TrustType::Staff => {
+            scoped_search_users!(users_staff, UsersStaff, q, trust, limit, connection)
+        }
+        TrustType::Ndaed => {
+            scoped_search_users!(users_ndaed, UsersNdaed, q, trust, limit, connection)
+        }
+        TrustType::Vouched => {
+            scoped_search_users!(users_vouched, UsersVouched, q, trust, limit, connection)
+        }
+        TrustType::Authenticated => scoped_search_users!(
+            users_authenticated,
+            UsersAuthenticated,
+            q,
+            trust,
+            limit,
+            connection
+        ),
+        TrustType::Public => {
+            scoped_search_users!(users_public, UsersPublic, q, trust, limit, connection)
+        }
+        _ => Err(DBError::InvalidTurstLevel.into()),
+    }
 }

@@ -441,6 +441,35 @@ paths:
           description: invalid input, invalid object
         "403":
           description: forbidden
+  "/groups/api/v1/users":
+    get:
+      summary: search for users
+      description: |
+        get top matches of users
+      parameters:
+        - in: query
+          name: q
+          description: search query to filter results
+          required: true
+          schema:
+            type: string
+          example: Han
+        - in: query
+          name: t
+          description: trust filter for results
+          required: false
+          schema:
+            $ref: "#/components/schemas/TrustType"
+          example: Ndaed
+      responses:
+        "200":
+          description: the top matches of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
   "/groups/api/v1/self/{groupName}":
     delete:
       summary: leave a group
@@ -512,7 +541,7 @@ paths:
         "403":
           description: forbidden
 servers:
-  - url: https://virtserver.swaggerhub.com/fiji/dinoparkgroups/1.0.0
+  - url: http://localhost:8085
 components:
   schemas:
     Group:
@@ -574,6 +603,38 @@ components:
         description:
           type: string
           example: another description in markdown
+    TrustType:
+      type: string
+      enum: ["Public", "Authenticated", "Vouched", "Ndaed", "Staff"]
+    User:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        picture:
+          type: string
+          nullable: true
+          example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
+        first_name:
+          type: string
+          nullable: true
+          example: Hans
+        last_name:
+          type: string
+          nullable: true
+          example: Knall
+        username:
+          type: string
+          example: hans
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: hans@knall.org
+        trust:
+          $ref:  "#/components/schemas/TrustType"
     DisplayMember:
       type: object
       properties:
