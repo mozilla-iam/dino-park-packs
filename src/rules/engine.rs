@@ -26,6 +26,10 @@ pub const HOST_IS_GROUP_ADMIN: Engine = Engine {
     rules: &[&rule_host_is_group_admin],
 };
 
+pub const ONLY_ADMINS: Engine = Engine {
+    rules: &[&rule_only_admins],
+};
+
 pub struct Engine<'a> {
     pub rules: &'a [&'static Rule],
 }
@@ -33,7 +37,7 @@ pub struct Engine<'a> {
 impl<'a> Engine<'a> {
     pub fn run(self: &Self, ctx: &RuleContext) -> Result<(), RuleError> {
         let ok = self.rules.iter().try_for_each(|rule| rule(ctx));
-        if !ok.is_err() && ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) == Some("admin") {
+        if ok.is_err() && ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) == Some("admin") {
             info!("using admin priviledges for {}", ctx.host_uuid);
             return Ok(());
         }

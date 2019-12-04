@@ -16,22 +16,37 @@ use dino_park_gate::scope::ScopeAndUser;
 use futures::future::IntoFuture;
 use futures::Future;
 use serde_derive::Deserialize;
-use serde_humantime::De;
 use std::sync::Arc;
-use std::time::Duration;
 use uuid::Uuid;
 
-#[derive(Deserialize)]
-pub struct Invitation {
-    user_uuid: Uuid,
-    invitation_expiration: De<Option<Duration>>,
-    group_expiration: De<Option<Duration>>,
+#[derive(Clone, Deserialize)]
+pub struct AddMember {
+    group_expiration: Option<i64>,
+}
+
+#[derive(Clone, Deserialize)]
+pub enum MemberRoles {
+    Any,
+    Member,
+    Curator,
+}
+
+impl MemberRoles {
+    pub fn get_role_types(&self) -> Vec<RoleType> {
+        match self {
+            MemberRoles::Any => vec![RoleType::Admin, RoleType::Curator, RoleType::Member],
+            MemberRoles::Member => vec![RoleType::Member],
+            MemberRoles::Curator => vec![RoleType::Admin, RoleType::Curator],
+        }
+    }
 }
 
 #[derive(Deserialize)]
 pub struct GetMembersQuery {
-    next: Option<i64>,
-    size: Option<i64>,
+    q: Option<String>,
+    r: Option<MemberRoles>,
+    n: Option<i64>,
+    s: Option<i64>,
 }
 
 fn get_members(
@@ -41,67 +56,58 @@ fn get_members(
     scope_and_user: ScopeAndUser,
     query: web::Query<GetMembersQuery>,
 ) -> impl Responder {
-    let page_size = query.size.unwrap_or_else(|| 20);
-    let next = query.next;
+    let page_size = query.s.unwrap_or_else(|| 20);
+    let roles = query
+        .r
+        .clone()
+        .unwrap_or_else(|| MemberRoles::Any)
+        .get_role_types();
     match operations::members::scoped_members_and_host(
         &*pool,
         &*group_name,
         &scope_and_user.scope,
-        &[RoleType::Admin, RoleType::Curator, RoleType::Member],
+        query.q.clone(),
+        &roles,
         page_size,
-        next,
+        query.n,
     ) {
         Ok(members) => Ok(HttpResponse::Ok().json(members)),
         Err(_) => Err(error::ErrorNotFound("")),
     }
 }
 
-fn invite_member(
-    _: HttpRequest,
+fn add_member(
     pool: web::Data<Pool>,
-    group_name: web::Path<String>,
+    path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
-    invitation: web::Json<Invitation>,
-) -> impl Responder {
-    let invitation = invitation.into_inner();
-    let invitation_expiration = match invitation
-        .invitation_expiration
-        .into_inner()
-        .map(to_expiration_ts)
-    {
-        Some(Err(e)) => return Err(error::ErrorBadRequest(e)),
-        Some(Ok(ts)) => Some(ts),
-        None => None,
-    };
-    let group_expiration = match invitation
-        .group_expiration
-        .into_inner()
-        .map(to_expiration_ts)
-    {
-        Some(Err(e)) => return Err(error::ErrorBadRequest(e)),
-        Some(Ok(ts)) => Some(ts),
-        None => None,
-    };
-    let member = User {
-        user_uuid: invitation.user_uuid,
-    };
-    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    match operations::invitations::invite_member(
-        &pool,
-        &scope_and_user,
-        &group_name,
-        host,
-        member,
-        invitation_expiration,
-        group_expiration,
-    ) {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => Err(error::ErrorNotFound(e)),
-    }
+    add_member: web::Json<AddMember>,
+    cis_client: web::Data<Arc<CisClient>>,
+) -> impl Future<Item = HttpResponse, Error = error::Error> {
+    let (group_name, user_uuid) = path.into_inner();
+    let pool_f = pool.clone();
+    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
+        .and_then(move |host| {
+            operations::users::user_profile_by_uuid(&pool.clone(), &user_uuid)
+                .map(|user_profile| (host, user_profile))
+        })
+        .into_future()
+        .and_then(move |(host, user_profile)| {
+            operations::members::add(
+                &pool_f,
+                &scope_and_user,
+                &group_name,
+                &host,
+                &User { user_uuid },
+                add_member.group_expiration.map(to_expiration_ts),
+                Arc::clone(&*cis_client),
+                user_profile.profile,
+            )
+        })
+        .map(|_| HttpResponse::Ok().finish())
+        .map_err(|e| error::ErrorNotFound(e))
 }
 
 fn remove_member(
-    _: HttpRequest,
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
@@ -152,8 +158,9 @@ pub fn members_app() -> impl HttpServiceFactory {
                 .max_age(3600),
         )
         .service(web::resource("/{group_name}").route(web::get().to(get_members)))
-        .service(web::resource("/{group_name}/invite").route(web::post().to(invite_member)))
         .service(
-            web::resource("/{group_name}/{user_uuid}").route(web::delete().to_async(remove_member)),
+            web::resource("/{group_name}/{user_uuid}")
+                .route(web::post().to_async(add_member))
+                .route(web::delete().to_async(remove_member)),
         )
 }

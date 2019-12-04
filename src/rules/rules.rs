@@ -37,6 +37,11 @@ impl<'a> RuleContext<'a> {
 
 pub type Rule = Fn(&RuleContext) -> Result<(), RuleError>;
 
+/// Always fails, caught by admin override.
+pub fn rule_only_admins(_: &RuleContext) -> Result<(), RuleError> {
+    Err(RuleError::NeverAllowed)
+}
+
 /// Check if curent user is allowed to create groups.
 pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
     match ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) {

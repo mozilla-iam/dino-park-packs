@@ -248,11 +248,13 @@ paths:
                   format: uuid
                   example: 34a33a8e-d035-4051-acac-497a79235e73
                 invitation_expiration:
-                  type: string
-                  example: 5days
+                  description: expiration period in days
+                  type: integer
+                  example: 5
                 group_expiration:
-                  type: string
-                  example: 6months
+                  description: expiration period in days
+                  type: integer
+                  example: 180
       responses:
         "201":
           description: member invited
@@ -285,11 +287,13 @@ paths:
               type: object
               properties:
                 invitation_expiration:
-                  type: string
-                  example: 5days
+                  description: expiration period in days
+                  type: integer
+                  example: 5
                 group_expiration:
-                  type: string
-                  example: 6months
+                  description: expiration period in days
+                  type: integer
+                  example: 180
       responses:
         "201":
           description: invitation updated
@@ -346,6 +350,40 @@ paths:
           description: invalid input, invalid object
         "403":
           description: forbidden
+    post:
+      summary: add a member
+      description: add a member to a group (admins only)
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberUuid
+          description: pass in the uuid of the member to add
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group_expiration:
+                  description: expiration period in days
+                  type: integer
+                  example: 180
+      responses:
+        "201":
+          description: member added
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
   "/groups/api/v1/members/{groupName}":
     get:
       summary: paginated members
@@ -364,7 +402,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [member, curator]
+            enum: [Any, Member, Curator]
         - in: query
           name: q
           description: search query to filter results

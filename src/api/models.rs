@@ -13,7 +13,6 @@ pub struct GroupInfo {
 pub struct DisplayGroupDetails {
     pub group: GroupInfo,
     pub members: PaginatedDisplayMembersAndHost,
-    pub curators: PaginatedDisplayMembersAndHost,
     pub member_count: i64,
     pub invitation_count: i64,
     pub renewal_count: i64,

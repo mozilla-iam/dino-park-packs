@@ -57,12 +57,12 @@ pub enum CapabilityType {
     Deiscourse,
 }
 
-#[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Role_type"]
 pub enum RoleType {
-    Member,
-    Curator,
     Admin,
+    Curator,
+    Member,
 }
 
 #[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]

@@ -12,4 +12,6 @@ pub enum RuleError {
     NotACurator,
     #[fail(display = "Not allowed to edit terms")]
     NotAllowedToEditTerms,
+    #[fail(display = "Never allowed (only admins)")]
+    NeverAllowed,
 }

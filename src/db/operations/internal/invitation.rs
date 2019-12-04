@@ -84,7 +84,6 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
     let membership = InsertMembership {
         group_id: invitation.group_id,
         user_uuid: invitation.user_uuid,
-        // TODO: what's going on
         role_id: role.id,
         expiration: invitation.group_expiration,
         added_by: invitation.added_by,

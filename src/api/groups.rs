@@ -1,3 +1,5 @@
+use crate::api::models::DisplayGroupDetails;
+use crate::api::models::GroupInfo;
 use crate::cis::operations::add_group_to_profile;
 use crate::db::db::Pool;
 use crate::db::operations;
@@ -5,6 +7,7 @@ use crate::db::types::*;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
+use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::Error;
@@ -99,6 +102,49 @@ fn add_group(
         .map_err(|e| Error::from(e))
 }
 
+fn group_details(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+) -> impl Responder {
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    let page_size = 20;
+    let member_count = match operations::members::member_count(&pool, &group_name) {
+        Ok(member_count) => member_count,
+        _ => return Err(error::ErrorNotFound("")),
+    };
+    let group = operations::groups::get_group(&pool, &group_name)?;
+    let members = operations::members::scoped_members_and_host(
+        &pool,
+        &group_name,
+        &scope_and_user.scope,
+        None,
+        &[RoleType::Admin, RoleType::Curator, RoleType::Member],
+        page_size,
+        None,
+    )?;
+    let invitation_count = operations::invitations::pending_invitations_count(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+    )?;
+    let renewal_count = operations::members::renewal_count(&pool, &group_name, None)?;
+    let result = DisplayGroupDetails {
+        group: GroupInfo {
+            name: group.name,
+            description: group.description,
+            typ: group.typ,
+        },
+        members,
+        member_count,
+        invitation_count,
+        renewal_count,
+    };
+    Ok(HttpResponse::Ok().json(result))
+}
+
 pub fn groups_app() -> impl HttpServiceFactory {
     web::scope("/groups")
         .wrap(
@@ -114,4 +160,5 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group)),
         )
+        .service(web::resource("/{group_name}/details").route(web::get().to(group_details)))
 }

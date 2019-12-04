@@ -51,7 +51,6 @@ fn main() -> Result<(), Error> {
                     .wrap(scope_middleware)
                     .service(api::groups::groups_app())
                     .service(api::members::members_app())
-                    .service(api::views::views_app())
                     .service(api::current::current_app())
                     .service(api::invitations::invitations_app())
                     .service(api::terms::terms_app())

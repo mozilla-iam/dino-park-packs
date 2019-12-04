@@ -19,14 +19,8 @@ use uuid::Uuid;
 #[derive(Deserialize)]
 pub struct Invitation {
     user_uuid: Uuid,
-    invitation_expiration: De<Option<Duration>>,
-    group_expiration: De<Option<Duration>>,
-}
-
-#[derive(Deserialize)]
-pub struct GetMembersQuery {
-    next: Option<i64>,
-    size: Option<i64>,
+    invitation_expiration: Option<i64>,
+    group_expiration: Option<i64>,
 }
 
 fn invite_member(
@@ -37,24 +31,8 @@ fn invite_member(
     invitation: web::Json<Invitation>,
 ) -> impl Responder {
     let invitation = invitation.into_inner();
-    let invitation_expiration = match invitation
-        .invitation_expiration
-        .into_inner()
-        .map(to_expiration_ts)
-    {
-        Some(Err(e)) => return Err(error::ErrorBadRequest(e)),
-        Some(Ok(ts)) => Some(ts),
-        None => None,
-    };
-    let group_expiration = match invitation
-        .group_expiration
-        .into_inner()
-        .map(to_expiration_ts)
-    {
-        Some(Err(e)) => return Err(error::ErrorBadRequest(e)),
-        Some(Ok(ts)) => Some(ts),
-        None => None,
-    };
+    let invitation_expiration = invitation.invitation_expiration.map(to_expiration_ts);
+    let group_expiration = invitation.group_expiration.map(to_expiration_ts);
     let member = User {
         user_uuid: invitation.user_uuid,
     };
