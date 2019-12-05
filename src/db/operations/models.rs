@@ -1,7 +1,13 @@
+use crate::db::model::Group;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
 use serde_derive::Serialize;
 use uuid::Uuid;
+
+pub struct GroupWithTermsFlag {
+    pub group: Group,
+    pub terms: bool,
+}
 
 #[derive(Serialize)]
 pub struct DisplayInvitation {

@@ -1,9 +1,27 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
+use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::schema;
 use crate::db::types::*;
+use diesel::dsl::exists;
+use diesel::dsl::select;
 use diesel::prelude::*;
 use failure::Error;
+
+pub fn get_group_with_terms_flag(
+    pool: &Pool,
+    group_name: &str,
+) -> Result<GroupWithTermsFlag, Error> {
+    let connection = pool.get()?;
+    let group = schema::groups::table
+        .filter(schema::groups::name.eq(group_name))
+        .first::<Group>(&connection)?;
+    let terms = select(exists(
+        schema::terms::table.filter(schema::terms::group_id.eq(group.id)),
+    ))
+    .get_result(&connection)?;
+    Ok(GroupWithTermsFlag { group, terms })
+}
 
 pub fn get_group(pool: &Pool, group_name: &str) -> Result<Group, Error> {
     let connection = pool.get()?;

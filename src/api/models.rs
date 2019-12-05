@@ -7,6 +7,7 @@ pub struct GroupInfo {
     pub name: String,
     pub description: String,
     pub typ: GroupType,
+    pub terms: bool,
 }
 
 #[derive(Serialize)]

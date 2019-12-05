@@ -1,3 +1,4 @@
+pub mod admins;
 pub mod current;
 pub mod groups;
 pub mod internal;

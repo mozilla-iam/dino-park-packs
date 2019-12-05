@@ -35,18 +35,13 @@ struct GroupCreate {
     description: String,
 }
 
-fn get_group(
-    _: HttpRequest,
-    pool: web::Data<Pool>,
-    group_name: web::Path<String>,
-) -> impl Responder {
+fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     operations::groups::get_group(&pool, &group_name)
         .map(|group| HttpResponse::Ok().json(group))
         .map_err(|_| HttpResponse::NotFound().finish())
 }
 
 fn update_group(
-    _: HttpRequest,
     pool: web::Data<Pool>,
     group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
@@ -64,14 +59,12 @@ fn update_group(
 }
 
 fn add_group(
-    _: HttpRequest,
     cis_client: web::Data<Arc<CisClient>>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     new_group: web::Json<GroupCreate>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let new_group = new_group.into_inner();
-    let group_name_update = new_group.name.clone();
     let pool = pool.clone();
     let cis_client = Arc::clone(&cis_client);
     let scope_and_user = scope_and_user.clone();
@@ -81,7 +74,8 @@ fn add_group(
             User::try_from(&user_profile.profile).map(|user| (user, user_profile))
         })
         .map_err(Into::into)
-        .and_then(|(user, user_profile)| {
+        .into_future()
+        .and_then(move |(user, user_profile)| {
             operations::groups::add_new_group(
                 &pool,
                 &scope_and_user,
@@ -90,20 +84,15 @@ fn add_group(
                 user,
                 new_group.typ.unwrap_or_else(|| GroupType::Closed),
                 TrustType::Ndaed,
+                cis_client,
+                user_profile.profile,
             )
-            .and_then(|_| operations::users::update_user_cache(&pool, &user_profile.profile))
-            .map(|_| user_profile)
-        })
-        .into_future()
-        .and_then(move |user_profile| {
-            add_group_to_profile(cis_client, group_name_update, user_profile.profile)
         })
         .map(|_| HttpResponse::Created().finish())
         .map_err(|e| Error::from(e))
 }
 
 fn group_details(
-    _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
@@ -114,7 +103,7 @@ fn group_details(
         Ok(member_count) => member_count,
         _ => return Err(error::ErrorNotFound("")),
     };
-    let group = operations::groups::get_group(&pool, &group_name)?;
+    let group = operations::groups::get_group_with_terms_flag(&pool, &group_name)?;
     let members = operations::members::scoped_members_and_host(
         &pool,
         &group_name,
@@ -133,9 +122,10 @@ fn group_details(
     let renewal_count = operations::members::renewal_count(&pool, &group_name, None)?;
     let result = DisplayGroupDetails {
         group: GroupInfo {
-            name: group.name,
-            description: group.description,
-            typ: group.typ,
+            name: group.group.name,
+            description: group.group.description,
+            typ: group.group.typ,
+            terms: group.terms,
         },
         members,
         member_count,

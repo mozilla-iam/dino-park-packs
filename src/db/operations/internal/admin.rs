@@ -2,6 +2,7 @@ use crate::db::db::Pool;
 use crate::db::model::*;
 use crate::db::schema;
 use crate::db::types::*;
+use crate::user::User;
 use diesel::prelude::*;
 use failure::Error;
 use uuid::Uuid;
@@ -34,18 +35,21 @@ pub fn get_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
 
 pub fn add_admin(
     pool: &Pool,
-    group_id: i32,
-    user_uuid: Uuid,
-    added_by: Uuid,
+    group_name: &str,
+    host: &User,
+    user: &User,
 ) -> Result<Membership, Error> {
-    let role = get_admin_role(pool, group_id)?;
     let connection = pool.get()?;
+    let group = schema::groups::table
+        .filter(schema::groups::name.eq(group_name))
+        .first::<Group>(&*connection)?;
+    let role = get_admin_role(pool, group.id)?;
     let admin_membership = InsertMembership {
-        group_id,
-        user_uuid,
+        group_id: group.id,
+        user_uuid: user.user_uuid.clone(),
         role_id: role.id,
         expiration: None,
-        added_by,
+        added_by: host.user_uuid.clone(),
     };
     diesel::insert_into(schema::memberships::table)
         .values(&admin_membership)

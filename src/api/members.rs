@@ -21,6 +21,7 @@ use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
 pub struct AddMember {
+    user_uuid: Uuid,
     group_expiration: Option<i64>,
 }
 
@@ -78,13 +79,13 @@ fn get_members(
 
 fn add_member(
     pool: web::Data<Pool>,
-    path: web::Path<(String, Uuid)>,
+    group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     add_member: web::Json<AddMember>,
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
-    let (group_name, user_uuid) = path.into_inner();
     let pool_f = pool.clone();
+    let user_uuid = add_member.user_uuid.clone();
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
         .and_then(move |host| {
             operations::users::user_profile_by_uuid(&pool.clone(), &user_uuid)
@@ -143,10 +144,12 @@ pub fn members_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(web::resource("/{group_name}").route(web::get().to(get_members)))
         .service(
-            web::resource("/{group_name}/{user_uuid}")
+            web::resource("/{group_name}")
                 .route(web::post().to_async(add_member))
-                .route(web::delete().to_async(remove_member)),
+                .route(web::get().to(get_members)),
+        )
+        .service(
+            web::resource("/{group_name}/{user_uuid}").route(web::delete().to_async(remove_member)),
         )
 }
