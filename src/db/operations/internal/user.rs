@@ -149,7 +149,6 @@ pub fn search_users(
     limit: i64,
 ) -> Result<Vec<DisplayUser>, Error> {
     let connection = pool.get()?;
-    use schema::users_staff as u;
     let trust = trust.unwrap_or(TrustType::Staff);
     let q: &str = &format!("{}%", q);
     match scope {

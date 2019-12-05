@@ -1,11 +1,7 @@
 use crate::db::db::Pool;
-use crate::db::model::*;
 use crate::db::operations::internal;
-use crate::db::schema;
-use crate::db::types::*;
 use crate::rules::engine::*;
 use crate::rules::rules::RuleContext;
-use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
 

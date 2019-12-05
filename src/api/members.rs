@@ -134,14 +134,6 @@ fn remove_member(
         .map_err(|e| error::ErrorNotFound(e))
 }
 
-pub fn pending(
-    _: HttpRequest,
-    pool: web::Data<Pool>,
-    group_name: web::Path<String>,
-    scope_and_user: ScopeAndUser,
-) -> impl Responder {
-}
-
 pub fn members_app() -> impl HttpServiceFactory {
     web::scope("/members")
         .wrap(

@@ -177,20 +177,23 @@ pub fn leave(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     group_name: &str,
-    user: &User,
     force: bool,
     cis_client: Arc<CisClient>,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let group_name_ff = group_name.to_owned();
     let pool_f = pool.clone();
-    let user_f = *user;
-    operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
-        .into_future()
-        .and_then(move |user_profile| {
-            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
+    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
+        .and_then(|user| {
+            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
+                .map(|user_profile| (user_profile, user))
         })
-        .and_then(move |_| db_leave(&pool_f, &group_name_ff, &user_f, force).into_future())
+        .into_future()
+        .and_then(move |(user_profile, user)| {
+            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
+                .map(move |_| user)
+        })
+        .and_then(move |user| db_leave(&pool_f, &group_name_ff, &user, force).into_future())
 }
 
 pub use internal::member::member_role;

@@ -56,20 +56,15 @@ fn leave(
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
     let pool_f = pool.clone();
-    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .into_future()
-        .and_then(move |user| {
-            operations::members::leave(
-                &pool_f,
-                &scope_and_user,
-                &group_name,
-                &user,
-                force.force.unwrap_or_default(),
-                Arc::clone(&*cis_client),
-            )
-        })
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| error::ErrorNotFound(e))
+    operations::members::leave(
+        &pool_f,
+        &scope_and_user,
+        &group_name,
+        force.force.unwrap_or_default(),
+        Arc::clone(&*cis_client),
+    )
+    .map(|_| HttpResponse::Ok().finish())
+    .map_err(|e| error::ErrorNotFound(e))
 }
 
 fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {

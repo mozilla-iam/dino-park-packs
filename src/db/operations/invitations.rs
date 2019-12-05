@@ -1,6 +1,5 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::db::db::Pool;
-use crate::db::model::*;
 use crate::db::operations::internal::invitation;
 use crate::db::operations::models::*;
 use crate::db::schema;

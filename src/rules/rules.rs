@@ -35,7 +35,7 @@ impl<'a> RuleContext<'a> {
     }
 }
 
-pub type Rule = Fn(&RuleContext) -> Result<(), RuleError>;
+pub type Rule = dyn Fn(&RuleContext) -> Result<(), RuleError>;
 
 /// Always fails, caught by admin override.
 pub fn rule_only_admins(_: &RuleContext) -> Result<(), RuleError> {

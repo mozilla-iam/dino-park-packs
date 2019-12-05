@@ -590,9 +590,26 @@ components:
         - type
         - description
       properties:
-        id:
-          type: integer
-          example: 1337
+        name:
+          type: string
+          example: dinopark-test
+        type:
+          type: string
+          enum:
+            - closed
+            - reviewed
+            - open
+          example: closed
+        description:
+          type: string
+          example: some fancy description in markdown
+    GroupWithTerms:
+      type: object
+      required:
+        - name
+        - type
+        - description
+      properties:
         name:
           type: string
           example: dinopark-test
@@ -813,19 +830,8 @@ components:
               type: integer
               nullable: true
               example: 20
-        curators:
-          type: object
-          properties:
-            members:
-              type: array
-              items:
-                $ref: "#/components/schemas/DisplayMember"
-            next:
-              type: integer
-              nullable: true
-              example: 20
         group:
-          $ref: "#/components/schemas/Group"
+          $ref: "#/components/schemas/GroupWithTerms"
         member_count:
           type: integer
           example: 50

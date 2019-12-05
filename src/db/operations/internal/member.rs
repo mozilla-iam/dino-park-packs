@@ -137,8 +137,12 @@ pub fn member_role(pool: &Pool, group_name: &str) -> Result<Role, Error> {
 
 pub fn remove_from_group(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<(), Error> {
     let connection = pool.get()?;
+    let group = schema::groups::table
+        .filter(schema::groups::name.eq(group_name))
+        .first::<Group>(&*connection)?;
     diesel::delete(schema::memberships::table)
         .filter(schema::memberships::user_uuid.eq(user_uuid))
+        .filter(schema::memberships::group_id.eq(group.id))
         .execute(&connection)?;
     Ok(())
 }

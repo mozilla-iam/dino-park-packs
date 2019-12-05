@@ -1,7 +1,6 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
 use crate::db::schema;
-use crate::db::types::*;
 use diesel::prelude::*;
 use failure::Error;
 
