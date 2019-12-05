@@ -12,6 +12,7 @@ use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::rules::RuleContext;
 use crate::user::User;
+use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use chrono::Utc;
 use cis_client::CisClient;
@@ -125,7 +126,7 @@ pub fn add(
     group_name: &str,
     host: &User,
     user: &User,
-    expiration: Option<NaiveDateTime>,
+    expiration: Option<i32>,
     cis_client: Arc<CisClient>,
     profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
@@ -139,7 +140,20 @@ pub fn add(
         ))
         .map_err(Into::into)
         .and_then(move |_| {
-            internal::member::add_to_group(&pool, &group_name, &host, &user, expiration)
+            if expiration.is_none() {
+                internal::group::get_group(&pool, group_name).map(|g| g.group_expiration)
+            } else {
+                Ok(expiration)
+            }
+        })
+        .and_then(move |expiration| {
+            internal::member::add_to_group(
+                &pool,
+                &group_name,
+                &host,
+                &user,
+                expiration.map(to_expiration_ts),
+            )
         })
         .into_future()
         .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))

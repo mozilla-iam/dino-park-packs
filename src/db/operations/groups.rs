@@ -21,6 +21,7 @@ fn add_new_group_db(
     creator: User,
     typ: GroupType,
     trust: TrustType,
+    expiration: Option<i32>,
 ) -> Result<(), Error> {
     CREATE_GROUP.run(&RuleContext::minimal(
         pool,
@@ -28,7 +29,8 @@ fn add_new_group_db(
         &name,
         &creator.user_uuid,
     ))?;
-    let new_group = internal::group::add_group(pool, name, description, vec![], typ, trust, None)?;
+    let new_group =
+        internal::group::add_group(pool, name, description, vec![], typ, trust, expiration)?;
     internal::admin::add_admin_role(pool, new_group.id)?;
     internal::member::add_member_role(pool, new_group.id)?;
     internal::admin::add_admin(pool, &new_group.name, &User::default(), &creator)?;
@@ -43,13 +45,23 @@ pub fn add_new_group(
     creator: User,
     typ: GroupType,
     trust: TrustType,
+    expiration: Option<i32>,
     cis_client: Arc<CisClient>,
     profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = name.clone();
-    add_new_group_db(pool, scope_and_user, name, description, creator, typ, trust)
-        .into_future()
-        .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
+    add_new_group_db(
+        pool,
+        scope_and_user,
+        name,
+        description,
+        creator,
+        typ,
+        trust,
+        expiration,
+    )
+    .into_future()
+    .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
 }
 
 pub use internal::group::get_group;

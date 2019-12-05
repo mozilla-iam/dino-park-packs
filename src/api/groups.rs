@@ -1,6 +1,5 @@
 use crate::api::models::DisplayGroupDetails;
 use crate::api::models::GroupInfo;
-use crate::cis::operations::add_group_to_profile;
 use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::*;
@@ -11,7 +10,6 @@ use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::Error;
-use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
@@ -25,7 +23,9 @@ use std::sync::Arc;
 
 #[derive(Deserialize)]
 struct GroupUpdate {
-    description: String,
+    description: Option<String>,
+    typ: Option<GroupType>,
+    group_expiration: Option<i32>,
 }
 
 #[derive(Deserialize)]
@@ -33,6 +33,7 @@ struct GroupCreate {
     name: String,
     typ: Option<GroupType>,
     description: String,
+    group_expiration: Option<i32>,
 }
 
 fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
@@ -46,13 +47,16 @@ fn update_group(
     group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
 ) -> impl Responder {
+    let group_update = group_update.into_inner();
     operations::groups::update_group(
         &pool,
         group_name.into_inner(),
-        Some(group_update.description.clone()),
+        group_update.description,
         None,
-        None,
-        None,
+        group_update.typ,
+        group_update
+            .group_expiration
+            .map(|i| if i < 1 { None } else { Some(i) }),
     )
     .map(|_| HttpResponse::Created().finish())
     .map_err(|e| Error::from(e))
@@ -84,6 +88,9 @@ fn add_group(
                 user,
                 new_group.typ.unwrap_or_else(|| GroupType::Closed),
                 TrustType::Ndaed,
+                new_group
+                    .group_expiration
+                    .and_then(|i| if i < 1 { None } else { Some(i) }),
                 cis_client,
                 user_profile.profile,
             )

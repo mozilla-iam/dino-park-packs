@@ -645,6 +645,10 @@ components:
         description:
           type: string
           example: some fancy description in markdown
+        group_expiration:
+          type: integer
+          description: period in days after which a membership expires (0 for never)
+          example: 90
     GroupUpdate:
       type: object
       properties:
@@ -658,6 +662,10 @@ components:
         description:
           type: string
           example: another description in markdown
+        group_expiration:
+          type: integer
+          description: period in days after which a membership expires (0 for never)
+          example: 90
     TrustType:
       type: string
       enum: ["Public", "Authenticated", "Vouched", "Ndaed", "Staff"]

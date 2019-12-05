@@ -2,7 +2,6 @@ use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::RoleType;
 use crate::user::User;
-use crate::utils::to_expiration_ts;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::error;
@@ -22,7 +21,7 @@ use uuid::Uuid;
 #[derive(Clone, Deserialize)]
 pub struct AddMember {
     user_uuid: Uuid,
-    group_expiration: Option<i64>,
+    group_expiration: Option<i32>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -99,7 +98,7 @@ fn add_member(
                 &group_name,
                 &host,
                 &User { user_uuid },
-                add_member.group_expiration.map(to_expiration_ts),
+                add_member.group_expiration,
                 Arc::clone(&*cis_client),
                 user_profile.profile,
             )

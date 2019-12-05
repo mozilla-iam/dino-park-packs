@@ -17,8 +17,8 @@ use uuid::Uuid;
 #[derive(Deserialize)]
 pub struct Invitation {
     user_uuid: Uuid,
-    invitation_expiration: Option<i64>,
-    group_expiration: Option<i64>,
+    invitation_expiration: Option<i32>,
+    group_expiration: Option<i32>,
 }
 
 fn invite_member(
