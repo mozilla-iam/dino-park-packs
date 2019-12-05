@@ -113,19 +113,14 @@ fn remove_member(
     scope_and_user: ScopeAndUser,
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
-    // TODO: rules
     let pool_f = pool.clone();
     let (group_name, user_uuid) = path.into_inner();
     let user = User {
         user_uuid: user_uuid,
     };
     operations::users::user_by_id(&pool, &scope_and_user.user_id)
-        .and_then(|host| {
-            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
-                .map(|user_profile| (host, user, user_profile))
-        })
         .into_future()
-        .and_then(move |(host, user, user_profile)| {
+        .and_then(move |host| {
             operations::members::remove(
                 &pool_f,
                 &scope_and_user,
@@ -133,7 +128,6 @@ fn remove_member(
                 &host,
                 &user,
                 Arc::clone(&*cis_client),
-                user_profile.profile,
             )
         })
         .map(|_| HttpResponse::Ok().finish())

@@ -42,12 +42,12 @@ fn insert_kv_and_sign_values_field(
 
 fn remove_kv_and_sign_values_field(
     field: &mut AccessInformationProviderSubObject,
-    k: String,
+    k: &str,
     store: &SecretStore,
     now: &str,
 ) -> Result<(), Error> {
     if let Some(KeyValue(ref mut values)) = &mut field.values {
-        if values.remove(&k).is_some() {
+        if values.remove(k).is_some() {
             field.metadata.last_modified = now.to_owned();
             field.signature.publisher.name = PublisherAuthority::Mozilliansorg;
             return store.sign_attribute(field);
@@ -82,7 +82,7 @@ pub fn add_group_to_profile(
 
 pub fn remove_group_from_profile(
     cis_client: Arc<CisClient>,
-    group_name: String,
+    group_name: &str,
     mut profile: Profile,
 ) -> Box<dyn Future<Item = (), Error = Error>> {
     let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);

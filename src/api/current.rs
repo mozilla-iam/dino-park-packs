@@ -57,12 +57,8 @@ fn leave(
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
     let pool_f = pool.clone();
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .and_then(move |user| {
-            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
-                .map(|user_profile| (user, user_profile))
-        })
         .into_future()
-        .and_then(move |(user, user_profile)| {
+        .and_then(move |user| {
             operations::members::leave(
                 &pool_f,
                 &scope_and_user,
@@ -70,7 +66,6 @@ fn leave(
                 &user,
                 force.force.unwrap_or_default(),
                 Arc::clone(&*cis_client),
-                user_profile.profile,
             )
         })
         .map(|_| HttpResponse::Ok().finish())

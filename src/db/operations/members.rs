@@ -1,6 +1,7 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
 use crate::db::db::Pool;
+use crate::db::operations;
 use crate::db::operations::error;
 use crate::db::operations::internal;
 use crate::db::operations::models::*;
@@ -151,20 +152,25 @@ pub fn remove(
     host: &User,
     user: &User,
     cis_client: Arc<CisClient>,
-    profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
+    let group_name_ff = group_name.to_owned();
+    let pool_f = pool.clone();
+    let user_f = *user;
     REMOVE_MEMBER
         .run(&RuleContext::minimal(
-            &pool.clone(),
+            &pool,
             scope_and_user,
             &group_name,
             &host.user_uuid,
         ))
         .map_err(Into::into)
-        .and_then(move |_| db_leave(&pool, &group_name, &user, true))
+        .and_then(|_| operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid))
         .into_future()
-        .and_then(move |_| remove_group_from_profile(cis_client, group_name_f, profile))
+        .and_then(move |user_profile| {
+            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
+        })
+        .and_then(move |_| db_leave(&pool_f, &group_name_ff, &user_f, true).into_future())
 }
 
 pub fn leave(
@@ -174,12 +180,17 @@ pub fn leave(
     user: &User,
     force: bool,
     cis_client: Arc<CisClient>,
-    profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
-    db_leave(pool, group_name, user, force)
+    let group_name_ff = group_name.to_owned();
+    let pool_f = pool.clone();
+    let user_f = *user;
+    operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
         .into_future()
-        .and_then(|_| remove_group_from_profile(cis_client, group_name_f, profile))
+        .and_then(move |user_profile| {
+            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
+        })
+        .and_then(move |_| db_leave(&pool_f, &group_name_ff, &user_f, force).into_future())
 }
 
 pub use internal::member::member_role;
