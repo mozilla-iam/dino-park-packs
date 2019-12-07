@@ -30,7 +30,7 @@ fn invite_member(
 ) -> impl Responder {
     let invitation = invitation.into_inner();
     let invitation_expiration = invitation.invitation_expiration.map(to_expiration_ts);
-    let group_expiration = invitation.group_expiration.map(to_expiration_ts);
+    let group_expiration = invitation.group_expiration;
     let member = User {
         user_uuid: invitation.user_uuid,
     };

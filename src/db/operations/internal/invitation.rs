@@ -8,6 +8,7 @@ use crate::db::schema::groups::dsl as groups;
 use crate::db::types::TrustType;
 use crate::db::views;
 use crate::user::User;
+use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
@@ -18,11 +19,13 @@ macro_rules! scoped_invitations_for_user {
         pub fn $f(connection: &PgConnection, user: &User) -> Result<Vec<DisplayInvitation>, Error> {
             use schema::groups as g;
             use schema::invitations as i;
+            use schema::terms as t;
             use schema::$t as u;
             use views::$h as h;
             i::table
                 .filter(i::user_uuid.eq(user.user_uuid))
                 .inner_join(g::table.on(g::group_id.eq(i::group_id)))
+                .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
                 .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
                 .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
                 .select((
@@ -35,6 +38,7 @@ macro_rules! scoped_invitations_for_user {
                     i::invitation_expiration,
                     i::group_expiration,
                     g::name,
+                    t::text.is_not_null(),
                     h::user_uuid,
                     h::first_name.concat(" ").concat(h::last_name),
                     h::username,
@@ -55,11 +59,13 @@ macro_rules! scoped_invitations_for {
         ) -> Result<Vec<DisplayInvitation>, Error> {
             use schema::groups as g;
             use schema::invitations as i;
+            use schema::terms as t;
             use schema::$t as u;
             use views::$h as h;
             g::table
                 .filter(g::name.eq(group_name))
                 .inner_join(i::table.on(i::group_id.eq(g::group_id)))
+                .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
                 .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
                 .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
                 .select((
@@ -72,6 +78,7 @@ macro_rules! scoped_invitations_for {
                     i::invitation_expiration,
                     i::group_expiration,
                     g::name,
+                    t::text.is_not_null(),
                     h::user_uuid,
                     h::first_name.concat(" ").concat(h::last_name),
                     h::username,
@@ -134,7 +141,7 @@ pub fn invite(
     host: User,
     member: User,
     invitation_expiration: Option<NaiveDateTime>,
-    group_expiration: Option<NaiveDateTime>,
+    group_expiration: Option<i32>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = groups::groups
@@ -176,13 +183,18 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
                 .and(schema::invitations::group_id.eq(group.id)),
         )
         .first::<Invitation>(&connection)?;
+    let expiration = match invitation.group_expiration {
+        Some(exp) => Some(exp),
+        None => group.group_expiration,
+    }
+    .map(to_expiration_ts);
     let role = internal::member::member_role(pool, group_name)?;
     let membership = InsertMembership {
         group_id: invitation.group_id,
         user_uuid: invitation.user_uuid,
         role_id: role.id,
         // TODO: figure out
-        expiration: invitation.group_expiration,
+        expiration: expiration,
         added_by: invitation.added_by,
     };
     diesel::insert_into(schema::memberships::table)

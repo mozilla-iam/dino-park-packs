@@ -33,6 +33,23 @@ impl<'a> RuleContext<'a> {
             member: None,
         }
     }
+    pub fn minimal_with_member_uuid(
+        pool: &'a Pool,
+        scope_and_user: &'a ScopeAndUser,
+        group: &'a str,
+        host_uuid: &'a Uuid,
+        member_uuid: &'a Uuid,
+    ) -> Self {
+        RuleContext {
+            pool,
+            scope_and_user,
+            group,
+            host_uuid,
+            host: None,
+            member_uuid: Some(member_uuid),
+            member: None,
+        }
+    }
 }
 
 pub type Rule = dyn Fn(&RuleContext) -> Result<(), RuleError>;
@@ -90,6 +107,15 @@ pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
         Ok(role) if role.typ == RoleType::Admin => Ok(()),
+        _ => Err(RuleError::NotAnAdmin),
+    }
+}
+
+/// Check if the host is either `RoleTpye::Admin` for the given group
+pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
+    let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
+    match operations::members::role_for(ctx.pool, member_uuid, ctx.group) {
+        Ok(role) if role.typ == RoleType::Member => Ok(()),
         _ => Err(RuleError::NotAnAdmin),
     }
 }

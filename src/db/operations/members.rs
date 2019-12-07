@@ -10,9 +10,9 @@ use crate::db::schema::groups::dsl as groups;
 use crate::db::types::*;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
+use crate::rules::engine::RENEW_MEMBER;
 use crate::rules::rules::RuleContext;
 use crate::user::User;
-use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use chrono::Utc;
 use cis_client::CisClient;
@@ -147,13 +147,7 @@ pub fn add(
             }
         })
         .and_then(move |expiration| {
-            internal::member::add_to_group(
-                &pool,
-                &group_name,
-                &host,
-                &user,
-                expiration.map(to_expiration_ts),
-            )
+            internal::member::add_to_group(&pool, &group_name, &host, &user, expiration)
         })
         .into_future()
         .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
@@ -208,6 +202,23 @@ pub fn leave(
                 .map(move |_| user)
         })
         .and_then(move |user| db_leave(&pool_f, &group_name_ff, &user, force).into_future())
+}
+pub fn renew(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+    user: &User,
+    expiration: Option<i32>,
+) -> Result<(), Error> {
+    RENEW_MEMBER.run(&RuleContext::minimal_with_member_uuid(
+        pool,
+        scope_and_user,
+        group_name,
+        &host.user_uuid,
+        &user.user_uuid,
+    ))?;
+    operations::internal::member::renew(pool, group_name, user, expiration)
 }
 
 pub use internal::member::member_role;

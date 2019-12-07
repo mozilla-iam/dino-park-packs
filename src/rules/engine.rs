@@ -10,6 +10,10 @@ pub const INVITE_MEMBER: Engine = Engine {
     rules: &[&rule_host_can_invite],
 };
 
+pub const RENEW_MEMBER: Engine = Engine {
+    rules: &[&rule_host_can_invite, &rule_user_has_member_role],
+};
+
 pub const REMOVE_MEMBER: Engine = Engine {
     rules: &[&rule_host_can_remove],
 };

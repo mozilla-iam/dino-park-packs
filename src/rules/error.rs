@@ -14,4 +14,6 @@ pub enum RuleError {
     NotAllowedToEditTerms,
     #[fail(display = "Never allowed (only admins)")]
     NeverAllowed,
+    #[fail(display = "Invalid rule context")]
+    InvalidRuleContext,
 }

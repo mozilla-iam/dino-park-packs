@@ -25,7 +25,7 @@ pub fn invite_member(
     host: User,
     member: User,
     invitation_expiration: Option<NaiveDateTime>,
-    group_expiration: Option<NaiveDateTime>,
+    group_expiration: Option<i32>,
 ) -> Result<(), Error> {
     // TODO: check db rules
     INVITE_MEMBER.run(&RuleContext::minimal(

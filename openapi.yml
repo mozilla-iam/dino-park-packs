@@ -325,6 +325,41 @@ paths:
           description: invalid input, invalid object
         "403":
           description: forbidden
+  "/groups/api/v1/members/{groupName}/{memberUuid}/renew":
+    post:
+      summary: renew a member
+      description: renew a member for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberUuid
+          description: pass in the uuid of the member to renew
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group_expiration:
+                  description: expiration period in days
+                  type: integer
+                  example: 180
+      responses:
+        "201":
+          description: member added
+        "400":
+          description: invalid input, invalid object
+        "403":
+          description: forbidden
   "/groups/api/v1/members/{groupName}/{memberUuid}":
     delete:
       summary: delete a member
@@ -454,10 +489,10 @@ paths:
           description: invalid input, invalid object
         "403":
           description: forbidden
-  "/groups/api/v1/curators/{groupName}/{memberUuid}":
-    delete:
-      summary: delete a curator
-      description: delete a curator of a group
+  "/groups/api/v1/curators/{groupName}/{memberUuid}/downgrade":
+    post:
+      summary: downgrade a curator to a normal member
+      description: downgrade a curator to a normal member
       parameters:
         - in: path
           name: groupName
@@ -467,11 +502,21 @@ paths:
             type: string
         - in: path
           name: memberUuid
-          description: pass in the uuid of the curator to delete
+          description: pass in the uuid of the curator to downgrade
           required: true
           schema:
             type: string
             format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group_expiration:
+                  type: integer
+                  example: 90
+                  description: group expiration for membership
       responses:
         "201":
           description: curator deleted
@@ -758,10 +803,10 @@ components:
           nullable: true
           example: 2014-11-28T12:45:59Z
         group_expiration:
-          type: string
-          format: datetime
+          type: integer
           nullable: true
-          example: 2014-11-28T12:45:59Z
+          example: 90
+          description: days after which membership will expire
         terms:
           type: boolean
           example: true
@@ -799,10 +844,10 @@ components:
           nullable: true
           example: 2014-11-28T12:45:59Z
         group_expiration:
-          type: string
-          format: datetime
+          type: integer
           nullable: true
-          example: 2014-11-28T12:45:59Z
+          example: 90
+          description: days after which membership will expire
         added_by:
           $ref: "#/components/schemas/AddedBy"
     AddedBy:

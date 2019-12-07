@@ -25,6 +25,11 @@ pub struct AddMember {
 }
 
 #[derive(Clone, Deserialize)]
+pub struct RenewMember {
+    group_expiration: Option<i32>,
+}
+
+#[derive(Clone, Deserialize)]
 pub enum MemberRoles {
     Any,
     Member,
@@ -63,8 +68,8 @@ fn get_members(
         .unwrap_or_else(|| MemberRoles::Any)
         .get_role_types();
     match operations::members::scoped_members_and_host(
-        &*pool,
-        &*group_name,
+        &pool,
+        &group_name,
         &scope_and_user.scope,
         query.q.clone(),
         &roles,
@@ -134,6 +139,30 @@ fn remove_member(
         .map_err(|e| error::ErrorNotFound(e))
 }
 
+fn renew_member(
+    pool: web::Data<Pool>,
+    path: web::Path<(String, Uuid)>,
+    scope_and_user: ScopeAndUser,
+    renew_member: web::Json<RenewMember>,
+) -> impl Responder {
+    let (group_name, user_uuid) = path.into_inner();
+    let user = User {
+        user_uuid: user_uuid,
+    };
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    match operations::members::renew(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &user,
+        renew_member.group_expiration,
+    ) {
+        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Err(_) => Err(error::ErrorNotFound("")),
+    }
+}
+
 pub fn members_app() -> impl HttpServiceFactory {
     web::scope("/members")
         .wrap(
@@ -150,5 +179,8 @@ pub fn members_app() -> impl HttpServiceFactory {
         )
         .service(
             web::resource("/{group_name}/{user_uuid}").route(web::delete().to_async(remove_member)),
+        )
+        .service(
+            web::resource("/{group_name}/{user_uuid}/renew").route(web::post().to(renew_member)),
         )
 }

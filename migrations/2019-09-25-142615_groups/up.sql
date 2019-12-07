@@ -45,7 +45,7 @@ CREATE TABLE invitations (
     group_id SERIAL REFERENCES groups,
     user_uuid UUID NOT NULL,
     invitation_expiration TIMESTAMP DEFAULT (NOW() + INTERVAL '1 week'),
-    group_expiration TIMESTAMP,
+    group_expiration INTEGER,
     added_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
     PRIMARY KEY (group_id, user_uuid)
 );

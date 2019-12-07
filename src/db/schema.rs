@@ -33,7 +33,7 @@ table! {
         group_id -> Int4,
         user_uuid -> Uuid,
         invitation_expiration -> Nullable<Timestamp>,
-        group_expiration -> Nullable<Timestamp>,
+        group_expiration -> Nullable<Int4>,
         added_by -> Uuid,
     }
 }

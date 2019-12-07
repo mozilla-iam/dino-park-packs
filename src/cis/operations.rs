@@ -60,18 +60,19 @@ fn remove_kv_and_sign_values_field(
 pub fn add_group_to_profile(
     cis_client: Arc<CisClient>,
     group_name: String,
-    mut profile: Profile,
+    profile: Profile,
 ) -> Box<dyn Future<Item = (), Error = Error>> {
     let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+    let mut update_profile = Profile::default();
     match insert_kv_and_sign_values_field(
-        &mut profile.access_information.mozilliansorg,
+        &mut update_profile.access_information.mozilliansorg,
         (group_name, None),
         cis_client.get_secret_store(),
         now,
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
-                Box::new(cis_client.update_user(&user_id, profile).map(|_| ()))
+                Box::new(cis_client.update_user(&user_id, update_profile).map(|_| ()))
             } else {
                 Box::new(Err(format_err!("invalid user_id")).into_future())
             }
@@ -83,18 +84,20 @@ pub fn add_group_to_profile(
 pub fn remove_group_from_profile(
     cis_client: Arc<CisClient>,
     group_name: &str,
-    mut profile: Profile,
+    profile: Profile,
 ) -> Box<dyn Future<Item = (), Error = Error>> {
     let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+    let mut update_profile = Profile::default();
+    update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
     match remove_kv_and_sign_values_field(
-        &mut profile.access_information.mozilliansorg,
+        &mut update_profile.access_information.mozilliansorg,
         group_name,
         cis_client.get_secret_store(),
         now,
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
-                Box::new(cis_client.update_user(&user_id, profile).map(|_| ()))
+                Box::new(cis_client.update_user(&user_id, update_profile).map(|_| ()))
             } else {
                 Box::new(Err(format_err!("invalid user_id")).into_future())
             }

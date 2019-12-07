@@ -34,3 +34,20 @@ pub fn add_admin(
         .into_future()
         .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
 }
+
+pub fn demote(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+    user: &User,
+    expiration: Option<i32>,
+) -> Result<(), Error> {
+    HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    internal::admin::demote_to_member(pool, group_name, user, expiration).map(|_| ())
+}

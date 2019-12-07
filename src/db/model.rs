@@ -55,7 +55,7 @@ pub struct Invitation {
     pub group_id: i32,
     pub user_uuid: Uuid,
     pub invitation_expiration: Option<NaiveDateTime>,
-    pub group_expiration: Option<NaiveDateTime>,
+    pub group_expiration: Option<i32>,
     pub added_by: Uuid,
 }
 

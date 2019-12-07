@@ -7,6 +7,7 @@ use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
+use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use futures::future::IntoFuture;
@@ -18,6 +19,11 @@ use uuid::Uuid;
 #[derive(Clone, Deserialize)]
 pub struct AddAdmin {
     member_uuid: Uuid,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct DowngradeAdmin {
+    group_expiration: Option<i32>,
 }
 
 fn add_admin(
@@ -50,6 +56,28 @@ fn add_admin(
         .map_err(|e| error::ErrorNotFound(e))
 }
 
+pub fn downgrade(
+    pool: web::Data<Pool>,
+    path: web::Path<(String, Uuid)>,
+    downgrade_admin: web::Json<DowngradeAdmin>,
+    scope_and_user: ScopeAndUser,
+) -> impl Responder {
+    let (group_name, user_uuid) = path.into_inner();
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    let user = User { user_uuid };
+    log::info!("donwgrade");
+    operations::admins::demote(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &user,
+        downgrade_admin.group_expiration,
+    )
+    .map(|_| HttpResponse::Created().finish())
+    .map_err(|e| error::ErrorNotFound(e))
+}
+
 pub fn admins_app() -> impl HttpServiceFactory {
     web::scope("/curators")
         .wrap(
@@ -66,4 +94,7 @@ pub fn admins_app() -> impl HttpServiceFactory {
         //    web::resource("/{group_name}/{user_uuid}")
         //        .route(web::delete().to_async(remove_admin)),
         )
+        .service(
+            web::resource("/{group_name}/{user_uuid}/downgrade")
+                .route(web::post().to(downgrade)))
 }

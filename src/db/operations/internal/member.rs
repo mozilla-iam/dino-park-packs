@@ -6,7 +6,7 @@ use crate::db::schema;
 use crate::db::types::*;
 use crate::db::views;
 use crate::user::User;
-use chrono::NaiveDateTime;
+use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
 use failure::Error;
 use uuid::Uuid;
@@ -152,7 +152,7 @@ pub fn add_to_group(
     group_name: &str,
     host: &User,
     member: &User,
-    expiration: Option<NaiveDateTime>,
+    expiration: Option<i32>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = schema::groups::table
@@ -163,7 +163,7 @@ pub fn add_to_group(
         group_id: group.id,
         user_uuid: member.user_uuid,
         role_id: role.id,
-        expiration,
+        expiration: expiration.map(to_expiration_ts),
         added_by: host.user_uuid,
     };
     diesel::insert_into(schema::memberships::table)
@@ -175,5 +175,27 @@ pub fn add_to_group(
         .do_update()
         .set(&membership)
         .execute(&*connection)?;
+    Ok(())
+}
+
+pub fn renew(
+    pool: &Pool,
+    group_name: &str,
+    member: &User,
+    expiration: Option<i32>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let group = schema::groups::table
+        .filter(schema::groups::name.eq(group_name))
+        .first::<Group>(&*connection)?;
+    diesel::update(
+        schema::memberships::table.filter(
+            schema::memberships::group_id
+                .eq(group.id)
+                .and(schema::memberships::user_uuid.eq(member.user_uuid)),
+        ),
+    )
+    .set(schema::memberships::expiration.eq(expiration.map(to_expiration_ts)))
+    .execute(&*connection)?;
     Ok(())
 }

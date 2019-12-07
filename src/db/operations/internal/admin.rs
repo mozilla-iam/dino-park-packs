@@ -1,8 +1,10 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
+use crate::db::operations::internal;
 use crate::db::schema;
 use crate::db::types::*;
 use crate::user::User;
+use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
 use failure::Error;
 use uuid::Uuid;
@@ -31,6 +33,33 @@ pub fn get_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
         .filter(schema::roles::typ.eq(RoleType::Admin))
         .first(&connection)
         .map_err(Into::into)
+}
+
+pub fn demote_to_member(
+    pool: &Pool,
+    group_name: &str,
+    user: &User,
+    expiration: Option<i32>,
+) -> Result<Membership, Error> {
+    let connection = pool.get()?;
+    let expiration = expiration.map(to_expiration_ts);
+    let group = schema::groups::table
+        .filter(schema::groups::name.eq(group_name))
+        .first::<Group>(&*connection)?;
+    let role = internal::member::member_role(pool, group_name)?;
+    diesel::update(
+        schema::memberships::table.filter(
+            schema::memberships::user_uuid
+                .eq(user.user_uuid)
+                .and(schema::memberships::group_id.eq(group.id)),
+        ),
+    )
+    .set((
+        schema::memberships::role_id.eq(role.id),
+        schema::memberships::expiration.eq(expiration),
+    ))
+    .get_result(&*connection)
+    .map_err(Into::into)
 }
 
 pub fn add_admin(
