@@ -3,7 +3,6 @@ use crate::api::models::GroupInfo;
 use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::*;
-use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::error;
@@ -14,11 +13,9 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use futures::future::IntoFuture;
 use futures::Future;
 use log::info;
 use serde_derive::Deserialize;
-use std::convert::TryFrom;
 use std::sync::Arc;
 
 #[derive(Deserialize)]
@@ -73,28 +70,29 @@ fn add_group(
     let cis_client = Arc::clone(&cis_client);
     let scope_and_user = scope_and_user.clone();
     info!("trying to create new group: {}", new_group.name);
-    operations::users::user_profile_by_user_id(&pool, &scope_and_user.user_id)
-        .and_then(|user_profile| {
-            User::try_from(&user_profile.profile).map(|user| (user, user_profile))
-        })
-        .map_err(Into::into)
-        .into_future()
-        .and_then(move |(user, user_profile)| {
-            operations::groups::add_new_group(
-                &pool,
-                &scope_and_user,
-                new_group.name,
-                new_group.description,
-                user,
-                new_group.typ.unwrap_or_else(|| GroupType::Closed),
-                TrustType::Ndaed,
-                new_group
-                    .group_expiration
-                    .and_then(|i| if i < 1 { None } else { Some(i) }),
-                cis_client,
-                user_profile.profile,
-            )
-        })
+    operations::groups::add_new_group(
+        &pool,
+        &scope_and_user,
+        new_group.name,
+        new_group.description,
+        new_group.typ.unwrap_or_else(|| GroupType::Closed),
+        TrustType::Ndaed,
+        new_group
+            .group_expiration
+            .and_then(|i| if i < 1 { None } else { Some(i) }),
+        cis_client,
+    )
+    .map(|_| HttpResponse::Created().finish())
+    .map_err(|e| Error::from(e))
+}
+
+fn delete_group(
+    cis_client: web::Data<Arc<CisClient>>,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    operations::groups::delete_group(&pool, &scope_and_user, &group_name, Arc::clone(&cis_client))
         .map(|_| HttpResponse::Created().finish())
         .map_err(|e| Error::from(e))
 }
@@ -155,7 +153,8 @@ pub fn groups_app() -> impl HttpServiceFactory {
         .service(
             web::resource("/{group_name}")
                 .route(web::get().to(get_group))
-                .route(web::put().to(update_group)),
+                .route(web::put().to(update_group))
+                .route(web::delete().to_async(delete_group)),
         )
         .service(web::resource("/{group_name}/details").route(web::get().to(group_details)))
 }

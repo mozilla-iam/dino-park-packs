@@ -11,6 +11,7 @@ use cis_profile::schema::Profile;
 use cis_profile::schema::PublisherAuthority;
 use failure::format_err;
 use failure::Error;
+use futures::future::Either;
 use futures::future::IntoFuture;
 use futures::Future;
 use log::warn;
@@ -61,9 +62,11 @@ pub fn add_group_to_profile(
     cis_client: Arc<CisClient>,
     group_name: String,
     profile: Profile,
-) -> Box<dyn Future<Item = (), Error = Error>> {
+) -> impl Future<Item = (), Error = Error> {
     let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
     let mut update_profile = Profile::default();
+    update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
+    update_profile.active = profile.active;
     match insert_kv_and_sign_values_field(
         &mut update_profile.access_information.mozilliansorg,
         (group_name, None),
@@ -72,12 +75,12 @@ pub fn add_group_to_profile(
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
-                Box::new(cis_client.update_user(&user_id, update_profile).map(|_| ()))
+                Either::A(cis_client.update_user(&user_id, update_profile).map(|_| ()))
             } else {
-                Box::new(Err(format_err!("invalid user_id")).into_future())
+                Either::B(Err(format_err!("invalid user_id")).into_future())
             }
         }
-        Err(e) => Box::new(Err(e).into_future()),
+        Err(e) => Either::B(Err(e).into_future()),
     }
 }
 
@@ -85,10 +88,11 @@ pub fn remove_group_from_profile(
     cis_client: Arc<CisClient>,
     group_name: &str,
     profile: Profile,
-) -> Box<dyn Future<Item = (), Error = Error>> {
+) -> impl Future<Item = (), Error = Error> {
     let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
+    update_profile.active = profile.active;
     match remove_kv_and_sign_values_field(
         &mut update_profile.access_information.mozilliansorg,
         group_name,
@@ -97,11 +101,11 @@ pub fn remove_group_from_profile(
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
-                Box::new(cis_client.update_user(&user_id, update_profile).map(|_| ()))
+                Either::A(cis_client.update_user(&user_id, update_profile).map(|_| ()))
             } else {
-                Box::new(Err(format_err!("invalid user_id")).into_future())
+                Either::B(Err(format_err!("invalid user_id")).into_future())
             }
         }
-        Err(e) => Box::new(Err(e).into_future()),
+        Err(e) => Either::B(Err(e).into_future()),
     }
 }

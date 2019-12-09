@@ -146,7 +146,7 @@ pub fn invite(
     let connection = pool.get()?;
     let group = groups::groups
         .filter(groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+        .first::<Group>(&connection)?;
     let invitation = Invitation {
         user_uuid: member.user_uuid,
         group_id: group.id.clone(),
@@ -214,4 +214,16 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
         )
         .execute(&connection)?;
     Ok(())
+}
+
+pub fn delete_invitations(pool: &Pool, group_name: &str) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let group = groups::groups
+        .filter(groups::name.eq(group_name))
+        .first::<Group>(&connection)?;
+    diesel::delete(schema::invitations::table)
+        .filter(schema::invitations::group_id.eq(group.id))
+        .execute(&connection)
+        .map(|_| ())
+        .map_err(Into::into)
 }

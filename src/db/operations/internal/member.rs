@@ -108,7 +108,7 @@ pub fn add_member_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
     };
     diesel::insert_into(schema::roles::table)
         .values(admin)
-        .get_result(&*connection)
+        .get_result(&connection)
         .map_err(Into::into)
 }
 
@@ -139,7 +139,7 @@ pub fn remove_from_group(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Res
     let connection = pool.get()?;
     let group = schema::groups::table
         .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+        .first::<Group>(&connection)?;
     diesel::delete(schema::memberships::table)
         .filter(schema::memberships::user_uuid.eq(user_uuid))
         .filter(schema::memberships::group_id.eq(group.id))
@@ -174,7 +174,7 @@ pub fn add_to_group(
         ))
         .do_update()
         .set(&membership)
-        .execute(&*connection)?;
+        .execute(&connection)?;
     Ok(())
 }
 
@@ -187,7 +187,7 @@ pub fn renew(
     let connection = pool.get()?;
     let group = schema::groups::table
         .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+        .first::<Group>(&connection)?;
     diesel::update(
         schema::memberships::table.filter(
             schema::memberships::group_id
@@ -196,6 +196,24 @@ pub fn renew(
         ),
     )
     .set(schema::memberships::expiration.eq(expiration.map(to_expiration_ts)))
-    .execute(&*connection)?;
+    .execute(&connection)?;
     Ok(())
+}
+
+pub fn get_members_not_current(
+    pool: &Pool,
+    group_name: &str,
+    current: &User,
+) -> Result<Vec<User>, Error> {
+    let connection = pool.get()?;
+    let group = schema::groups::table
+        .filter(schema::groups::name.eq(group_name))
+        .first::<Group>(&connection)?;
+    schema::memberships::table
+        .filter(schema::memberships::group_id.eq(group.id))
+        .filter(schema::memberships::user_uuid.ne(current.user_uuid))
+        .select(schema::memberships::user_uuid)
+        .get_results(&connection)
+        .map(|r| r.into_iter().map(|user_uuid| User { user_uuid }).collect())
+        .map_err(Into::into)
 }

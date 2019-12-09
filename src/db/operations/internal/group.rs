@@ -1,5 +1,6 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
+use crate::db::operations::error::OperationError;
 use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::schema;
 use crate::db::types::*;
@@ -78,6 +79,20 @@ pub fn update_group(
 }
 
 pub fn delete_group(pool: &Pool, name: &str) -> Result<(), Error> {
-    // TODO
-    Ok(())
+    let connection = pool.get()?;
+    let group = get_group(pool, name)?;
+    diesel::delete(schema::roles::table)
+        .filter(schema::roles::group_id.eq(group.id))
+        .execute(&connection)
+        .map(|_| ())?;
+    diesel::delete(schema::terms::table)
+        .filter(schema::terms::group_id.eq(group.id))
+        .execute(&connection)
+        .optional()
+        .map(|_| ())?;
+    diesel::delete(schema::groups::table)
+        .filter(schema::groups::name.eq(name))
+        .execute(&connection)
+        .map(|_| ())
+        .map_err(Into::into)
 }
