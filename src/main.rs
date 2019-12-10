@@ -4,6 +4,8 @@ extern crate diesel;
 extern crate diesel_derive_enum;
 #[macro_use]
 extern crate failure_derive;
+#[macro_use]
+extern crate diesel_migrations;
 
 mod api;
 mod cis;
@@ -26,6 +28,8 @@ use failure::Error;
 use log::info;
 use std::sync::Arc;
 
+embed_migrations!();
+
 fn main() -> Result<(), Error> {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
@@ -35,6 +39,7 @@ fn main() -> Result<(), Error> {
     let cis_client = Arc::new(CisClient::from_settings(&s.cis)?);
 
     let pool = db::db::establish_connection();
+    embedded_migrations::run_with_output(&pool.get()?, &mut std::io::stdout())?;
     let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")?;
     HttpServer::new(move || {
         let scope_middleware = ScopeAndUserAuth {
