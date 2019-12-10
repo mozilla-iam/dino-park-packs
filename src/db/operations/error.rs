@@ -4,6 +4,4 @@ pub enum OperationError {
     LastAdmin,
     #[fail(display = "Error deleting members")]
     ErrorDeletingMembers,
-    #[fail(display = "More than 1 last member")]
-    MoreThan1LastMember,
 }

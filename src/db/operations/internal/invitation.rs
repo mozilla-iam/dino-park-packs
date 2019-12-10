@@ -25,6 +25,7 @@ macro_rules! scoped_invitations_for_user {
             i::table
                 .filter(i::user_uuid.eq(user.user_uuid))
                 .inner_join(g::table.on(g::group_id.eq(i::group_id)))
+                .filter(g::active.eq(true))
                 .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
                 .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
                 .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
@@ -64,6 +65,7 @@ macro_rules! scoped_invitations_for {
             use views::$h as h;
             g::table
                 .filter(g::name.eq(group_name))
+                .filter(g::active.eq(true))
                 .inner_join(i::table.on(i::group_id.eq(g::group_id)))
                 .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
                 .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
@@ -144,9 +146,7 @@ pub fn invite(
     group_expiration: Option<i32>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
-    let group = groups::groups
-        .filter(groups::name.eq(group_name))
-        .first::<Group>(&connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     let invitation = Invitation {
         user_uuid: member.user_uuid,
         group_id: group.id.clone(),
@@ -173,9 +173,7 @@ pub fn pending_count(pool: &Pool, group_name: &str) -> Result<i64, Error> {
 
 pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error> {
     let connection = pool.get()?;
-    let group = groups::groups
-        .filter(groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     let invitation = schema::invitations::table
         .filter(
             schema::invitations::user_uuid
@@ -214,16 +212,4 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
         )
         .execute(&connection)?;
     Ok(())
-}
-
-pub fn delete_invitations(pool: &Pool, group_name: &str) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = groups::groups
-        .filter(groups::name.eq(group_name))
-        .first::<Group>(&connection)?;
-    diesel::delete(schema::invitations::table)
-        .filter(schema::invitations::group_id.eq(group.id))
-        .execute(&connection)
-        .map(|_| ())
-        .map_err(Into::into)
 }

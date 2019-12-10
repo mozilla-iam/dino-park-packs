@@ -15,6 +15,7 @@ table! {
     groups (group_id) {
         group_id -> Int4,
         name -> Varchar,
+        active -> Bool,
         path -> Varchar,
         description -> Text,
         capabilities -> Array<Capability_type>,

@@ -43,9 +43,7 @@ pub fn demote_to_member(
 ) -> Result<Membership, Error> {
     let connection = pool.get()?;
     let expiration = expiration.map(to_expiration_ts);
-    let group = schema::groups::table
-        .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     let role = internal::member::member_role(pool, group_name)?;
     diesel::update(
         schema::memberships::table.filter(
@@ -69,9 +67,7 @@ pub fn add_admin(
     user: &User,
 ) -> Result<Membership, Error> {
     let connection = pool.get()?;
-    let group = schema::groups::table
-        .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     let role = get_admin_role(pool, group.id)?;
     let admin_membership = InsertMembership {
         group_id: group.id,

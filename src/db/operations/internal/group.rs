@@ -1,6 +1,5 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
-use crate::db::operations::error::OperationError;
 use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::schema;
 use crate::db::types::*;
@@ -16,6 +15,7 @@ pub fn get_group_with_terms_flag(
     let connection = pool.get()?;
     let group = schema::groups::table
         .filter(schema::groups::name.eq(group_name))
+        .filter(schema::groups::active.eq(true))
         .first::<Group>(&connection)?;
     let terms = select(exists(
         schema::terms::table.filter(schema::terms::group_id.eq(group.id)),
@@ -28,6 +28,7 @@ pub fn get_group(pool: &Pool, group_name: &str) -> Result<Group, Error> {
     let connection = pool.get()?;
     schema::groups::table
         .filter(schema::groups::name.eq(group_name))
+        .filter(schema::groups::active.eq(true))
         .first::<Group>(&connection)
         .map_err(Into::into)
 }
@@ -44,6 +45,7 @@ pub fn add_group(
     let connection = pool.get()?;
     let group = InsertGroup {
         name,
+        active: true,
         path: String::from("/access_information/mozillians/"),
         description,
         capabilities,
@@ -95,8 +97,12 @@ pub fn delete_group(pool: &Pool, name: &str) -> Result<(), Error> {
         .execute(&connection)
         .optional()
         .map(|_| ())?;
-    diesel::delete(schema::groups::table)
+    diesel::update(schema::groups::table)
         .filter(schema::groups::name.eq(name))
+        .set((
+            schema::groups::description.eq(""),
+            schema::groups::active.eq(false),
+        ))
         .execute(&connection)
         .map(|_| ())
         .map_err(Into::into)

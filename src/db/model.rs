@@ -9,6 +9,7 @@ use uuid::Uuid;
 pub struct Group {
     pub id: i32,
     pub name: String,
+    pub active: bool,
     pub path: String,
     pub description: String,
     pub capabilities: Vec<CapabilityType>,
@@ -63,6 +64,7 @@ pub struct Invitation {
 #[table_name = "groups"]
 pub struct InsertGroup {
     pub name: String,
+    pub active: bool,
     pub path: String,
     pub description: String,
     pub capabilities: Vec<CapabilityType>,

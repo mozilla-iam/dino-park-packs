@@ -12,11 +12,8 @@ use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
 use futures::future::join_all;
-use futures::future::Either;
 use futures::future::IntoFuture;
-use futures::stream::Stream;
 use futures::Future;
-use log::warn;
 use std::convert::TryFrom;
 use std::sync::Arc;
 
@@ -83,14 +80,12 @@ pub fn delete_group(
     let group_name_f = name.to_owned();
     let group_name_ff = name.to_owned();
     let group_name_fff = name.to_owned();
-    let group_name_ffff = name.to_owned();
     let pool_f = pool.clone();
     let pool_ff = pool.clone();
     let pool_fff = pool.clone();
-    let pool_ffff = pool.clone();
     let scope_and_user_f = scope_and_user.clone();
     let scope_and_user_ff = scope_and_user.clone();
-    let cis_client_ff = Arc::clone(&cis_client);
+    let cis_client_f = Arc::clone(&cis_client);
     internal::user::user_by_id(pool, &scope_and_user.user_id)
         .and_then(|host| {
             HOST_IS_GROUP_ADMIN
@@ -104,7 +99,7 @@ pub fn delete_group(
                 .map(|_| host)
         })
         .and_then(move |host| {
-            internal::member::get_members_not_current(&pool_f, &group_name_f, &host)
+            internal::member::get_members_not_current(pool, name, &host)
                 .map(|members| (host, members))
         })
         .into_future()
@@ -113,9 +108,9 @@ pub fn delete_group(
                 .iter()
                 .map(|user| {
                     operations::members::remove(
-                        &pool_ff,
+                        &pool_f,
                         &scope_and_user_f,
-                        &group_name_ff,
+                        &group_name_f,
                         &host,
                         &user,
                         Arc::clone(&cis_client),
@@ -129,17 +124,15 @@ pub fn delete_group(
         })
         .and_then(move |host| {
             operations::members::remove(
-                &pool_fff,
+                &pool_ff,
                 &scope_and_user_ff,
-                &group_name_fff,
+                &group_name_ff,
                 &host,
                 &host,
-                cis_client_ff,
+                cis_client_f,
             )
         })
-        .and_then(move |_| {
-            internal::group::delete_group(&pool_ffff, &group_name_ffff).into_future()
-        })
+        .and_then(move |_| internal::group::delete_group(&pool_fff, &group_name_fff).into_future())
 }
 
 pub use internal::group::get_group;

@@ -8,6 +8,7 @@ CREATE TYPE rule_type AS ENUM ('staff', 'nda', 'group', 'custom');
 CREATE TABLE groups (
     group_id SERIAL PRIMARY KEY,
     name VARCHAR UNIQUE NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT true,
     path VARCHAR NOT NULL,
     description TEXT NOT NULL,
     capabilities capability_type[] NOT NULL,

@@ -1,6 +1,7 @@
 use crate::db::db::Pool;
 use crate::db::model::*;
 use crate::db::operations;
+use crate::db::operations::internal;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::types::*;
@@ -137,9 +138,7 @@ pub fn member_role(pool: &Pool, group_name: &str) -> Result<Role, Error> {
 
 pub fn remove_from_group(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<(), Error> {
     let connection = pool.get()?;
-    let group = schema::groups::table
-        .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     diesel::delete(schema::memberships::table)
         .filter(schema::memberships::user_uuid.eq(user_uuid))
         .filter(schema::memberships::group_id.eq(group.id))
@@ -155,9 +154,7 @@ pub fn add_to_group(
     expiration: Option<i32>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
-    let group = schema::groups::table
-        .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&*connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     let role = operations::internal::member::member_role(pool, group_name)?;
     let membership = InsertMembership {
         group_id: group.id,
@@ -185,9 +182,7 @@ pub fn renew(
     expiration: Option<i32>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
-    let group = schema::groups::table
-        .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     diesel::update(
         schema::memberships::table.filter(
             schema::memberships::group_id
@@ -206,9 +201,7 @@ pub fn get_members_not_current(
     current: &User,
 ) -> Result<Vec<User>, Error> {
     let connection = pool.get()?;
-    let group = schema::groups::table
-        .filter(schema::groups::name.eq(group_name))
-        .first::<Group>(&connection)?;
+    let group = internal::group::get_group(pool, group_name)?;
     schema::memberships::table
         .filter(schema::memberships::group_id.eq(group.id))
         .filter(schema::memberships::user_uuid.ne(current.user_uuid))
