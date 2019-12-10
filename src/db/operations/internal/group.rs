@@ -81,6 +81,11 @@ pub fn update_group(
 pub fn delete_group(pool: &Pool, name: &str) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = get_group(pool, name)?;
+    diesel::delete(schema::invitations::table)
+        .filter(schema::invitations::group_id.eq(group.id))
+        .execute(&connection)
+        .optional()
+        .map(|_| ())?;
     diesel::delete(schema::roles::table)
         .filter(schema::roles::group_id.eq(group.id))
         .execute(&connection)
