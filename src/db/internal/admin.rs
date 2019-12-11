@@ -1,8 +1,8 @@
-use crate::db::db::Pool;
+use crate::db::internal;
 use crate::db::model::*;
-use crate::db::operations::internal;
 use crate::db::schema;
 use crate::db::types::*;
+use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
@@ -71,10 +71,10 @@ pub fn add_admin(
     let role = get_admin_role(pool, group.id)?;
     let admin_membership = InsertMembership {
         group_id: group.id,
-        user_uuid: user.user_uuid.clone(),
+        user_uuid: user.user_uuid,
         role_id: role.id,
         expiration: None,
-        added_by: host.user_uuid.clone(),
+        added_by: host.user_uuid,
     };
     diesel::insert_into(schema::memberships::table)
         .values(&admin_membership)

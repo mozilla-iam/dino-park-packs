@@ -4,6 +4,14 @@ use chrono::NaiveDateTime;
 use serde_derive::Serialize;
 use uuid::Uuid;
 
+pub struct NewGroup {
+    pub name: String,
+    pub description: String,
+    pub typ: GroupType,
+    pub trust: TrustType,
+    pub expiration: Option<i32>,
+}
+
 pub struct GroupWithTermsFlag {
     pub group: Group,
     pub terms: bool,

@@ -1,7 +1,7 @@
-use crate::db::db::Pool;
-use crate::db::operations::internal;
+use crate::db::internal;
 use crate::db::types::TrustType;
 use crate::db::users::DisplayUser;
+use crate::db::Pool;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;

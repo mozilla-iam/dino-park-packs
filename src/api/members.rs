@@ -1,6 +1,6 @@
-use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::RoleType;
+use crate::db::Pool;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
@@ -89,14 +89,10 @@ fn add_member(
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
     let pool_f = pool.clone();
-    let user_uuid = add_member.user_uuid.clone();
+    let user_uuid = add_member.user_uuid;
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .and_then(move |host| {
-            operations::users::user_profile_by_uuid(&pool.clone(), &user_uuid)
-                .map(|user_profile| (host, user_profile))
-        })
         .into_future()
-        .and_then(move |(host, user_profile)| {
+        .and_then(move |host| {
             operations::members::add(
                 &pool_f,
                 &scope_and_user,
@@ -105,11 +101,10 @@ fn add_member(
                 &User { user_uuid },
                 add_member.group_expiration,
                 Arc::clone(&*cis_client),
-                user_profile.profile,
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| error::ErrorNotFound(e))
+        .map_err(error::ErrorNotFound)
 }
 
 fn remove_member(
@@ -120,9 +115,7 @@ fn remove_member(
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
     let pool_f = pool.clone();
     let (group_name, user_uuid) = path.into_inner();
-    let user = User {
-        user_uuid: user_uuid,
-    };
+    let user = User { user_uuid };
     operations::users::user_by_id(&pool, &scope_and_user.user_id)
         .into_future()
         .and_then(move |host| {
@@ -136,7 +129,7 @@ fn remove_member(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| error::ErrorNotFound(e))
+        .map_err(error::ErrorNotFound)
 }
 
 fn renew_member(
@@ -146,9 +139,7 @@ fn renew_member(
     renew_member: web::Json<RenewMember>,
 ) -> impl Responder {
     let (group_name, user_uuid) = path.into_inner();
-    let user = User {
-        user_uuid: user_uuid,
-    };
+    let user = User { user_uuid };
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::members::renew(
         &pool,

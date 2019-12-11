@@ -1,11 +1,10 @@
-use crate::db::db::Pool;
+use crate::db::internal;
 use crate::db::model::*;
-use crate::db::operations;
-use crate::db::operations::internal;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::types::*;
 use crate::db::views;
+use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
@@ -155,7 +154,7 @@ pub fn add_to_group(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = internal::group::get_group(pool, group_name)?;
-    let role = operations::internal::member::member_role(pool, group_name)?;
+    let role = internal::member::member_role(pool, group_name)?;
     let membership = InsertMembership {
         group_id: group.id,
         user_uuid: member.user_uuid,

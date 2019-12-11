@@ -1,5 +1,5 @@
-use crate::db::db::Pool;
 use crate::db::operations;
+use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use actix_cors::Cors;

@@ -1,12 +1,12 @@
 use crate::cis::operations::add_group_to_profile;
-use crate::db::db::Pool;
+use crate::db::internal;
 use crate::db::operations;
 use crate::db::operations::error::OperationError;
-use crate::db::operations::internal;
-use crate::db::types::*;
+use crate::db::operations::models::NewGroup;
+use crate::db::Pool;
 use crate::rules::engine::CREATE_GROUP;
 use crate::rules::engine::HOST_IS_GROUP_ADMIN;
-use crate::rules::rules::RuleContext;
+use crate::rules::RuleContext;
 use crate::user::User;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
@@ -17,17 +17,16 @@ use futures::Future;
 use std::convert::TryFrom;
 use std::sync::Arc;
 
-fn add_new_group_db(
-    pool: &Pool,
-    name: String,
-    description: String,
-    creator: User,
-    typ: GroupType,
-    trust: TrustType,
-    expiration: Option<i32>,
-) -> Result<(), Error> {
-    let new_group =
-        internal::group::add_group(pool, name, description, vec![], typ, trust, expiration)?;
+fn add_new_group_db(pool: &Pool, new_group: NewGroup, creator: User) -> Result<(), Error> {
+    let new_group = internal::group::add_group(
+        pool,
+        new_group.name,
+        new_group.description,
+        vec![],
+        new_group.typ,
+        new_group.trust,
+        new_group.expiration,
+    )?;
     internal::admin::add_admin_role(pool, new_group.id)?;
     internal::member::add_member_role(pool, new_group.id)?;
     internal::admin::add_admin(pool, &new_group.name, &User::default(), &creator)?;
@@ -37,14 +36,10 @@ fn add_new_group_db(
 pub fn add_new_group(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
-    name: String,
-    description: String,
-    typ: GroupType,
-    trust: TrustType,
-    expiration: Option<i32>,
+    new_group: NewGroup,
     cis_client: Arc<CisClient>,
 ) -> impl Future<Item = (), Error = Error> {
-    let group_name_f = name.clone();
+    let group_name_f = new_group.name.clone();
     internal::user::user_profile_by_user_id(&pool, &scope_and_user.user_id)
         .and_then(|user_profile| {
             User::try_from(&user_profile.profile).map(|user| (user, user_profile))
@@ -54,15 +49,14 @@ pub fn add_new_group(
                 .run(&RuleContext::minimal(
                     pool,
                     scope_and_user,
-                    &name,
+                    &new_group.name,
                     &user.user_uuid,
                 ))
                 .map(|_| (user, user_profile))
                 .map_err(Into::into)
         })
         .and_then(|(user, user_profile)| {
-            add_new_group_db(pool, name, description, user, typ, trust, expiration)
-                .map(|_| user_profile)
+            add_new_group_db(pool, new_group, user).map(|_| user_profile)
         })
         .into_future()
         .and_then(move |user_profile| {

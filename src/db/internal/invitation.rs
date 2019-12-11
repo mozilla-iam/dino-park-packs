@@ -1,12 +1,12 @@
-use crate::db::db::Pool;
+use crate::db::internal;
 use crate::db::model::*;
-use crate::db::operations::internal;
 use crate::db::operations::models::DisplayInvitation;
 use crate::db::operations::models::InvitationAndHost;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::TrustType;
 use crate::db::views;
+use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
@@ -149,7 +149,7 @@ pub fn invite(
     let group = internal::group::get_group(pool, group_name)?;
     let invitation = Invitation {
         user_uuid: member.user_uuid,
-        group_id: group.id.clone(),
+        group_id: group.id,
         invitation_expiration,
         group_expiration,
         added_by: host.user_uuid,
@@ -191,8 +191,7 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
         group_id: invitation.group_id,
         user_uuid: invitation.user_uuid,
         role_id: role.id,
-        // TODO: figure out
-        expiration: expiration,
+        expiration,
         added_by: invitation.added_by,
     };
     diesel::insert_into(schema::memberships::table)

@@ -1,5 +1,5 @@
-use crate::db::db::Pool;
 use crate::db::operations;
+use crate::db::Pool;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
@@ -34,7 +34,7 @@ fn add_admin(
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = error::Error> {
     let pool_f = pool.clone();
-    let user_uuid = add_admin.member_uuid.clone();
+    let user_uuid = add_admin.member_uuid;
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
         .and_then(move |host| {
             operations::users::user_profile_by_uuid(&pool.clone(), &user_uuid)
@@ -53,7 +53,7 @@ fn add_admin(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| error::ErrorNotFound(e))
+        .map_err(error::ErrorNotFound)
 }
 
 pub fn downgrade(
@@ -75,7 +75,7 @@ pub fn downgrade(
         downgrade_admin.group_expiration,
     )
     .map(|_| HttpResponse::Created().finish())
-    .map_err(|e| error::ErrorNotFound(e))
+    .map_err(error::ErrorNotFound)
 }
 
 pub fn admins_app() -> impl HttpServiceFactory {

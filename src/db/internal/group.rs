@@ -1,8 +1,8 @@
-use crate::db::db::Pool;
 use crate::db::model::*;
 use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::schema;
 use crate::db::types::*;
+use crate::db::Pool;
 use diesel::dsl::exists;
 use diesel::dsl::select;
 use diesel::prelude::*;
@@ -60,6 +60,7 @@ pub fn add_group(
         .map_err(Into::into)
 }
 
+#[allow(clippy::option_option)]
 pub fn update_group(
     pool: &Pool,
     name: String,

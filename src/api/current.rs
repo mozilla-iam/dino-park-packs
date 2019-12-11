@@ -1,5 +1,5 @@
-use crate::db::db::Pool;
 use crate::db::operations;
+use crate::db::Pool;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::error;
@@ -44,7 +44,7 @@ fn join(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(|e| error::ErrorNotFound(e))
+        .map_err(error::ErrorNotFound)
 }
 
 fn leave(
@@ -64,7 +64,7 @@ fn leave(
         Arc::clone(&*cis_client),
     )
     .map(|_| HttpResponse::Ok().finish())
-    .map_err(|e| error::ErrorNotFound(e))
+    .map_err(error::ErrorNotFound)
 }
 
 fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {

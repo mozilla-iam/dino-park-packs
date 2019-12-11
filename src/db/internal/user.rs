@@ -1,9 +1,9 @@
-use crate::db::db::Pool;
 use crate::db::error::DBError;
 use crate::db::schema;
 use crate::db::types::TrustType;
 use crate::db::users::UserProfile;
 use crate::db::users::*;
+use crate::db::Pool;
 use crate::user::User;
 use cis_profile::schema::Profile;
 use diesel::prelude::*;
@@ -55,7 +55,7 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
         .execute(&connection)?;
 
     let profile_id_uuid = UserIdUuid {
-        user_uuid: user_profile.user_uuid.clone(),
+        user_uuid: user_profile.user_uuid,
         user_id: user_profile.user_id.clone(),
     };
 

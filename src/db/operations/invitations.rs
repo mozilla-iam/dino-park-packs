@@ -1,9 +1,9 @@
 use crate::cis::operations::add_group_to_profile;
-use crate::db::db::Pool;
-use crate::db::operations::internal::invitation::*;
+use crate::db::internal::invitation::*;
 use crate::db::operations::models::*;
+use crate::db::Pool;
 use crate::rules::engine::*;
-use crate::rules::rules::RuleContext;
+use crate::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
 use cis_client::CisClient;

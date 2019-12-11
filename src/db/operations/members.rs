@@ -1,22 +1,21 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
-use crate::db::db::Pool;
+use crate::db::internal;
 use crate::db::operations;
 use crate::db::operations::error;
-use crate::db::operations::internal;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::*;
+use crate::db::Pool;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::engine::RENEW_MEMBER;
-use crate::rules::rules::RuleContext;
+use crate::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
 use chrono::Utc;
 use cis_client::CisClient;
-use cis_profile::schema::Profile;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
@@ -38,7 +37,7 @@ pub fn scoped_members_and_host(
     offset: Option<i64>,
 ) -> Result<PaginatedDisplayMembersAndHost, Error> {
     let connection = pool.get()?;
-    let members = match scope {
+    match scope {
         "staff" => internal::member::staff_scoped_members_and_host(
             &connection,
             group_name,
@@ -79,10 +78,8 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        _ => return Err(format_err!("invalid scope")),
-    };
-
-    members
+        _ => Err(format_err!("invalid scope")),
+    }
 }
 
 pub fn member_count(pool: &Pool, group_name: &str) -> Result<i64, Error> {
@@ -128,9 +125,10 @@ pub fn add(
     user: &User,
     expiration: Option<i32>,
     cis_client: Arc<CisClient>,
-    profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
+    let user_uuid_f = user.user_uuid;
+    let pool_f = pool.clone();
     ONLY_ADMINS
         .run(&RuleContext::minimal(
             &pool.clone(),
@@ -150,7 +148,10 @@ pub fn add(
             internal::member::add_to_group(&pool, &group_name, &host, &user, expiration)
         })
         .into_future()
-        .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
+        .and_then(move |_| operations::users::user_profile_by_uuid(&pool_f, &user_uuid_f))
+        .and_then(move |user_profile| {
+            add_group_to_profile(cis_client, group_name_f, user_profile.profile)
+        })
 }
 
 pub fn remove(
@@ -218,7 +219,7 @@ pub fn renew(
         &host.user_uuid,
         &user.user_uuid,
     ))?;
-    operations::internal::member::renew(pool, group_name, user, expiration)
+    internal::member::renew(pool, group_name, user, expiration)
 }
 
 pub use internal::member::member_role;

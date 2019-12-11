@@ -1,8 +1,8 @@
 use crate::cis::operations::add_group_to_profile;
-use crate::db::db::Pool;
-use crate::db::operations::internal;
+use crate::db::internal;
+use crate::db::Pool;
 use crate::rules::engine::*;
-use crate::rules::rules::RuleContext;
+use crate::rules::RuleContext;
 use crate::user::User;
 use cis_client::CisClient;
 use cis_profile::schema::Profile;

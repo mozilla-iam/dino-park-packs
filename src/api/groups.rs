@@ -1,8 +1,9 @@
 use crate::api::models::DisplayGroupDetails;
 use crate::api::models::GroupInfo;
-use crate::db::db::Pool;
 use crate::db::operations;
+use crate::db::operations::models::NewGroup;
 use crate::db::types::*;
+use crate::db::Pool;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::error;
@@ -56,7 +57,7 @@ fn update_group(
             .map(|i| if i < 1 { None } else { Some(i) }),
     )
     .map(|_| HttpResponse::Created().finish())
-    .map_err(|e| Error::from(e))
+    .map_err(error::ErrorNotFound)
 }
 
 fn add_group(
@@ -70,20 +71,18 @@ fn add_group(
     let cis_client = Arc::clone(&cis_client);
     let scope_and_user = scope_and_user.clone();
     info!("trying to create new group: {}", new_group.name);
-    operations::groups::add_new_group(
-        &pool,
-        &scope_and_user,
-        new_group.name,
-        new_group.description,
-        new_group.typ.unwrap_or_else(|| GroupType::Closed),
-        TrustType::Ndaed,
-        new_group
+    let new_group = NewGroup {
+        name: new_group.name,
+        description: new_group.description,
+        typ: new_group.typ.unwrap_or_else(|| GroupType::Closed),
+        trust: TrustType::Ndaed,
+        expiration: new_group
             .group_expiration
             .and_then(|i| if i < 1 { None } else { Some(i) }),
-        cis_client,
-    )
-    .map(|_| HttpResponse::Created().finish())
-    .map_err(|e| Error::from(e))
+    };
+    operations::groups::add_new_group(&pool, &scope_and_user, new_group, cis_client)
+        .map(|_| HttpResponse::Created().finish())
+        .map_err(error::ErrorNotFound)
 }
 
 fn delete_group(
@@ -94,7 +93,7 @@ fn delete_group(
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     operations::groups::delete_group(&pool, &scope_and_user, &group_name, Arc::clone(&cis_client))
         .map(|_| HttpResponse::Created().finish())
-        .map_err(|e| Error::from(e))
+        .map_err(error::ErrorNotFound)
 }
 
 fn group_details(

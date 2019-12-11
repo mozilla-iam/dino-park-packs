@@ -1,7 +1,7 @@
-use crate::db::db::Pool;
+use crate::db::internal;
 use crate::db::model::*;
-use crate::db::operations::internal;
 use crate::db::schema;
+use crate::db::Pool;
 use diesel::prelude::*;
 use failure::Error;
 

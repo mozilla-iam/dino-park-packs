@@ -1,5 +1,6 @@
 use crate::rules::error::RuleError;
-use crate::rules::rules::*;
+use crate::rules::functions::*;
+use crate::rules::RuleContext;
 use log::info;
 
 pub const CREATE_GROUP: Engine = Engine {
@@ -59,7 +60,7 @@ mod test {
 
     #[test]
     fn simple_rule_stuct_creator_success() -> Result<(), Error> {
-        let pool = db::db::establish_connection();
+        let pool = db::establish_connection();
         let scope_and_user = ScopeAndUser {
             user_id: String::from("some_id"),
             scope: String::from("staff"),
@@ -84,7 +85,7 @@ mod test {
 
     #[test]
     fn simple_rule_stuct_creator_fail() -> Result<(), Error> {
-        let pool = db::db::establish_connection();
+        let pool = db::establish_connection();
         let scope_and_user = ScopeAndUser {
             user_id: String::from("some_id"),
             scope: String::from("staff"),

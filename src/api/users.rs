@@ -1,6 +1,6 @@
-use crate::db::db::Pool;
 use crate::db::operations;
 use crate::db::types::TrustType;
+use crate::db::Pool;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::error;
