@@ -1,8 +1,8 @@
+use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpRequest;
@@ -26,7 +26,7 @@ fn join(
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = error::Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let pool_f = pool.clone();
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
         .and_then(move |user| {
@@ -44,7 +44,7 @@ fn join(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(error::ErrorNotFound)
+        .map_err(Into::into)
 }
 
 fn leave(
@@ -54,7 +54,7 @@ fn leave(
     scope_and_user: ScopeAndUser,
     force: web::Query<ForceLeave>,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = error::Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let pool_f = pool.clone();
     operations::members::leave(
         &pool_f,
@@ -64,14 +64,14 @@ fn leave(
         Arc::clone(&*cis_client),
     )
     .map(|_| HttpResponse::Ok().finish())
-    .map_err(error::ErrorNotFound)
+    .map_err(Into::into)
 }
 
 fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user, &user) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
-        Err(e) => Err(error::ErrorNotFound(e)),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 

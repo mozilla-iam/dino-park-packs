@@ -1,10 +1,10 @@
+use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::types::RoleType;
 use crate::db::Pool;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpRequest;
@@ -77,7 +77,7 @@ fn get_members(
         query.n,
     ) {
         Ok(members) => Ok(HttpResponse::Ok().json(members)),
-        Err(_) => Err(error::ErrorNotFound("")),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 
@@ -87,7 +87,7 @@ fn add_member(
     scope_and_user: ScopeAndUser,
     add_member: web::Json<AddMember>,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = error::Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let pool_f = pool.clone();
     let user_uuid = add_member.user_uuid;
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
@@ -104,7 +104,7 @@ fn add_member(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(error::ErrorNotFound)
+        .map_err(ApiError::NotAcceptableError)
 }
 
 fn remove_member(
@@ -112,7 +112,7 @@ fn remove_member(
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = error::Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let pool_f = pool.clone();
     let (group_name, user_uuid) = path.into_inner();
     let user = User { user_uuid };
@@ -129,7 +129,7 @@ fn remove_member(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(error::ErrorNotFound)
+        .map_err(ApiError::NotAcceptableError)
 }
 
 fn renew_member(
@@ -150,7 +150,7 @@ fn renew_member(
         renew_member.group_expiration,
     ) {
         Ok(_) => Ok(HttpResponse::Created().finish()),
-        Err(_) => Err(error::ErrorNotFound("")),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 

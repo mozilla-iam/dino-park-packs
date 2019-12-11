@@ -1,13 +1,12 @@
+use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use crate::user::User;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use futures::future::IntoFuture;
@@ -32,7 +31,7 @@ fn add_admin(
     scope_and_user: ScopeAndUser,
     add_admin: web::Json<AddAdmin>,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = error::Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let pool_f = pool.clone();
     let user_uuid = add_admin.member_uuid;
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
@@ -53,7 +52,7 @@ fn add_admin(
             )
         })
         .map(|_| HttpResponse::Ok().finish())
-        .map_err(error::ErrorNotFound)
+        .map_err(Into::into)
 }
 
 pub fn downgrade(
@@ -61,7 +60,7 @@ pub fn downgrade(
     path: web::Path<(String, Uuid)>,
     downgrade_admin: web::Json<DowngradeAdmin>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let user = User { user_uuid };
@@ -75,7 +74,7 @@ pub fn downgrade(
         downgrade_admin.group_expiration,
     )
     .map(|_| HttpResponse::Created().finish())
-    .map_err(error::ErrorNotFound)
+    .map_err(ApiError::NotAcceptableError)
 }
 
 pub fn admins_app() -> impl HttpServiceFactory {
@@ -87,14 +86,8 @@ pub fn admins_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(web::resource("/{group_name}")
-                .route(web::post().to_async(add_admin))
-        //.route(web::get().to(get_admins)))
-        //.service(
-        //    web::resource("/{group_name}/{user_uuid}")
-        //        .route(web::delete().to_async(remove_admin)),
-        )
+        .service(web::resource("/{group_name}").route(web::post().to_async(add_admin)))
         .service(
-            web::resource("/{group_name}/{user_uuid}/downgrade")
-                .route(web::post().to(downgrade)))
+            web::resource("/{group_name}/{user_uuid}/downgrade").route(web::post().to(downgrade)),
+        )
 }

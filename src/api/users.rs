@@ -1,9 +1,9 @@
+use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::types::TrustType;
 use crate::db::Pool;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
@@ -23,7 +23,7 @@ fn search_users(
 ) -> impl Responder {
     match operations::users::search_users(&pool, scope_and_user, query.t.clone(), &query.q) {
         Ok(users) => Ok(HttpResponse::Ok().json(users)),
-        Err(_) => Err(error::ErrorNotFound("")),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 

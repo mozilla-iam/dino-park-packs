@@ -1,10 +1,10 @@
+use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpRequest;
@@ -45,7 +45,7 @@ fn invite_member(
         group_expiration,
     ) {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => Err(error::ErrorNotFound(e)),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 
@@ -58,7 +58,7 @@ pub fn pending(
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations(&pool, &scope_and_user, &group_name, &host) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
-        Err(e) => Err(error::ErrorNotFound(e)),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 

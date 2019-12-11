@@ -1,3 +1,4 @@
+use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use actix_cors::Cors;
@@ -8,7 +9,6 @@ use actix_web::error;
 use actix_web::http;
 use actix_web::web;
 use actix_web::web::Bytes;
-use actix_web::Error;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_profile::schema::Profile;
@@ -16,6 +16,7 @@ use futures::future;
 use futures::future::IntoFuture;
 use futures::Future;
 use futures::Stream;
+use log::error;
 use serde_derive::Serialize;
 
 #[derive(Serialize)]
@@ -30,7 +31,7 @@ fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Respo
 fn bulk_update_users(
     pool: web::Data<Pool>,
     multipart: Multipart,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     multipart
         .map(move |field| {
             let pool = pool.clone();
@@ -43,8 +44,8 @@ fn bulk_update_users(
                     }))
                 })
                 .map_err(|e| {
-                    println!("failed multipart for intermediate, {:?}", e);
-                    error::ErrorBadRequest(e)
+                    error!("failed multipart, {:?}", e);
+                    ApiError::MultipartError
                 })
                 .and_then(move |buf: Vec<u8>| {
                     serde_json::from_slice::<Vec<Profile>>(&buf)
@@ -57,7 +58,7 @@ fn bulk_update_users(
                 })
                 .into_stream()
         })
-        .map_err(error::ErrorBadRequest)
+        .map_err(|_| ApiError::MultipartError)
         .flatten()
         .collect()
         .map(|mut v| v.pop().unwrap_or_default())

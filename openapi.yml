@@ -47,10 +47,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Group"
-        "400":
-          description: bad input parameter
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     put:
       summary: updates a group
       description: |
@@ -71,10 +69,8 @@ paths:
       responses:
         "201":
           description: updates applied
-        "400":
-          description: invalid input, object invalid
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     delete:
       summary: deletes a group
       description: |
@@ -89,10 +85,8 @@ paths:
       responses:
         "201":
           description: group deleted
-        "400":
-          description: invalid input, object invalid
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/groups/{groupName}/details":
     get:
       summary: detailed group information
@@ -130,10 +124,8 @@ paths:
               schema:
                 type: string
                 example: some terms
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     delete:
       summary: delete group terms
       description: delete the terms of condition for a group
@@ -147,10 +139,8 @@ paths:
       responses:
         "201":
           description: terms deleted
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     post:
       summary: create group terms
       description: create terms of condition for a group
@@ -173,10 +163,8 @@ paths:
       responses:
         "201":
           description: terms created
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     put:
       summary: update group terms
       description: update terms of condition for a group
@@ -199,10 +187,8 @@ paths:
       responses:
         "201":
           description: terms updated
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/invitations/{groupName}":
     get:
       summary: group invitations
@@ -223,10 +209,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Invitation"
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     post:
       summary: invite a member
       description: invite a member to a group
@@ -258,10 +242,8 @@ paths:
       responses:
         "201":
           description: member invited
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/invitations/{groupName}/{userUuid}":
     put:
       summary: update an invitation
@@ -297,10 +279,8 @@ paths:
       responses:
         "201":
           description: invitation updated
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     delete:
       summary: delete an invitation
       description: delete an invitation for a group
@@ -321,10 +301,8 @@ paths:
       responses:
         "201":
           description: invitation deleted
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/members/{groupName}/{memberUuid}/renew":
     post:
       summary: renew a member
@@ -356,10 +334,8 @@ paths:
       responses:
         "201":
           description: member added
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/members/{groupName}/{memberUuid}":
     delete:
       summary: delete a member
@@ -381,10 +357,8 @@ paths:
       responses:
         "201":
           description: member deleted
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
     post:
       summary: add a member
       description: add a member to a group (admins only)
@@ -415,10 +389,8 @@ paths:
       responses:
         "201":
           description: member added
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/members/{groupName}":
     get:
       summary: paginated members
@@ -485,10 +457,8 @@ paths:
       responses:
         "201":
           description: curator added
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/curators/{groupName}/{memberUuid}/downgrade":
     post:
       summary: downgrade a curator to a normal member
@@ -520,10 +490,8 @@ paths:
       responses:
         "201":
           description: curator deleted
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/users":
     get:
       summary: search for users
@@ -573,10 +541,8 @@ paths:
       responses:
         "201":
           description: left group
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
   "/groups/api/v1/self/invitations":
     get:
       summary: inviations for the logged in user
@@ -619,10 +585,8 @@ paths:
                     type: string
                     enum: [pending, joined]
                     example: joined
-        "400":
-          description: invalid input, invalid object
-        "403":
-          description: forbidden
+        "406":
+          description: not acceptable
 servers:
   - url: http://localhost:8085
 components:

@@ -1,3 +1,4 @@
+use crate::api::error::ApiError;
 use crate::api::models::DisplayGroupDetails;
 use crate::api::models::GroupInfo;
 use crate::db::operations;
@@ -6,10 +7,8 @@ use crate::db::types::*;
 use crate::db::Pool;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::error;
 use actix_web::http;
 use actix_web::web;
-use actix_web::Error;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
@@ -37,7 +36,7 @@ struct GroupCreate {
 fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     operations::groups::get_group(&pool, &group_name)
         .map(|group| HttpResponse::Ok().json(group))
-        .map_err(|_| HttpResponse::NotFound().finish())
+        .map_err(ApiError::NotAcceptableError)
 }
 
 fn update_group(
@@ -57,7 +56,7 @@ fn update_group(
             .map(|i| if i < 1 { None } else { Some(i) }),
     )
     .map(|_| HttpResponse::Created().finish())
-    .map_err(error::ErrorNotFound)
+    .map_err(ApiError::NotAcceptableError)
 }
 
 fn add_group(
@@ -65,7 +64,7 @@ fn add_group(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     new_group: web::Json<GroupCreate>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let new_group = new_group.into_inner();
     let pool = pool.clone();
     let cis_client = Arc::clone(&cis_client);
@@ -82,7 +81,7 @@ fn add_group(
     };
     operations::groups::add_new_group(&pool, &scope_and_user, new_group, cis_client)
         .map(|_| HttpResponse::Created().finish())
-        .map_err(error::ErrorNotFound)
+        .map_err(ApiError::NotAcceptableError)
 }
 
 fn delete_group(
@@ -90,22 +89,22 @@ fn delete_group(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
     operations::groups::delete_group(&pool, &scope_and_user, &group_name, Arc::clone(&cis_client))
         .map(|_| HttpResponse::Created().finish())
-        .map_err(error::ErrorNotFound)
+        .map_err(ApiError::NotAcceptableError)
 }
 
 fn group_details(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let page_size = 20;
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
-        _ => return Err(error::ErrorNotFound("")),
+        Err(e) => return Err(ApiError::NotAcceptableError(e)),
     };
     let group = operations::groups::get_group_with_terms_flag(&pool, &group_name)?;
     let members = operations::members::scoped_members_and_host(
