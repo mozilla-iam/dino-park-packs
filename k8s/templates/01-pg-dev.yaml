@@ -1,0 +1,56 @@
+{{ if eq .Values.env "dev" -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}-pg-service
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: {{ .Values.name }}-pg
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-pg-deployment
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}-pg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}-pg
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}-pg
+    spec:
+      containers:
+        - name: {{ .Values.name }}-pg
+          image: postgres:latest
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 1024Mi
+          ports:
+            - containerPort: 5432
+          env:
+            {{- range $key, $value := .Values }}{{ if hasPrefix "env_" $key }}
+            - name: {{ $key | trimPrefix "env_" }}
+              value: "{{ $value }}"
+            {{- end }}{{- end }}
+            - name: POSTGRES_DB
+              value: dino-park-packs
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dino-park-packs-pg
+                  key: password
+{{- end }}

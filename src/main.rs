@@ -38,7 +38,7 @@ fn main() -> Result<(), Error> {
     let s = settings::Settings::new()?;
     let cis_client = Arc::new(CisClient::from_settings(&s.cis)?);
 
-    let pool = db::establish_connection();
+    let pool = db::establish_connection(&s.packs.postgres_url);
     embedded_migrations::run_with_output(&pool.get()?, &mut std::io::stdout())?;
     let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")?;
     HttpServer::new(move || {

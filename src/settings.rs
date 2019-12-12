@@ -4,13 +4,19 @@ use serde_derive::Deserialize;
 use std::env;
 
 #[derive(Debug, Deserialize)]
+pub struct Packs {
+    pub postgres_url: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub cis: CisSettings,
+    pub packs: Packs,
 }
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
-        let file = env::var("DPG_SETTINGS").unwrap_or_else(|_| String::from(".settings"));
+        let file = env::var("DPP_SETTINGS").unwrap_or_else(|_| String::from(".settings"));
         let mut s = Config::new();
         s.merge(File::with_name(&file))?;
         s.merge(Environment::new().separator("__"))?;

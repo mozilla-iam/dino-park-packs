@@ -54,13 +54,15 @@ impl<'a> Engine<'a> {
 mod test {
     use super::*;
     use crate::db;
+    use crate::settings;
     use dino_park_gate::scope::ScopeAndUser;
     use failure::Error;
     use uuid::Uuid;
 
     #[test]
     fn simple_rule_stuct_creator_success() -> Result<(), Error> {
-        let pool = db::establish_connection();
+        let s = settings::Settings::new()?;
+        let pool = db::establish_connection(&s.packs.postgres_url);
         let scope_and_user = ScopeAndUser {
             user_id: String::from("some_id"),
             scope: String::from("staff"),
@@ -85,7 +87,8 @@ mod test {
 
     #[test]
     fn simple_rule_stuct_creator_fail() -> Result<(), Error> {
-        let pool = db::establish_connection();
+        let s = settings::Settings::new()?;
+        let pool = db::establish_connection(&s.packs.postgres_url);
         let scope_and_user = ScopeAndUser {
             user_id: String::from("some_id"),
             scope: String::from("staff"),
