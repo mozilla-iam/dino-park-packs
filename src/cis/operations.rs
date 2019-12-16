@@ -1,4 +1,4 @@
-use chrono::SecondsFormat;
+use chrono::DateTime;
 use chrono::Utc;
 use cis_client::AsyncCisClientTrait;
 use cis_client::CisClient;
@@ -22,21 +22,22 @@ fn insert_kv_and_sign_values_field(
     field: &mut AccessInformationProviderSubObject,
     kv: (String, Option<String>),
     store: &SecretStore,
-    now: &str,
+    now: &DateTime<Utc>,
 ) -> Result<(), Error> {
     if let Some(KeyValue(ref mut values)) = &mut field.values {
         values.insert(kv.0, kv.1);
     } else {
+        field.metadata.created = *now;
         field.values = Some(KeyValue({
             let mut btm = BTreeMap::new();
             btm.insert(kv.0, kv.1);
             btm
-        }))
+        }));
     }
     if field.metadata.display.is_none() {
         field.metadata.display = Some(Display::Staff);
     }
-    field.metadata.last_modified = now.to_owned();
+    field.metadata.last_modified = *now;
     field.signature.publisher.name = PublisherAuthority::Mozilliansorg;
     store.sign_attribute(field)
 }
@@ -45,11 +46,11 @@ fn remove_kv_and_sign_values_field(
     field: &mut AccessInformationProviderSubObject,
     k: &str,
     store: &SecretStore,
-    now: &str,
+    now: &DateTime<Utc>,
 ) -> Result<(), Error> {
     if let Some(KeyValue(ref mut values)) = &mut field.values {
         if values.remove(k).is_some() {
-            field.metadata.last_modified = now.to_owned();
+            field.metadata.last_modified = *now;
             field.signature.publisher.name = PublisherAuthority::Mozilliansorg;
             return store.sign_attribute(field);
         }
@@ -63,7 +64,7 @@ pub fn add_group_to_profile(
     group_name: String,
     profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
-    let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+    let now = &Utc::now();
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
     update_profile.active = profile.active;
@@ -71,7 +72,7 @@ pub fn add_group_to_profile(
         &mut update_profile.access_information.mozilliansorg,
         (group_name, None),
         cis_client.get_secret_store(),
-        now,
+        &now,
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
@@ -89,7 +90,7 @@ pub fn remove_group_from_profile(
     group_name: &str,
     profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
-    let now = &Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true);
+    let now = &Utc::now();
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
     update_profile.active = profile.active;
@@ -97,7 +98,7 @@ pub fn remove_group_from_profile(
         &mut update_profile.access_information.mozilliansorg,
         group_name,
         cis_client.get_secret_store(),
-        now,
+        &now,
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {

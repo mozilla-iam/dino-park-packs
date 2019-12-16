@@ -35,6 +35,17 @@ pub fn add_admin(
         .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
 }
 
+pub fn is_admin(pool: &Pool, scope_and_user: &ScopeAndUser, group_name: &str, host: &User) -> bool {
+    HOST_IS_GROUP_ADMIN
+        .run(&RuleContext::minimal(
+            pool,
+            scope_and_user,
+            &group_name,
+            &host.user_uuid,
+        ))
+        .is_ok()
+}
+
 pub fn demote(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,

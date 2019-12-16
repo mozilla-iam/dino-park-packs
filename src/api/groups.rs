@@ -101,6 +101,7 @@ fn group_details(
     scope_and_user: ScopeAndUser,
 ) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    let curator = operations::admins::is_admin(&pool, &scope_and_user, &group_name, &host);
     let page_size = 20;
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
@@ -116,14 +117,27 @@ fn group_details(
         page_size,
         None,
     )?;
-    let invitation_count = operations::invitations::pending_invitations_count(
-        &pool,
-        &scope_and_user,
-        &group_name,
-        &host,
-    )?;
-    let renewal_count = operations::members::renewal_count(&pool, &group_name, None)?;
+    let invitation_count = if curator {
+        Some(operations::invitations::pending_invitations_count(
+            &pool,
+            &scope_and_user,
+            &group_name,
+            &host,
+        )?)
+    } else {
+        None
+    };
+    let renewal_count = if curator {
+        Some(operations::members::renewal_count(
+            &pool,
+            &group_name,
+            None,
+        )?)
+    } else {
+        None
+    };
     let result = DisplayGroupDetails {
+        curator,
         group: GroupInfo {
             name: group.group.name,
             description: group.group.description,

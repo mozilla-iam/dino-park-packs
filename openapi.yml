@@ -836,6 +836,9 @@ components:
     GroupDetails:
       type: object
       properties:
+        curator:
+          type: boolean
+          example: true
         members:
           type: object
           properties:
