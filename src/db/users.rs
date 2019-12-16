@@ -112,6 +112,7 @@ macro_rules! user_t {
     ($user_typ:ident, $table:expr, $display:expr) => {
         #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
         #[primary_key(user_uuid)]
+        #[changeset_options(treat_none_as_null="true")]
         #[table_name = $table]
         pub struct $user_typ {
             pub user_uuid: Uuid,
