@@ -1,9 +1,13 @@
 use crate::db::internal;
+use crate::db::logs::log_comment_body;
+use crate::db::logs::LogContext;
 use crate::db::model::*;
 use crate::db::operations::models::DisplayInvitation;
 use crate::db::operations::models::InvitationAndHost;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
+use crate::db::types::LogOperationType;
+use crate::db::types::LogTargetType;
 use crate::db::types::TrustType;
 use crate::db::views;
 use crate::db::Pool;
@@ -154,10 +158,19 @@ pub fn invite(
         group_expiration,
         added_by: host.user_uuid,
     };
+    let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
     diesel::insert_into(schema::invitations::table)
         .values(&invitation)
         .execute(&*connection)
-        .map(|_| ())
+        .map(|_| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Invitation,
+                LogOperationType::Created,
+                None,
+            );
+        })
         .map_err(Error::from)
 }
 
@@ -194,6 +207,7 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
         expiration,
         added_by: invitation.added_by,
     };
+    let log_ctx = LogContext::with(group.id, invitation.added_by).with_user(invitation.user_uuid);
     diesel::insert_into(schema::memberships::table)
         .values(&membership)
         .on_conflict((
@@ -202,7 +216,16 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
         ))
         .do_update()
         .set(&membership)
-        .execute(&*connection)?;
+        .execute(&*connection)
+        .map(|_| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Membership,
+                LogOperationType::Created,
+                log_comment_body("accepted invitation"),
+            );
+        })?;
     diesel::delete(schema::invitations::table)
         .filter(
             schema::invitations::user_uuid

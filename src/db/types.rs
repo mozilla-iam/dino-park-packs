@@ -23,6 +23,12 @@ pub enum TrustType {
     Private,
 }
 
+impl TrustType {
+    pub fn ndaed() -> Self {
+        Self::Ndaed
+    }
+}
+
 impl TryFrom<String> for TrustType {
     type Error = failure::Error;
     fn try_from(s: String) -> Result<Self, Self::Error> {
@@ -69,8 +75,32 @@ pub enum RoleType {
 #[DieselType = "Group_type"]
 pub enum GroupType {
     Open,
-    Reviewd,
+    Reviewed,
     Closed,
+}
+
+impl Default for GroupType {
+    fn default() -> Self {
+        Self::Closed
+    }
+}
+
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[DieselType = "Log_target_type"]
+pub enum LogTargetType {
+    Group,
+    Terms,
+    Membership,
+    Role,
+    Invitation,
+}
+
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[DieselType = "Log_operation_type"]
+pub enum LogOperationType {
+    Created,
+    Deleted,
+    Updated,
 }
 
 #[cfg(test)]

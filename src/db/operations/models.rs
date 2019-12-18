@@ -1,14 +1,48 @@
 use crate::db::model::Group;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
+use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use uuid::Uuid;
 
+#[derive(Deserialize)]
+pub struct GroupUpdate {
+    pub description: Option<String>,
+    pub typ: Option<GroupType>,
+    pub capabilities: Option<Vec<CapabilityType>>,
+    pub trust: Option<TrustType>,
+    #[allow(clippy::option_option)]
+    pub expiration: Option<Option<i32>>,
+}
+
+impl GroupUpdate {
+    pub fn log_comment(&self) -> String {
+        [
+            self.description.as_ref().map(|_| "description"),
+            self.typ.as_ref().map(|_| "typ"),
+            self.capabilities.as_ref().map(|_| "capabilities"),
+            self.trust.as_ref().map(|_| "trust"),
+            self.expiration.as_ref().map(|_| "expiration"),
+        ]
+        .iter()
+        .filter_map(|s| *s)
+        .map(String::from)
+        .collect::<Vec<String>>()
+        .join(", ")
+    }
+}
+
+#[derive(Deserialize)]
 pub struct NewGroup {
     pub name: String,
     pub description: String,
+    #[serde(default)]
     pub typ: GroupType,
+    #[serde(default)]
+    pub capabilities: Vec<CapabilityType>,
+    #[serde(default = "TrustType::ndaed")]
     pub trust: TrustType,
+    #[serde(default)]
     pub expiration: Option<i32>,
 }
 
@@ -157,4 +191,32 @@ pub struct PaginatedDisplayMembers {
 pub struct PaginatedDisplayMembersAndHost {
     pub members: Vec<DisplayMemberAndHost>,
     pub next: Option<i64>,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_group_update_log_comment() {
+        let group_update = GroupUpdate {
+            description: Some("someting".into()),
+            typ: None,
+            capabilities: Some(vec![]),
+            trust: Some(TrustType::Public),
+            expiration: Some(None),
+        };
+        assert_eq!(
+            group_update.log_comment(),
+            "description, capabilities, trust, expiration"
+        );
+        let group_update = GroupUpdate {
+            description: None,
+            typ: None,
+            capabilities: None,
+            trust: None,
+            expiration: None,
+        };
+        assert_eq!(group_update.log_comment(), "");
+    }
 }

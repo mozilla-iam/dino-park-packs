@@ -1,4 +1,6 @@
 use crate::db::internal;
+use crate::db::logs::log_comment_body;
+use crate::db::logs::LogContext;
 use crate::db::model::*;
 use crate::db::schema;
 use crate::db::types::*;
@@ -11,7 +13,7 @@ use uuid::Uuid;
 
 const ROLE_ADMIN: &str = "admin";
 
-pub fn add_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
+pub fn add_admin_role(log_ctx: &LogContext, pool: &Pool, group_id: i32) -> Result<Role, Error> {
     let connection = pool.get()?;
     let admin = InsertRole {
         group_id,
@@ -23,6 +25,16 @@ pub fn add_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
         .values(admin)
         .get_result(&*connection)
         .map_err(Into::into)
+        .map(|role| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Role,
+                LogOperationType::Created,
+                log_comment_body("admin"),
+            );
+            role
+        })
 }
 
 pub fn get_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
@@ -36,6 +48,7 @@ pub fn get_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
 }
 
 pub fn demote_to_member(
+    host_uuid: &Uuid,
     pool: &Pool,
     group_name: &str,
     user: &User,
@@ -45,6 +58,7 @@ pub fn demote_to_member(
     let expiration = expiration.map(to_expiration_ts);
     let group = internal::group::get_group(pool, group_name)?;
     let role = internal::member::member_role(pool, group_name)?;
+    let log_ctx = LogContext::with(group.id, *host_uuid).with_user(user.user_uuid);
     diesel::update(
         schema::memberships::table.filter(
             schema::memberships::user_uuid
@@ -58,6 +72,16 @@ pub fn demote_to_member(
     ))
     .get_result(&*connection)
     .map_err(Into::into)
+    .map(|membership| {
+        internal::log::db_log(
+            &connection,
+            &log_ctx,
+            LogTargetType::Membership,
+            LogOperationType::Updated,
+            log_comment_body("demoted from admin to member"),
+        );
+        membership
+    })
 }
 
 pub fn add_admin(
@@ -76,6 +100,7 @@ pub fn add_admin(
         expiration: None,
         added_by: host.user_uuid,
     };
+    let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(user.user_uuid);
     diesel::insert_into(schema::memberships::table)
         .values(&admin_membership)
         .on_conflict((
@@ -86,6 +111,16 @@ pub fn add_admin(
         .set(&admin_membership)
         .get_result(&*connection)
         .map_err(Into::into)
+        .map(|membership| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Membership,
+                LogOperationType::Created,
+                log_comment_body("admin"),
+            );
+            membership
+        })
 }
 
 pub fn is_last_admin(pool: &Pool, group_id: i32, user_uuid: &Uuid) -> Result<bool, Error> {

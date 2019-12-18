@@ -632,6 +632,9 @@ components:
         description:
           type: string
           example: some fancy description in markdown
+        expiration:
+          type: integer
+          example: 90
         terms:
           type: boolean
           example: true

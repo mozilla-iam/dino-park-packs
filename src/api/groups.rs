@@ -2,6 +2,7 @@ use crate::api::error::ApiError;
 use crate::api::models::DisplayGroupDetails;
 use crate::api::models::GroupInfo;
 use crate::db::operations;
+use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::NewGroup;
 use crate::db::types::*;
 use crate::db::Pool;
@@ -15,23 +16,7 @@ use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use futures::Future;
 use log::info;
-use serde_derive::Deserialize;
 use std::sync::Arc;
-
-#[derive(Deserialize)]
-struct GroupUpdate {
-    description: Option<String>,
-    typ: Option<GroupType>,
-    group_expiration: Option<i32>,
-}
-
-#[derive(Deserialize)]
-struct GroupCreate {
-    name: String,
-    typ: Option<GroupType>,
-    description: String,
-    group_expiration: Option<i32>,
-}
 
 fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     operations::groups::get_group(&pool, &group_name)
@@ -41,19 +26,15 @@ fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Respo
 
 fn update_group(
     pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
     group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
 ) -> impl Responder {
-    let group_update = group_update.into_inner();
     operations::groups::update_group(
         &pool,
+        &scope_and_user,
         group_name.into_inner(),
-        group_update.description,
-        None,
-        group_update.typ,
-        group_update
-            .group_expiration
-            .map(|i| if i < 1 { None } else { Some(i) }),
+        group_update.into_inner(),
     )
     .map(|_| HttpResponse::Created().finish())
     .map_err(ApiError::NotAcceptableError)
@@ -63,22 +44,13 @@ fn add_group(
     cis_client: web::Data<Arc<CisClient>>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
-    new_group: web::Json<GroupCreate>,
+    new_group: web::Json<NewGroup>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let new_group = new_group.into_inner();
     let pool = pool.clone();
     let cis_client = Arc::clone(&cis_client);
     let scope_and_user = scope_and_user.clone();
     info!("trying to create new group: {}", new_group.name);
-    let new_group = NewGroup {
-        name: new_group.name,
-        description: new_group.description,
-        typ: new_group.typ.unwrap_or_else(|| GroupType::Closed),
-        trust: TrustType::Ndaed,
-        expiration: new_group
-            .group_expiration
-            .and_then(|i| if i < 1 { None } else { Some(i) }),
-    };
     operations::groups::add_new_group(&pool, &scope_and_user, new_group, cis_client)
         .map(|_| HttpResponse::Created().finish())
         .map_err(ApiError::NotAcceptableError)
@@ -142,6 +114,11 @@ fn group_details(
             name: group.group.name,
             description: group.group.description,
             typ: group.group.typ,
+            expiration: if curator {
+                group.group.group_expiration.or(Some(0))
+            } else {
+                None
+            },
             terms: group.terms,
         },
         members,

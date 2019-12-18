@@ -18,7 +18,7 @@ pub fn update_terms(
         &group_name,
         &host.user_uuid,
     ))?;
-    internal::terms::set_terms(pool, group_name, text)
+    internal::terms::set_terms(&host.user_uuid, pool, group_name, text)
 }
 
 pub fn delete_terms(
@@ -33,7 +33,7 @@ pub fn delete_terms(
         &group_name,
         &host.user_uuid,
     ))?;
-    internal::terms::delete_terms(pool, group_name)
+    internal::terms::delete_terms(&host.user_uuid, pool, group_name)
 }
 
 pub use internal::terms::get_terms;

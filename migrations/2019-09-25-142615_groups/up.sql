@@ -1,4 +1,4 @@
-CREATE TYPE group_type AS ENUM ('closed', 'reviewd', 'open');
+CREATE TYPE group_type AS ENUM ('closed', 'reviewed', 'open');
 CREATE TYPE role_type AS ENUM ('admin', 'curator', 'member');
 CREATE TYPE capability_type AS ENUM ('gdrive', 'discourse');
 CREATE TYPE permission_type AS ENUM ('invite_member', 'edit_description', 'add_curator', 'remove_curator', 'delete_group', 'remove_member', 'edit_terms');

@@ -24,6 +24,7 @@ use failure::Error;
 use futures::future::IntoFuture;
 use futures::Future;
 use std::sync::Arc;
+use uuid::Uuid;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
 
@@ -109,10 +110,16 @@ pub fn renewal_count(
     Ok(count)
 }
 
-fn db_leave(pool: &Pool, group_name: &str, user: &User, force: bool) -> Result<(), Error> {
+fn db_leave(
+    host_uuid: &Uuid,
+    pool: &Pool,
+    group_name: &str,
+    user: &User,
+    force: bool,
+) -> Result<(), Error> {
     let group = internal::group::get_group(&pool, group_name)?;
     if force || !internal::admin::is_last_admin(&pool, group.id, &user.user_uuid)? {
-        return internal::member::remove_from_group(&pool, &user.user_uuid, group_name);
+        return internal::member::remove_from_group(host_uuid, &pool, &user.user_uuid, group_name);
     }
     Err(error::OperationError::LastAdmin.into())
 }
@@ -166,6 +173,7 @@ pub fn remove(
     let group_name_ff = group_name.to_owned();
     let pool_f = pool.clone();
     let user_f = *user;
+    let host_uuid = host.user_uuid;
     REMOVE_MEMBER
         .run(&RuleContext::minimal(
             &pool,
@@ -179,7 +187,9 @@ pub fn remove(
         .and_then(move |user_profile| {
             remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
         })
-        .and_then(move |_| db_leave(&pool_f, &group_name_ff, &user_f, true).into_future())
+        .and_then(move |_| {
+            db_leave(&host_uuid, &pool_f, &group_name_ff, &user_f, true).into_future()
+        })
 }
 
 pub fn leave(
@@ -202,7 +212,9 @@ pub fn leave(
             remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
                 .map(move |_| user)
         })
-        .and_then(move |user| db_leave(&pool_f, &group_name_ff, &user, force).into_future())
+        .and_then(move |user| {
+            db_leave(&user.user_uuid, &pool_f, &group_name_ff, &user, force).into_future()
+        })
 }
 pub fn renew(
     pool: &Pool,
@@ -219,7 +231,7 @@ pub fn renew(
         &host.user_uuid,
         &user.user_uuid,
     ))?;
-    internal::member::renew(pool, group_name, user, expiration)
+    internal::member::renew(&host.user_uuid, pool, group_name, user, expiration)
 }
 
 pub use internal::member::member_role;

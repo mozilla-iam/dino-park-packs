@@ -60,5 +60,6 @@ pub fn demote(
         &group_name,
         &host.user_uuid,
     ))?;
-    internal::admin::demote_to_member(pool, group_name, user, expiration).map(|_| ())
+    internal::admin::demote_to_member(&host.user_uuid, pool, group_name, user, expiration)
+        .map(|_| ())
 }

@@ -43,6 +43,23 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
+    logs (id) {
+        id -> Int4,
+        ts -> Timestamp,
+        target -> Log_target_type,
+        operation -> Log_operation_type,
+        group_id -> Int4,
+        host_uuid -> Uuid,
+        user_uuid -> Nullable<Uuid>,
+        ok -> Bool,
+        body -> Nullable<Jsonb>,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
     memberships (user_uuid, group_id) {
         user_uuid -> Uuid,
         group_id -> Int4,
@@ -189,6 +206,7 @@ table! {
 joinable!(group_rules -> groups (group_id));
 joinable!(group_rules -> rules (rule_id));
 joinable!(invitations -> groups (group_id));
+joinable!(logs -> groups (group_id));
 joinable!(memberships -> groups (group_id));
 joinable!(memberships -> roles (role_id));
 joinable!(roles -> groups (group_id));
@@ -199,6 +217,7 @@ allow_tables_to_appear_in_same_query!(
     group_rules,
     groups,
     invitations,
+    logs,
     memberships,
     profiles,
     roles,

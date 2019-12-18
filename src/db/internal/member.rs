@@ -1,7 +1,11 @@
 use crate::db::internal;
+use crate::db::logs::log_comment_body;
+use crate::db::logs::LogContext;
 use crate::db::model::*;
 use crate::db::operations::models::*;
 use crate::db::schema;
+use crate::db::types::LogOperationType;
+use crate::db::types::LogTargetType;
 use crate::db::types::*;
 use crate::db::views;
 use crate::db::Pool;
@@ -98,7 +102,7 @@ scoped_members_and_host_for!(
 );
 scoped_members_and_host_for!(users_public, hosts_public, public_scoped_members_and_host);
 
-pub fn add_member_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
+pub fn add_member_role(host_uuid: &Uuid, pool: &Pool, group_id: i32) -> Result<Role, Error> {
     let connection = pool.get()?;
     let admin = InsertRole {
         group_id,
@@ -106,9 +110,20 @@ pub fn add_member_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
         name: ROLE_MEMBER.to_owned(),
         permissions: vec![],
     };
+    let log_ctx = LogContext::with(group_id, *host_uuid);
     diesel::insert_into(schema::roles::table)
         .values(admin)
         .get_result(&connection)
+        .map(|role| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Role,
+                LogOperationType::Created,
+                log_comment_body("member"),
+            );
+            role
+        })
         .map_err(Into::into)
 }
 
@@ -135,14 +150,29 @@ pub fn member_role(pool: &Pool, group_name: &str) -> Result<Role, Error> {
         .map_err(Into::into)
 }
 
-pub fn remove_from_group(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<(), Error> {
+pub fn remove_from_group(
+    host_uuid: &Uuid,
+    pool: &Pool,
+    user_uuid: &Uuid,
+    group_name: &str,
+) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = internal::group::get_group(pool, group_name)?;
+    let log_ctx = LogContext::with(group.id, *host_uuid).with_user(*user_uuid);
     diesel::delete(schema::memberships::table)
         .filter(schema::memberships::user_uuid.eq(user_uuid))
         .filter(schema::memberships::group_id.eq(group.id))
-        .execute(&connection)?;
-    Ok(())
+        .execute(&connection)
+        .map(|_| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Membership,
+                LogOperationType::Deleted,
+                None,
+            );
+        })
+        .map_err(Into::into)
 }
 
 pub fn add_to_group(
@@ -162,6 +192,7 @@ pub fn add_to_group(
         expiration: expiration.map(to_expiration_ts),
         added_by: host.user_uuid,
     };
+    let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
     diesel::insert_into(schema::memberships::table)
         .values(&membership)
         .on_conflict((
@@ -170,11 +201,21 @@ pub fn add_to_group(
         ))
         .do_update()
         .set(&membership)
-        .execute(&connection)?;
-    Ok(())
+        .execute(&connection)
+        .map(|_| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Membership,
+                LogOperationType::Created,
+                log_comment_body("added"),
+            );
+        })
+        .map_err(Into::into)
 }
 
 pub fn renew(
+    host_uuid: &Uuid,
     pool: &Pool,
     group_name: &str,
     member: &User,
@@ -182,6 +223,7 @@ pub fn renew(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let group = internal::group::get_group(pool, group_name)?;
+    let log_ctx = LogContext::with(group.id, *host_uuid).with_user(member.user_uuid);
     diesel::update(
         schema::memberships::table.filter(
             schema::memberships::group_id
@@ -190,8 +232,17 @@ pub fn renew(
         ),
     )
     .set(schema::memberships::expiration.eq(expiration.map(to_expiration_ts)))
-    .execute(&connection)?;
-    Ok(())
+    .execute(&connection)
+    .map(|_| {
+        internal::log::db_log(
+            &connection,
+            &log_ctx,
+            LogTargetType::Membership,
+            LogOperationType::Updated,
+            log_comment_body("renewed"),
+        );
+    })
+    .map_err(Into::into)
 }
 
 pub fn get_members_not_current(
