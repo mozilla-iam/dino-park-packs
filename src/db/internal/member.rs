@@ -59,7 +59,8 @@ macro_rules! scoped_members_and_host_for {
                         .select((
                             m::user_uuid,
                             u::picture,
-                            u::first_name.concat(" ").concat(u::last_name),
+                            u::first_name,
+                            u::last_name,
                             u::username,
                             u::email,
                             u::trust.eq(TrustType::Staff),
@@ -67,7 +68,8 @@ macro_rules! scoped_members_and_host_for {
                             m::expiration,
                             r::typ,
                             h::user_uuid,
-                            h::first_name.concat(" ").concat(h::last_name),
+                            h::first_name,
+                            h::last_name,
                             h::username,
                             h::email,
                         ))

@@ -36,7 +36,8 @@ macro_rules! scoped_invitations_for_user {
                 .select((
                     u::user_uuid,
                     u::picture,
-                    u::first_name.concat(" ").concat(u::last_name),
+                    u::first_name,
+                    u::last_name,
                     u::username,
                     u::email,
                     u::trust.eq(TrustType::Staff),
@@ -45,7 +46,8 @@ macro_rules! scoped_invitations_for_user {
                     g::name,
                     t::text.is_not_null(),
                     h::user_uuid,
-                    h::first_name.concat(" ").concat(h::last_name),
+                    h::first_name,
+                    h::last_name,
                     h::username,
                     h::email,
                 ))
@@ -77,7 +79,8 @@ macro_rules! scoped_invitations_for {
                 .select((
                     u::user_uuid,
                     u::picture,
-                    u::first_name.concat(" ").concat(u::last_name),
+                    u::first_name,
+                    u::last_name,
                     u::username,
                     u::email,
                     u::trust.eq(TrustType::Staff),
@@ -86,7 +89,8 @@ macro_rules! scoped_invitations_for {
                     g::name,
                     t::text.is_not_null(),
                     h::user_uuid,
-                    h::first_name.concat(" ").concat(h::last_name),
+                    h::first_name,
+                    h::last_name,
                     h::username,
                     h::email,
                 ))

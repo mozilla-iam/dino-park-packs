@@ -721,10 +721,14 @@ components:
           type: string
           nullable: true
           example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
-        name:
+        first_name:
           type: string
           nullable: true
-          example: Hans Knall
+          example: Hans
+        last_name:
+          type: string
+          nullable: true
+          example: Knall
         username:
           type: string
           example: hans
@@ -790,10 +794,14 @@ components:
           type: string
           nullable: true
           example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
-        name:
+        first_name:
           type: string
           nullable: true
-          example: Hans Knall
+          example: Hans
+        last_name:
+          type: string
+          nullable: true
+          example: Knall
         username:
           type: string
           example: hans
@@ -823,10 +831,14 @@ components:
         user_uuid:
           type: string
           example: 34a33a8e-d035-4051-acac-497a79235e73
-        name:
+        first_name:
           type: string
           nullable: true
-          example: Hans Knall
+          example: Hans
+        last_name:
+          type: string
+          nullable: true
+          example: Knall
         username:
           type: string
           nullable: true
@@ -859,8 +871,10 @@ components:
           type: integer
           example: 50
         invitation_count:
+          nullable: true
           type: integer
           example: 2
         renewal_count:
+          nullable: true
           type: integer
           example: 3
