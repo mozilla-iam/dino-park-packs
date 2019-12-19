@@ -73,7 +73,10 @@ pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
             .values(profile_id_uuid)
             .execute(&connection)
             .map(|_| ())?,
-        Err(e) => return Err(e.into()),
+        Err(e) => {
+            error!("error verifying uuid/id consistency: {}", e);
+            return Err(e.into());
+        }
         _ => (),
     }
 

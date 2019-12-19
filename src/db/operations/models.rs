@@ -12,7 +12,7 @@ pub struct GroupUpdate {
     pub capabilities: Option<Vec<CapabilityType>>,
     pub trust: Option<TrustType>,
     #[allow(clippy::option_option)]
-    pub expiration: Option<Option<i32>>,
+    pub group_expiration: Option<Option<i32>>,
 }
 
 impl GroupUpdate {
@@ -22,7 +22,7 @@ impl GroupUpdate {
             self.typ.as_ref().map(|_| "typ"),
             self.capabilities.as_ref().map(|_| "capabilities"),
             self.trust.as_ref().map(|_| "trust"),
-            self.expiration.as_ref().map(|_| "expiration"),
+            self.group_expiration.as_ref().map(|_| "expiration"),
         ]
         .iter()
         .filter_map(|s| *s)
@@ -43,7 +43,7 @@ pub struct NewGroup {
     #[serde(default = "TrustType::ndaed")]
     pub trust: TrustType,
     #[serde(default)]
-    pub expiration: Option<i32>,
+    pub group_expiration: Option<i32>,
 }
 
 pub struct GroupWithTermsFlag {
@@ -215,7 +215,7 @@ mod test {
             typ: None,
             capabilities: Some(vec![]),
             trust: Some(TrustType::Public),
-            expiration: Some(None),
+            group_expiration: Some(None),
         };
         assert_eq!(
             group_update.log_comment(),
@@ -226,7 +226,7 @@ mod test {
             typ: None,
             capabilities: None,
             trust: None,
-            expiration: None,
+            group_expiration: None,
         };
         assert_eq!(group_update.log_comment(), "");
     }

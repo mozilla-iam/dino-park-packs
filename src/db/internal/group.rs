@@ -51,7 +51,7 @@ pub fn add_group(host_uuid: &Uuid, pool: &Pool, new_group: NewGroup) -> Result<G
         typ: new_group.typ,
         trust: new_group.trust,
         group_expiration: new_group
-            .expiration
+            .group_expiration
             .and_then(|i| if i < 1 { None } else { Some(i) }),
     };
 
@@ -92,7 +92,7 @@ pub fn update_group(
             group_update.typ.map(|t| schema::groups::typ.eq(t)),
             group_update.trust.map(|t| schema::groups::trust.eq(t)),
             group_update
-                .expiration
+                .group_expiration
                 .map(|e| e.and_then(|i| if i < 1 { None } else { Some(i) }))
                 .map(|e| schema::groups::group_expiration.eq(e)),
         ))
