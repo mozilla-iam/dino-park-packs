@@ -1,5 +1,6 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::db::internal;
+use crate::db::operations::error::OperationError;
 use crate::db::Pool;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
@@ -60,6 +61,10 @@ pub fn demote(
         &group_name,
         &host.user_uuid,
     ))?;
-    internal::admin::demote_to_member(&host.user_uuid, pool, group_name, user, expiration)
-        .map(|_| ())
+    if !internal::admin::is_last_admin(&pool, group_name, &user.user_uuid)? {
+        internal::admin::demote_to_member(&host.user_uuid, pool, group_name, user, expiration)
+            .map(|_| ())
+    } else {
+        Err(OperationError::LastAdmin.into())
+    }
 }

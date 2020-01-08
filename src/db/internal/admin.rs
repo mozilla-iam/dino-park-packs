@@ -123,8 +123,9 @@ pub fn add_admin(
         })
 }
 
-pub fn is_last_admin(pool: &Pool, group_id: i32, user_uuid: &Uuid) -> Result<bool, Error> {
-    let role = get_admin_role(pool, group_id)?;
+pub fn is_last_admin(pool: &Pool, group_name: &str, user_uuid: &Uuid) -> Result<bool, Error> {
+    let group = internal::group::get_group(&pool, group_name)?;
+    let role = get_admin_role(pool, group.id)?;
     let connection = pool.get()?;
     schema::memberships::table
         .filter(schema::memberships::role_id.eq(role.id))

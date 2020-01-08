@@ -117,8 +117,7 @@ fn db_leave(
     user: &User,
     force: bool,
 ) -> Result<(), Error> {
-    let group = internal::group::get_group(&pool, group_name)?;
-    if force || !internal::admin::is_last_admin(&pool, group.id, &user.user_uuid)? {
+    if force || !internal::admin::is_last_admin(&pool, group_name, &user.user_uuid)? {
         return internal::member::remove_from_group(host_uuid, &pool, &user.user_uuid, group_name);
     }
     Err(error::OperationError::LastAdmin.into())

@@ -145,6 +145,57 @@ scoped_invitations_for_user!(
     public_scoped_invitations_and_host_for_user
 );
 
+pub fn update(
+    pool: &Pool,
+    group_name: &str,
+    host: User,
+    member: User,
+    invitation_expiration: Option<NaiveDateTime>,
+    group_expiration: Option<i32>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let group = internal::group::get_group(pool, group_name)?;
+    let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
+    diesel::update(schema::invitations::table)
+        .filter(schema::invitations::user_uuid.eq(member.user_uuid))
+        .filter(schema::invitations::group_id.eq(group.id))
+        .set((
+            invitation_expiration.map(|e| schema::invitations::invitation_expiration.eq(e)),
+            (group_expiration.map(|e| schema::invitations::group_expiration.eq(e))),
+        ))
+        .execute(&*connection)
+        .map(|_| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Invitation,
+                LogOperationType::Updated,
+                None,
+            );
+        })
+        .map_err(Error::from)
+}
+
+pub fn delete(pool: &Pool, group_name: &str, host: User, member: User) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let group = internal::group::get_group(pool, group_name)?;
+    let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
+    diesel::delete(schema::invitations::table)
+        .filter(schema::invitations::user_uuid.eq(member.user_uuid))
+        .filter(schema::invitations::group_id.eq(group.id))
+        .execute(&*connection)
+        .map(|_| {
+            internal::log::db_log(
+                &connection,
+                &log_ctx,
+                LogTargetType::Invitation,
+                LogOperationType::Deleted,
+                None,
+            );
+        })
+        .map_err(Error::from)
+}
+
 pub fn invite(
     pool: &Pool,
     group_name: &str,

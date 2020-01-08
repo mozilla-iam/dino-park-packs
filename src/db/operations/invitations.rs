@@ -18,6 +18,47 @@ use std::sync::Arc;
 #[derive(Queryable, Serialize)]
 pub struct PendingInvitations {}
 
+pub fn delete_invitation(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: User,
+    member: User,
+) -> Result<(), Error> {
+    INVITE_MEMBER.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    delete(pool, group_name, host, member)
+}
+
+pub fn update_invitation(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: User,
+    member: User,
+    invitation_expiration: Option<NaiveDateTime>,
+    group_expiration: Option<i32>,
+) -> Result<(), Error> {
+    INVITE_MEMBER.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    update(
+        pool,
+        group_name,
+        host,
+        member,
+        invitation_expiration,
+        group_expiration,
+    )
+}
+
 pub fn invite_member(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,

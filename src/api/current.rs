@@ -30,7 +30,7 @@ fn join(
     let pool_f = pool.clone();
     operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
         .and_then(move |user| {
-            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
+            operations::users::user_profile_by_uuid(&pool, &user.user_uuid)
                 .map(|user_profile| (user, user_profile))
         })
         .into_future()
@@ -55,9 +55,8 @@ fn leave(
     force: web::Query<ForceLeave>,
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    let pool_f = pool.clone();
     operations::members::leave(
-        &pool_f,
+        &pool,
         &scope_and_user,
         &group_name,
         force.force.unwrap_or_default(),

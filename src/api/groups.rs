@@ -47,9 +47,7 @@ fn add_group(
     new_group: web::Json<NewGroup>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
     let new_group = new_group.into_inner();
-    let pool = pool.clone();
     let cis_client = Arc::clone(&cis_client);
-    let scope_and_user = scope_and_user.clone();
     info!("trying to create new group: {}", new_group.name);
     operations::groups::add_new_group(&pool, &scope_and_user, new_group, cis_client)
         .map(|_| HttpResponse::Created().finish())

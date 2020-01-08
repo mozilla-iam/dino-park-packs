@@ -140,7 +140,7 @@ pub fn update_group(
         &group_name,
         &host.user_uuid,
     ))?;
-    internal::group::update_group(&host.user_uuid, pool, group_name.to_owned(), group_update)
+    internal::group::update_group(&host.user_uuid, pool, group_name, group_update)
         .map(|_| ())
         .map_err(Into::into)
 }

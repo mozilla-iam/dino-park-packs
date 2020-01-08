@@ -180,14 +180,13 @@ user_t!(UsersPublic, "users_public", Display::Public);
 mod test {
     use super::*;
 
-    #[test]
-    fn test_filter() {
-        const UUID: &str = "5035efe5-c1cd-42bf-8148-d2a004e81ddc";
-        const FIRST_NAME: &str = "Hans";
-        const LAST_NAME: &str = "KNALL";
-        const USERNAME: &str = "hans";
-        const EMAIL: &str = "hans@knall.org";
+    const UUID: &str = "5035efe5-c1cd-42bf-8148-d2a004e81ddc";
+    const FIRST_NAME: &str = "Hans";
+    const LAST_NAME: &str = "KNALL";
+    const USERNAME: &str = "hans";
+    const EMAIL: &str = "hans@knall.org";
 
+    fn some_profile() -> Profile {
         let mut profile = Profile::default();
         profile.uuid.value = Some(String::from(UUID));
         profile.first_name.value = Some(String::from(FIRST_NAME));
@@ -199,39 +198,62 @@ mod test {
         profile.last_name.metadata.display = Some(Display::Staff);
         profile.primary_username.metadata.display = Some(Display::Ndaed);
         profile.primary_email.metadata.display = Some(Display::Public);
+        profile
+    }
 
-        let public = UsersPublic::from(&profile);
-        let authenticated = UsersAuthenticated::from(&profile);
-        let vouched = UsersVouched::from(&profile);
-        let ndaed = UsersNdaed::from(&profile);
-        let staff = UsersStaff::from(&profile);
-
+    #[test]
+    fn test_filter_public() {
         let uuid = Uuid::parse_str(UUID).unwrap_or_default();
-
+        let profile = some_profile();
+        let public = UsersPublic::from(&profile);
         assert_eq!(public.user_uuid, uuid);
         assert_eq!(public.first_name, None);
         assert_eq!(public.last_name, None);
         assert_eq!(public.username, USERNAME);
         assert_eq!(public.email, Some(EMAIL.to_owned()));
+    }
 
+    #[test]
+    fn test_filter_authenticated() {
+        let uuid = Uuid::parse_str(UUID).unwrap_or_default();
+        let profile = some_profile();
+        let authenticated = UsersAuthenticated::from(&profile);
         assert_eq!(authenticated.user_uuid, uuid);
         assert_eq!(authenticated.first_name, None);
         assert_eq!(authenticated.last_name, None);
         assert_eq!(authenticated.username, USERNAME);
         assert_eq!(authenticated.email, Some(EMAIL.to_owned()));
+    }
 
+    #[test]
+    fn test_filter_vouched() {
+        let uuid = Uuid::parse_str(UUID).unwrap_or_default();
+        let profile = some_profile();
+        let vouched = UsersVouched::from(&profile);
         assert_eq!(vouched.user_uuid, uuid);
         assert_eq!(vouched.first_name, None);
         assert_eq!(vouched.last_name, None);
         assert_eq!(vouched.username, USERNAME);
         assert_eq!(vouched.email, Some(EMAIL.to_owned()));
+    }
 
+    #[test]
+    fn test_filter_ndaed() {
+        let uuid = Uuid::parse_str(UUID).unwrap_or_default();
+        let profile = some_profile();
+        let ndaed = UsersNdaed::from(&profile);
         assert_eq!(ndaed.user_uuid, uuid);
         assert_eq!(ndaed.first_name, None);
         assert_eq!(ndaed.last_name, None);
         assert_eq!(ndaed.username, USERNAME);
         assert_eq!(ndaed.email, Some(EMAIL.to_owned()));
+    }
 
+    #[test]
+    fn test_filter_staff() {
+        let uuid = Uuid::parse_str(UUID).unwrap_or_default();
+        let profile = some_profile();
+        let staff = UsersStaff::from(&profile);
         assert_eq!(staff.user_uuid, uuid);
         assert_eq!(staff.first_name, None);
         assert_eq!(staff.last_name, Some(LAST_NAME.to_owned()));
