@@ -10,7 +10,7 @@ use crate::db::types::LogOperationType;
 use crate::db::types::LogTargetType;
 use crate::db::types::TrustType;
 use crate::db::views;
-use crate::db::Pool;
+
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
@@ -146,15 +146,14 @@ scoped_invitations_for_user!(
 );
 
 pub fn update(
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     host: User,
     member: User,
     invitation_expiration: Option<NaiveDateTime>,
     group_expiration: Option<i32>,
 ) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
     diesel::update(schema::invitations::table)
         .filter(schema::invitations::user_uuid.eq(member.user_uuid))
@@ -166,7 +165,7 @@ pub fn update(
         .execute(&*connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Invitation,
                 LogOperationType::Updated,
@@ -176,9 +175,13 @@ pub fn update(
         .map_err(Error::from)
 }
 
-pub fn delete(pool: &Pool, group_name: &str, host: User, member: User) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+pub fn delete(
+    connection: &PgConnection,
+    group_name: &str,
+    host: User,
+    member: User,
+) -> Result<(), Error> {
+    let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
     diesel::delete(schema::invitations::table)
         .filter(schema::invitations::user_uuid.eq(member.user_uuid))
@@ -186,7 +189,7 @@ pub fn delete(pool: &Pool, group_name: &str, host: User, member: User) -> Result
         .execute(&*connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Invitation,
                 LogOperationType::Deleted,
@@ -197,15 +200,14 @@ pub fn delete(pool: &Pool, group_name: &str, host: User, member: User) -> Result
 }
 
 pub fn invite(
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     host: User,
     member: User,
     invitation_expiration: Option<NaiveDateTime>,
     group_expiration: Option<i32>,
 ) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
     let invitation = Invitation {
         user_uuid: member.user_uuid,
         group_id: group.id,
@@ -219,7 +221,7 @@ pub fn invite(
         .execute(&*connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Invitation,
                 LogOperationType::Created,
@@ -229,32 +231,30 @@ pub fn invite(
         .map_err(Error::from)
 }
 
-pub fn pending_count(pool: &Pool, group_name: &str) -> Result<i64, Error> {
-    let connection = pool.get()?;
+pub fn pending_count(connection: &PgConnection, group_name: &str) -> Result<i64, Error> {
     let count = schema::invitations::table
         .inner_join(groups::groups)
         .filter(groups::name.eq(group_name))
         .select(count(schema::invitations::user_uuid))
-        .first(&connection)?;
+        .first(connection)?;
     Ok(count)
 }
 
-pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+pub fn accept(connection: &PgConnection, group_name: &str, member: &User) -> Result<(), Error> {
+    let group = internal::group::get_group(connection, group_name)?;
     let invitation = schema::invitations::table
         .filter(
             schema::invitations::user_uuid
                 .eq(member.user_uuid)
                 .and(schema::invitations::group_id.eq(group.id)),
         )
-        .first::<Invitation>(&connection)?;
+        .first::<Invitation>(connection)?;
     let expiration = match invitation.group_expiration {
         Some(exp) => Some(exp),
         None => group.group_expiration,
     }
     .map(to_expiration_ts);
-    let role = internal::member::member_role(pool, group_name)?;
+    let role = internal::member::member_role(connection, group_name)?;
     let membership = InsertMembership {
         group_id: invitation.group_id,
         user_uuid: invitation.user_uuid,
@@ -274,7 +274,7 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
         .execute(&*connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Membership,
                 LogOperationType::Created,
@@ -287,6 +287,6 @@ pub fn accept(pool: &Pool, group_name: &str, member: &User) -> Result<(), Error>
                 .eq(member.user_uuid)
                 .and(schema::invitations::group_id.eq(group.id)),
         )
-        .execute(&connection)?;
+        .execute(connection)?;
     Ok(())
 }

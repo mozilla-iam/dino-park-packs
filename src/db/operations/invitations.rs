@@ -31,7 +31,8 @@ pub fn delete_invitation(
         &group_name,
         &host.user_uuid,
     ))?;
-    delete(pool, group_name, host, member)
+    let connection = pool.get()?;
+    delete(&connection, group_name, host, member)
 }
 
 pub fn update_invitation(
@@ -49,8 +50,9 @@ pub fn update_invitation(
         &group_name,
         &host.user_uuid,
     ))?;
+    let connection = pool.get()?;
     update(
-        pool,
+        &connection,
         group_name,
         host,
         member,
@@ -75,8 +77,9 @@ pub fn invite_member(
         &group_name,
         &host.user_uuid,
     ))?;
+    let connection = pool.get()?;
     invite(
-        pool,
+        &connection,
         group_name,
         host,
         member,
@@ -97,7 +100,8 @@ pub fn pending_invitations_count(
         &group_name,
         &host.user_uuid,
     ))?;
-    pending_count(pool, group_name)
+    let connection = pool.get()?;
+    pending_count(&connection, group_name)
 }
 
 pub fn pending_invitations(
@@ -145,7 +149,9 @@ pub fn accept_invitation(
     profile: Profile,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
-    accept(pool, group_name, user)
+    pool.get()
+        .map_err(Into::into)
+        .and_then(|connection| accept(&connection, group_name, user))
         .into_future()
         .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
 }

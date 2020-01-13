@@ -1,9 +1,11 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::db::internal;
 use crate::db::logs::LogContext;
+use crate::db::model::Group;
 use crate::db::operations;
 use crate::db::operations::error::OperationError;
 use crate::db::operations::models::GroupUpdate;
+use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::operations::models::NewGroup;
 use crate::db::Pool;
 use crate::rules::engine::CREATE_GROUP;
@@ -11,6 +13,7 @@ use crate::rules::engine::HOST_IS_GROUP_ADMIN;
 use crate::rules::RuleContext;
 use crate::user::User;
 use cis_client::CisClient;
+use diesel::pg::PgConnection;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
 use futures::future::join_all;
@@ -19,12 +22,16 @@ use futures::Future;
 use std::convert::TryFrom;
 use std::sync::Arc;
 
-fn add_new_group_db(pool: &Pool, new_group: NewGroup, creator: User) -> Result<(), Error> {
-    let new_group = internal::group::add_group(&creator.user_uuid, pool, new_group)?;
+fn add_new_group_db(
+    connection: &PgConnection,
+    new_group: NewGroup,
+    creator: User,
+) -> Result<(), Error> {
+    let new_group = internal::group::add_group(&creator.user_uuid, &connection, new_group)?;
     let log_ctx = LogContext::with(new_group.id, creator.user_uuid);
-    internal::admin::add_admin_role(&log_ctx, pool, new_group.id)?;
-    internal::member::add_member_role(&creator.user_uuid, pool, new_group.id)?;
-    internal::admin::add_admin(pool, &new_group.name, &User::default(), &creator)?;
+    internal::admin::add_admin_role(&log_ctx, &connection, new_group.id)?;
+    internal::member::add_member_role(&creator.user_uuid, &connection, new_group.id)?;
+    internal::admin::add_admin(&connection, &new_group.name, &User::default(), &creator)?;
     Ok(())
 }
 
@@ -35,11 +42,16 @@ pub fn add_new_group(
     cis_client: Arc<CisClient>,
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = new_group.name.clone();
-    internal::user::user_profile_by_user_id(&pool, &scope_and_user.user_id)
-        .and_then(|user_profile| {
-            User::try_from(&user_profile.profile).map(|user| (user, user_profile))
+    pool.get()
+        .map_err(Into::into)
+        .and_then(|connection| {
+            internal::user::user_profile_by_user_id(&connection, &scope_and_user.user_id)
+                .map(|user_profile| (connection, user_profile))
         })
-        .and_then(|(user, user_profile)| {
+        .and_then(|(connection, user_profile)| {
+            User::try_from(&user_profile.profile).map(|user| (connection, user, user_profile))
+        })
+        .and_then(|(connection, user, user_profile)| {
             CREATE_GROUP
                 .run(&RuleContext::minimal(
                     pool,
@@ -47,11 +59,11 @@ pub fn add_new_group(
                     &new_group.name,
                     &user.user_uuid,
                 ))
-                .map(|_| (user, user_profile))
+                .map(|_| (connection, user, user_profile))
                 .map_err(Into::into)
         })
-        .and_then(|(user, user_profile)| {
-            add_new_group_db(pool, new_group, user).map(|_| user_profile)
+        .and_then(|(connection, user, user_profile)| {
+            add_new_group_db(&connection, new_group, user).map(|_| user_profile)
         })
         .into_future()
         .and_then(move |user_profile| {
@@ -71,12 +83,17 @@ pub fn delete_group(
     let group_name_fff = name.to_owned();
     let pool_f = pool.clone();
     let pool_ff = pool.clone();
-    let pool_fff = pool.clone();
+    let _pool_fff = pool.clone();
     let scope_and_user_f = scope_and_user.clone();
     let scope_and_user_ff = scope_and_user.clone();
     let cis_client_f = Arc::clone(&cis_client);
-    internal::user::user_by_id(pool, &scope_and_user.user_id)
-        .and_then(|host| {
+    pool.get()
+        .map_err(Into::into)
+        .and_then(|connection| {
+            internal::user::user_by_id(&connection, &scope_and_user.user_id)
+                .map(|host| (connection, host))
+        })
+        .and_then(|(connection, host)| {
             HOST_IS_GROUP_ADMIN
                 .run(&RuleContext::minimal(
                     pool,
@@ -85,14 +102,14 @@ pub fn delete_group(
                     &host.user_uuid,
                 ))
                 .map_err(Into::into)
-                .map(|_| host)
+                .map(|_| (connection, host))
         })
-        .and_then(move |host| {
-            internal::member::get_members_not_current(pool, name, &host)
-                .map(|members| (host, members))
+        .and_then(move |(connection, host)| {
+            internal::member::get_members_not_current(&connection, name, &host)
+                .map(|members| (connection, host, members))
         })
         .into_future()
-        .and_then(move |(host, members)| {
+        .and_then(move |(connection, host, members)| {
             let v = members
                 .iter()
                 .map(|user| {
@@ -109,9 +126,9 @@ pub fn delete_group(
             log::info!("deleting {} members", v.len());
             join_all(v)
                 .map_err(|_| OperationError::ErrorDeletingMembers.into())
-                .map(move |_| host)
+                .map(move |_| (connection, host))
         })
-        .and_then(move |host| {
+        .and_then(move |(connection, host)| {
             operations::members::remove(
                 &pool_ff,
                 &scope_and_user_ff,
@@ -120,10 +137,11 @@ pub fn delete_group(
                 &host,
                 cis_client_f,
             )
-            .map(move |_| host)
+            .map(move |_| (connection, host))
         })
-        .and_then(move |host| {
-            internal::group::delete_group(&host.user_uuid, &pool_fff, &group_name_fff).into_future()
+        .and_then(move |(connection, host)| {
+            internal::group::delete_group(&host.user_uuid, &connection, &group_name_fff)
+                .into_future()
         })
 }
 
@@ -133,17 +151,28 @@ pub fn update_group(
     group_name: String,
     group_update: GroupUpdate,
 ) -> Result<(), Error> {
-    let host = internal::user::user_by_id(pool, &scope_and_user.user_id)?;
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
         pool,
         scope_and_user,
         &group_name,
         &host.user_uuid,
     ))?;
-    internal::group::update_group(&host.user_uuid, pool, group_name, group_update)
+    internal::group::update_group(&host.user_uuid, &connection, group_name, group_update)
         .map(|_| ())
         .map_err(Into::into)
 }
 
-pub use internal::group::get_group;
-pub use internal::group::get_group_with_terms_flag;
+pub fn get_group(pool: &Pool, group_name: &str) -> Result<Group, Error> {
+    let connection = pool.get()?;
+    internal::group::get_group(&connection, group_name)
+}
+
+pub fn get_group_with_terms_flag(
+    pool: &Pool,
+    group_name: &str,
+) -> Result<GroupWithTermsFlag, Error> {
+    let connection = pool.get()?;
+    internal::group::get_group_with_terms_flag(&connection, group_name)
+}
