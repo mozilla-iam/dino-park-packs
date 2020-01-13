@@ -4,7 +4,7 @@ use crate::db::logs::LogContext;
 use crate::db::model::*;
 use crate::db::schema;
 use crate::db::types::*;
-use crate::db::Pool;
+
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
@@ -13,8 +13,11 @@ use uuid::Uuid;
 
 const ROLE_ADMIN: &str = "admin";
 
-pub fn add_admin_role(log_ctx: &LogContext, pool: &Pool, group_id: i32) -> Result<Role, Error> {
-    let connection = pool.get()?;
+pub fn add_admin_role(
+    log_ctx: &LogContext,
+    connection: &PgConnection,
+    group_id: i32,
+) -> Result<Role, Error> {
     let admin = InsertRole {
         group_id,
         typ: RoleType::Admin,
@@ -27,7 +30,7 @@ pub fn add_admin_role(log_ctx: &LogContext, pool: &Pool, group_id: i32) -> Resul
         .map_err(Into::into)
         .map(|role| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Role,
                 LogOperationType::Created,
@@ -37,27 +40,25 @@ pub fn add_admin_role(log_ctx: &LogContext, pool: &Pool, group_id: i32) -> Resul
         })
 }
 
-pub fn get_admin_role(pool: &Pool, group_id: i32) -> Result<Role, Error> {
-    let connection = pool.get()?;
+pub fn get_admin_role(connection: &PgConnection, group_id: i32) -> Result<Role, Error> {
     schema::roles::table
         .filter(schema::roles::group_id.eq(group_id))
         .filter(schema::roles::name.eq(ROLE_ADMIN))
         .filter(schema::roles::typ.eq(RoleType::Admin))
-        .first(&connection)
+        .first(connection)
         .map_err(Into::into)
 }
 
 pub fn demote_to_member(
     host_uuid: &Uuid,
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     user: &User,
     expiration: Option<i32>,
 ) -> Result<Membership, Error> {
-    let connection = pool.get()?;
     let expiration = expiration.map(to_expiration_ts);
-    let group = internal::group::get_group(pool, group_name)?;
-    let role = internal::member::member_role(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
+    let role = internal::member::member_role(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid).with_user(user.user_uuid);
     diesel::update(
         schema::memberships::table.filter(
@@ -74,7 +75,7 @@ pub fn demote_to_member(
     .map_err(Into::into)
     .map(|membership| {
         internal::log::db_log(
-            &connection,
+            connection,
             &log_ctx,
             LogTargetType::Membership,
             LogOperationType::Updated,
@@ -85,14 +86,13 @@ pub fn demote_to_member(
 }
 
 pub fn add_admin(
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     host: &User,
     user: &User,
 ) -> Result<Membership, Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
-    let role = get_admin_role(pool, group.id)?;
+    let group = internal::group::get_group(connection, group_name)?;
+    let role = get_admin_role(connection, group.id)?;
     let admin_membership = InsertMembership {
         group_id: group.id,
         user_uuid: user.user_uuid,
@@ -113,7 +113,7 @@ pub fn add_admin(
         .map_err(Into::into)
         .map(|membership| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Membership,
                 LogOperationType::Created,
@@ -123,14 +123,18 @@ pub fn add_admin(
         })
 }
 
-pub fn is_last_admin(pool: &Pool, group_name: &str, user_uuid: &Uuid) -> Result<bool, Error> {
-    let group = internal::group::get_group(&pool, group_name)?;
-    let role = get_admin_role(pool, group.id)?;
-    let connection = pool.get()?;
+pub fn is_last_admin(
+    connection: &PgConnection,
+    group_name: &str,
+    user_uuid: &Uuid,
+) -> Result<bool, Error> {
+    let group = internal::group::get_group(connection, group_name)?;
+    let role = get_admin_role(connection, group.id)?;
+
     schema::memberships::table
         .filter(schema::memberships::role_id.eq(role.id))
         .select(schema::memberships::user_uuid)
-        .get_results(&connection)
+        .get_results(connection)
         .map(|admins: Vec<Uuid>| admins.contains(user_uuid) && admins.len() == 1)
         .map_err(Into::into)
 }

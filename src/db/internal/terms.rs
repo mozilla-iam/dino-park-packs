@@ -4,31 +4,33 @@ use crate::db::model::*;
 use crate::db::schema;
 use crate::db::types::LogOperationType;
 use crate::db::types::LogTargetType;
-use crate::db::Pool;
+
 use diesel::prelude::*;
 use failure::Error;
 use uuid::Uuid;
 
-pub fn get_terms(pool: &Pool, group_name: &str) -> Result<Option<String>, Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+pub fn get_terms(connection: &PgConnection, group_name: &str) -> Result<Option<String>, Error> {
+    let group = internal::group::get_group(connection, group_name)?;
     Terms::belonging_to(&group)
-        .first(&connection)
+        .first(connection)
         .map(|t: Terms| t.text)
         .optional()
         .map_err(Into::into)
 }
 
-pub fn delete_terms(host_uuid: &Uuid, pool: &Pool, group_name: &str) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+pub fn delete_terms(
+    host_uuid: &Uuid,
+    connection: &PgConnection,
+    group_name: &str,
+) -> Result<(), Error> {
+    let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid);
     diesel::delete(schema::terms::table)
         .filter(schema::terms::group_id.eq(&group.id))
-        .execute(&connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Terms,
                 LogOperationType::Updated,
@@ -40,12 +42,11 @@ pub fn delete_terms(host_uuid: &Uuid, pool: &Pool, group_name: &str) -> Result<(
 
 pub fn set_terms(
     host_uuid: &Uuid,
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     text: String,
 ) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
     let terms = Terms {
         group_id: group.id,
         text,
@@ -56,10 +57,10 @@ pub fn set_terms(
         .on_conflict(schema::terms::group_id)
         .do_update()
         .set(&terms)
-        .execute(&connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Terms,
                 LogOperationType::Updated,

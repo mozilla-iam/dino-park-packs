@@ -1,16 +1,20 @@
 use crate::db::internal;
 use crate::db::types::TrustType;
 use crate::db::users::DisplayUser;
+use crate::db::users::UserProfile;
 use crate::db::Pool;
+use crate::user::User;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
 use std::convert::TryFrom;
+use uuid::Uuid;
 
 pub fn batch_update_user_cache(pool: &Pool, profiles: Vec<Profile>) -> Result<usize, Error> {
+    let connection = pool.get()?;
     let l = profiles.len();
     for profile in profiles {
-        update_user_cache(pool, &profile)?;
+        internal::user::update_user_cache(&connection, &profile)?;
     }
     Ok(l)
 }
@@ -21,8 +25,9 @@ pub fn search_users(
     trust: Option<TrustType>,
     q: &str,
 ) -> Result<Vec<DisplayUser>, Error> {
+    let connection = pool.get()?;
     internal::user::search_users(
-        pool,
+        &connection,
         trust,
         TrustType::try_from(scope_and_user.scope)?,
         q,
@@ -30,7 +35,17 @@ pub fn search_users(
     )
 }
 
-pub use internal::user::update_user_cache;
-pub use internal::user::user_by_id;
-pub use internal::user::user_profile_by_user_id;
-pub use internal::user::user_profile_by_uuid;
+pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
+    let connection = pool.get()?;
+    internal::user::update_user_cache(&connection, profile)
+}
+
+pub fn user_by_id(pool: &Pool, user_id: &str) -> Result<User, Error> {
+    let connection = pool.get()?;
+    internal::user::user_by_id(&connection, user_id)
+}
+
+pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile, Error> {
+    let connection = pool.get()?;
+    internal::user::user_profile_by_uuid(&connection, user_uuid)
+}

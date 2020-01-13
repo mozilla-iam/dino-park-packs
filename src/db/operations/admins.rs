@@ -31,7 +31,10 @@ pub fn add_admin(
             &host.user_uuid,
         ))
         .map_err(Into::into)
-        .and_then(move |_| internal::admin::add_admin(&pool, &group_name, host, user))
+        .and_then(move |_| pool.get().map_err(Into::into))
+        .and_then(move |connection| {
+            internal::admin::add_admin(&connection, &group_name, host, user)
+        })
         .into_future()
         .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
 }
@@ -61,9 +64,16 @@ pub fn demote(
         &group_name,
         &host.user_uuid,
     ))?;
-    if !internal::admin::is_last_admin(&pool, group_name, &user.user_uuid)? {
-        internal::admin::demote_to_member(&host.user_uuid, pool, group_name, user, expiration)
-            .map(|_| ())
+    let connection = pool.get()?;
+    if !internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
+        internal::admin::demote_to_member(
+            &host.user_uuid,
+            &connection,
+            group_name,
+            user,
+            expiration,
+        )
+        .map(|_| ())
     } else {
         Err(OperationError::LastAdmin.into())
     }

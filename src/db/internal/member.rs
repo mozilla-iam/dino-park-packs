@@ -8,7 +8,7 @@ use crate::db::types::LogOperationType;
 use crate::db::types::LogTargetType;
 use crate::db::types::*;
 use crate::db::views;
-use crate::db::Pool;
+
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
@@ -104,8 +104,11 @@ scoped_members_and_host_for!(
 );
 scoped_members_and_host_for!(users_public, hosts_public, public_scoped_members_and_host);
 
-pub fn add_member_role(host_uuid: &Uuid, pool: &Pool, group_id: i32) -> Result<Role, Error> {
-    let connection = pool.get()?;
+pub fn add_member_role(
+    host_uuid: &Uuid,
+    connection: &PgConnection,
+    group_id: i32,
+) -> Result<Role, Error> {
     let admin = InsertRole {
         group_id,
         typ: RoleType::Member,
@@ -115,10 +118,10 @@ pub fn add_member_role(host_uuid: &Uuid, pool: &Pool, group_id: i32) -> Result<R
     let log_ctx = LogContext::with(group_id, *host_uuid);
     diesel::insert_into(schema::roles::table)
         .values(admin)
-        .get_result(&connection)
+        .get_result(connection)
         .map(|role| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Role,
                 LogOperationType::Created,
@@ -129,45 +132,46 @@ pub fn add_member_role(host_uuid: &Uuid, pool: &Pool, group_id: i32) -> Result<R
         .map_err(Into::into)
 }
 
-pub fn role_for(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<Role, Error> {
-    let connection = pool.get()?;
+pub fn role_for(
+    connection: &PgConnection,
+    user_uuid: &Uuid,
+    group_name: &str,
+) -> Result<Role, Error> {
     schema::memberships::table
         .filter(schema::memberships::user_uuid.eq(user_uuid))
         .inner_join(schema::groups::table)
         .filter(schema::groups::name.eq(group_name))
         .inner_join(schema::roles::table)
-        .get_result::<(Membership, Group, Role)>(&connection)
+        .get_result::<(Membership, Group, Role)>(connection)
         .map(|(_, _, r)| r)
         .map_err(Into::into)
 }
 
-pub fn member_role(pool: &Pool, group_name: &str) -> Result<Role, Error> {
-    let connection = pool.get()?;
+pub fn member_role(connection: &PgConnection, group_name: &str) -> Result<Role, Error> {
     schema::roles::table
         .inner_join(schema::groups::table)
         .filter(schema::groups::name.eq(group_name))
         .filter(schema::roles::typ.eq(RoleType::Member))
-        .get_result::<(Role, Group)>(&connection)
+        .get_result::<(Role, Group)>(connection)
         .map(|(r, _)| r)
         .map_err(Into::into)
 }
 
 pub fn remove_from_group(
     host_uuid: &Uuid,
-    pool: &Pool,
+    connection: &PgConnection,
     user_uuid: &Uuid,
     group_name: &str,
 ) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid).with_user(*user_uuid);
     diesel::delete(schema::memberships::table)
         .filter(schema::memberships::user_uuid.eq(user_uuid))
         .filter(schema::memberships::group_id.eq(group.id))
-        .execute(&connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Membership,
                 LogOperationType::Deleted,
@@ -178,15 +182,14 @@ pub fn remove_from_group(
 }
 
 pub fn add_to_group(
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     host: &User,
     member: &User,
     expiration: Option<i32>,
 ) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
-    let role = internal::member::member_role(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
+    let role = internal::member::member_role(connection, group_name)?;
     let membership = InsertMembership {
         group_id: group.id,
         user_uuid: member.user_uuid,
@@ -203,10 +206,10 @@ pub fn add_to_group(
         ))
         .do_update()
         .set(&membership)
-        .execute(&connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Membership,
                 LogOperationType::Created,
@@ -218,13 +221,12 @@ pub fn add_to_group(
 
 pub fn renew(
     host_uuid: &Uuid,
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     member: &User,
     expiration: Option<i32>,
 ) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid).with_user(member.user_uuid);
     diesel::update(
         schema::memberships::table.filter(
@@ -234,10 +236,10 @@ pub fn renew(
         ),
     )
     .set(schema::memberships::expiration.eq(expiration.map(to_expiration_ts)))
-    .execute(&connection)
+    .execute(connection)
     .map(|_| {
         internal::log::db_log(
-            &connection,
+            connection,
             &log_ctx,
             LogTargetType::Membership,
             LogOperationType::Updated,
@@ -248,17 +250,16 @@ pub fn renew(
 }
 
 pub fn get_members_not_current(
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     current: &User,
 ) -> Result<Vec<User>, Error> {
-    let connection = pool.get()?;
-    let group = internal::group::get_group(pool, group_name)?;
+    let group = internal::group::get_group(connection, group_name)?;
     schema::memberships::table
         .filter(schema::memberships::group_id.eq(group.id))
         .filter(schema::memberships::user_uuid.ne(current.user_uuid))
         .select(schema::memberships::user_uuid)
-        .get_results(&connection)
+        .get_results(connection)
         .map(|r| r.into_iter().map(|user_uuid| User { user_uuid }).collect())
         .map_err(Into::into)
 }

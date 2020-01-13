@@ -88,13 +88,12 @@ fn add_member(
     add_member: web::Json<AddMember>,
     cis_client: web::Data<Arc<CisClient>>,
 ) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    let pool_f = pool.clone();
     let user_uuid = add_member.user_uuid;
-    operations::users::user_by_id(&pool, &scope_and_user.user_id)
+    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
         .into_future()
         .and_then(move |host| {
             operations::members::add(
-                &pool_f,
+                &pool,
                 &scope_and_user,
                 &group_name,
                 &host,

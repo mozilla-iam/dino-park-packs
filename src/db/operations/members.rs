@@ -1,6 +1,7 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
+use crate::db::model::Role;
 use crate::db::operations;
 use crate::db::operations::error;
 use crate::db::operations::models::*;
@@ -112,13 +113,18 @@ pub fn renewal_count(
 
 fn db_leave(
     host_uuid: &Uuid,
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
     user: &User,
     force: bool,
 ) -> Result<(), Error> {
-    if force || !internal::admin::is_last_admin(&pool, group_name, &user.user_uuid)? {
-        return internal::member::remove_from_group(host_uuid, &pool, &user.user_uuid, group_name);
+    if force || !internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
+        return internal::member::remove_from_group(
+            host_uuid,
+            &connection,
+            &user.user_uuid,
+            group_name,
+        );
     }
     Err(error::OperationError::LastAdmin.into())
 }
@@ -134,7 +140,6 @@ pub fn add(
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let user_uuid_f = user.user_uuid;
-    let pool_f = pool.clone();
     ONLY_ADMINS
         .run(&RuleContext::minimal(
             &pool.clone(),
@@ -143,18 +148,21 @@ pub fn add(
             &host.user_uuid,
         ))
         .map_err(Into::into)
-        .and_then(move |_| {
+        .and_then(move |_| pool.get().map_err(Into::into))
+        .and_then(move |connection| {
             if expiration.is_none() {
-                internal::group::get_group(&pool, group_name).map(|g| g.group_expiration)
+                internal::group::get_group(&connection, group_name)
+                    .map(|g| (connection, g.group_expiration))
             } else {
-                Ok(expiration)
+                Ok((connection, expiration))
             }
         })
-        .and_then(move |expiration| {
-            internal::member::add_to_group(&pool, &group_name, &host, &user, expiration)
+        .and_then(move |(connection, expiration)| {
+            internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)
+                .map(|_| connection)
         })
         .into_future()
-        .and_then(move |_| operations::users::user_profile_by_uuid(&pool_f, &user_uuid_f))
+        .and_then(move |connection| internal::user::user_profile_by_uuid(&connection, &user_uuid_f))
         .and_then(move |user_profile| {
             add_group_to_profile(cis_client, group_name_f, user_profile.profile)
         })
@@ -170,7 +178,6 @@ pub fn remove(
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let group_name_ff = group_name.to_owned();
-    let pool_f = pool.clone();
     let user_f = *user;
     let host_uuid = host.user_uuid;
     REMOVE_MEMBER
@@ -181,13 +188,18 @@ pub fn remove(
             &host.user_uuid,
         ))
         .map_err(Into::into)
-        .and_then(|_| operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid))
-        .into_future()
-        .and_then(move |user_profile| {
-            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
+        .and_then(move |_| pool.get().map_err(Into::into))
+        .and_then(|connection| {
+            internal::user::user_profile_by_uuid(&connection, &user.user_uuid)
+                .map(|user_profile| (connection, user_profile))
         })
-        .and_then(move |_| {
-            db_leave(&host_uuid, &pool_f, &group_name_ff, &user_f, true).into_future()
+        .into_future()
+        .and_then(move |(connection, user_profile)| {
+            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
+                .map(|_| connection)
+        })
+        .and_then(move |connection| {
+            db_leave(&host_uuid, &connection, &group_name_ff, &user_f, true).into_future()
         })
 }
 
@@ -200,21 +212,27 @@ pub fn leave(
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let group_name_ff = group_name.to_owned();
-    let pool_f = pool.clone();
-    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .and_then(|user| {
+
+    pool.get()
+        .map_err(Into::into)
+        .and_then(|connection| {
+            internal::user::user_by_id(&connection, &scope_and_user.user_id)
+                .map(|user| (connection, user))
+        })
+        .and_then(|(connection, user)| {
             operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
-                .map(|user_profile| (user_profile, user))
+                .map(|user_profile| (connection, user_profile, user))
         })
         .into_future()
-        .and_then(move |(user_profile, user)| {
+        .and_then(move |(connection, user_profile, user)| {
             remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
-                .map(move |_| user)
+                .map(move |_| (connection, user))
         })
-        .and_then(move |user| {
-            db_leave(&user.user_uuid, &pool_f, &group_name_ff, &user, force).into_future()
+        .and_then(move |(connection, user)| {
+            db_leave(&user.user_uuid, &connection, &group_name_ff, &user, force).into_future()
         })
 }
+
 pub fn renew(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
@@ -230,8 +248,11 @@ pub fn renew(
         &host.user_uuid,
         &user.user_uuid,
     ))?;
-    internal::member::renew(&host.user_uuid, pool, group_name, user, expiration)
+    let connection = pool.get()?;
+    internal::member::renew(&host.user_uuid, &connection, group_name, user, expiration)
 }
 
-pub use internal::member::member_role;
-pub use internal::member::role_for;
+pub fn role_for(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<Role, Error> {
+    let connection = pool.get()?;
+    internal::member::role_for(&connection, user_uuid, group_name)
+}

@@ -7,7 +7,7 @@ use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::operations::models::NewGroup;
 use crate::db::schema;
 use crate::db::types::*;
-use crate::db::Pool;
+
 use diesel::dsl::exists;
 use diesel::dsl::select;
 use diesel::prelude::*;
@@ -16,32 +16,33 @@ use serde_json::Value;
 use uuid::Uuid;
 
 pub fn get_group_with_terms_flag(
-    pool: &Pool,
+    connection: &PgConnection,
     group_name: &str,
 ) -> Result<GroupWithTermsFlag, Error> {
-    let connection = pool.get()?;
     let group = schema::groups::table
         .filter(schema::groups::name.eq(group_name))
         .filter(schema::groups::active.eq(true))
-        .first::<Group>(&connection)?;
+        .first::<Group>(connection)?;
     let terms = select(exists(
         schema::terms::table.filter(schema::terms::group_id.eq(group.id)),
     ))
-    .get_result(&connection)?;
+    .get_result(connection)?;
     Ok(GroupWithTermsFlag { group, terms })
 }
 
-pub fn get_group(pool: &Pool, group_name: &str) -> Result<Group, Error> {
-    let connection = pool.get()?;
+pub fn get_group(connection: &PgConnection, group_name: &str) -> Result<Group, Error> {
     schema::groups::table
         .filter(schema::groups::name.eq(group_name))
         .filter(schema::groups::active.eq(true))
-        .first::<Group>(&connection)
+        .first::<Group>(connection)
         .map_err(Into::into)
 }
 
-pub fn add_group(host_uuid: &Uuid, pool: &Pool, new_group: NewGroup) -> Result<Group, Error> {
-    let connection = pool.get()?;
+pub fn add_group(
+    host_uuid: &Uuid,
+    connection: &PgConnection,
+    new_group: NewGroup,
+) -> Result<Group, Error> {
     let group = InsertGroup {
         name: new_group.name,
         active: true,
@@ -58,12 +59,12 @@ pub fn add_group(host_uuid: &Uuid, pool: &Pool, new_group: NewGroup) -> Result<G
     diesel::insert_into(schema::groups::table)
         .values(&group)
         .on_conflict_do_nothing()
-        .get_result::<Group>(&connection)
+        .get_result::<Group>(connection)
         .map_err(Into::into)
         .map(|group| {
             let log_ctx = LogContext::with(group.id, *host_uuid);
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Group,
                 LogOperationType::Created,
@@ -75,11 +76,10 @@ pub fn add_group(host_uuid: &Uuid, pool: &Pool, new_group: NewGroup) -> Result<G
 
 pub fn update_group(
     host_uuid: &Uuid,
-    pool: &Pool,
+    connection: &PgConnection,
     name: String,
     group_update: GroupUpdate,
 ) -> Result<Group, Error> {
-    let connection = pool.get()?;
     let log_comment = group_update.log_comment();
     diesel::update(schema::groups::table.filter(schema::groups::name.eq(&name)))
         .set((
@@ -96,12 +96,12 @@ pub fn update_group(
                 .map(|e| e.and_then(|i| if i < 1 { None } else { Some(i) }))
                 .map(|e| schema::groups::group_expiration.eq(e)),
         ))
-        .get_result::<Group>(&connection)
+        .get_result::<Group>(connection)
         .map_err(Into::into)
         .map(move |group| {
             let log_ctx = LogContext::with(group.id, *host_uuid);
             internal::log::db_log(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Group,
                 LogOperationType::Updated,
@@ -120,17 +120,16 @@ fn log_delete(
     internal::log::db_log(connection, log_ctx, target, LogOperationType::Deleted, body);
 }
 
-pub fn delete_group(host_uuid: &Uuid, pool: &Pool, name: &str) -> Result<(), Error> {
-    let connection = pool.get()?;
-    let group = get_group(pool, name)?;
+pub fn delete_group(host_uuid: &Uuid, connection: &PgConnection, name: &str) -> Result<(), Error> {
+    let group = get_group(connection, name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid);
     diesel::delete(schema::invitations::table)
         .filter(schema::invitations::group_id.eq(group.id))
-        .execute(&connection)
+        .execute(connection)
         .optional()
         .map(|_| {
             log_delete(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Invitation,
                 log_comment_body("all outstanding invitations"),
@@ -138,10 +137,10 @@ pub fn delete_group(host_uuid: &Uuid, pool: &Pool, name: &str) -> Result<(), Err
         })?;
     diesel::delete(schema::roles::table)
         .filter(schema::roles::group_id.eq(group.id))
-        .execute(&connection)
+        .execute(connection)
         .map(|_| {
             log_delete(
-                &connection,
+                connection,
                 &log_ctx,
                 LogTargetType::Role,
                 log_comment_body("all roles"),
@@ -149,16 +148,16 @@ pub fn delete_group(host_uuid: &Uuid, pool: &Pool, name: &str) -> Result<(), Err
         })?;
     diesel::delete(schema::terms::table)
         .filter(schema::terms::group_id.eq(group.id))
-        .execute(&connection)
+        .execute(connection)
         .optional()
-        .map(|_| log_delete(&connection, &log_ctx, LogTargetType::Terms, None))?;
+        .map(|_| log_delete(connection, &log_ctx, LogTargetType::Terms, None))?;
     diesel::update(schema::groups::table)
         .filter(schema::groups::name.eq(name))
         .set((
             schema::groups::description.eq(""),
             schema::groups::active.eq(false),
         ))
-        .execute(&connection)
-        .map(|_| log_delete(&connection, &log_ctx, LogTargetType::Group, None))
+        .execute(connection)
+        .map(|_| log_delete(connection, &log_ctx, LogTargetType::Group, None))
         .map_err(Into::into)
 }

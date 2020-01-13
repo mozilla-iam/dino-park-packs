@@ -34,7 +34,7 @@ embed_migrations!();
 fn main() -> Result<(), Error> {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
-    info!("starting dino-park-whoami");
+    info!("starting dino-park-packs");
 
     let s = settings::Settings::new()?;
     let cis_client = Arc::new(CisClient::from_settings(&s.cis)?);
