@@ -140,7 +140,6 @@ pub fn add(
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let user_uuid_f = user.user_uuid;
-    let _pool_f = pool.clone();
     ONLY_ADMINS
         .run(&RuleContext::minimal(
             &pool.clone(),
@@ -179,7 +178,6 @@ pub fn remove(
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let group_name_ff = group_name.to_owned();
-    let _pool_f = pool.clone();
     let user_f = *user;
     let host_uuid = host.user_uuid;
     REMOVE_MEMBER
@@ -214,7 +212,6 @@ pub fn leave(
 ) -> impl Future<Item = (), Error = Error> {
     let group_name_f = group_name.to_owned();
     let group_name_ff = group_name.to_owned();
-    let _pool_f = pool.clone();
 
     pool.get()
         .map_err(Into::into)
