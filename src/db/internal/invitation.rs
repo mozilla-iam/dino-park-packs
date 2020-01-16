@@ -10,13 +10,13 @@ use crate::db::types::LogOperationType;
 use crate::db::types::LogTargetType;
 use crate::db::types::TrustType;
 use crate::db::views;
-
 use crate::user::User;
 use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use failure::Error;
+use uuid::Uuid;
 
 macro_rules! scoped_invitations_for_user {
     ($t:ident, $h:ident, $f:ident) => {
@@ -288,5 +288,24 @@ pub fn accept(connection: &PgConnection, group_name: &str, member: &User) -> Res
                 .and(schema::invitations::group_id.eq(group.id)),
         )
         .execute(connection)?;
+    Ok(())
+}
+
+pub fn expire_before(connection: &PgConnection, before: NaiveDateTime) -> Result<(), Error> {
+    let deleted = diesel::delete(schema::invitations::table)
+        .filter(schema::invitations::invitation_expiration.le(before))
+        .get_results::<Invitation>(connection)?;
+
+    for invitation in deleted {
+        let log_ctx =
+            LogContext::with(invitation.group_id, Uuid::default()).with_user(invitation.user_uuid);
+        internal::log::db_log(
+            connection,
+            &log_ctx,
+            LogTargetType::Invitation,
+            LogOperationType::Deleted,
+            log_comment_body("expired"),
+        );
+    }
     Ok(())
 }

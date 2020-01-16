@@ -38,6 +38,14 @@ pub fn get_group(connection: &PgConnection, group_name: &str) -> Result<Group, E
         .map_err(Into::into)
 }
 
+pub fn get_group_by_id(connection: &PgConnection, group_id: i32) -> Result<Group, Error> {
+    schema::groups::table
+        .filter(schema::groups::group_id.eq(group_id))
+        .filter(schema::groups::active.eq(true))
+        .first::<Group>(connection)
+        .map_err(Into::into)
+}
+
 pub fn add_group(
     host_uuid: &Uuid,
     connection: &PgConnection,

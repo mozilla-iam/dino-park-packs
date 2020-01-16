@@ -11,6 +11,7 @@ use actix_web::web;
 use actix_web::web::Bytes;
 use actix_web::HttpResponse;
 use actix_web::Responder;
+use cis_client::CisClient;
 use cis_profile::schema::Profile;
 use futures::future;
 use futures::future::IntoFuture;
@@ -18,6 +19,7 @@ use futures::Future;
 use futures::Stream;
 use log::error;
 use serde_derive::Serialize;
+use std::sync::Arc;
 
 #[derive(Serialize)]
 pub struct UpdatedProfiles {
@@ -26,6 +28,19 @@ pub struct UpdatedProfiles {
 
 fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Responder {
     operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().finish())
+}
+
+fn expire_all(
+    pool: web::Data<Pool>,
+    cis_client: web::Data<Arc<CisClient>>,
+) -> impl Future<Item = HttpResponse, Error = ApiError> {
+    let pool_f = pool.clone();
+    let cis_client = Arc::clone(&cis_client);
+    operations::expirations::expire_invitations(&pool)
+        .into_future()
+        .and_then(move |_| operations::expirations::expire_memberships(&pool_f, cis_client))
+        .map_err(Into::into)
+        .map(|_| HttpResponse::Ok().finish())
 }
 
 fn bulk_update_users(
@@ -39,7 +54,7 @@ fn bulk_update_users(
                 .fold(Vec::<u8>::new(), |mut acc: Vec<u8>, bytes: Bytes| {
                     acc.extend(bytes.into_iter());
                     future::result(Ok(acc).map_err(|e| {
-                        println!("file.write_all failed: {:?}", e);
+                        error!("failed multipart, {:?}", e);
                         MultipartError::Payload(error::PayloadError::Io(e))
                     }))
                 })
@@ -78,4 +93,5 @@ pub fn internal_app() -> impl HttpServiceFactory {
         .data(web::JsonConfig::default().limit(1_048_576))
         .service(web::resource("/update/bulk").route(web::post().to_async(bulk_update_users)))
         .service(web::resource("/update/user").route(web::post().to(update_user)))
+        .service(web::resource("/expire/all").route(web::post().to_async(expire_all)))
 }

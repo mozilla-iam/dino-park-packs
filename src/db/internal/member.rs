@@ -8,11 +8,12 @@ use crate::db::types::LogOperationType;
 use crate::db::types::LogTargetType;
 use crate::db::types::*;
 use crate::db::views;
-
 use crate::user::User;
 use crate::utils::to_expiration_ts;
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use failure::Error;
+use serde_json::Value;
 use uuid::Uuid;
 
 const ROLE_MEMBER: &str = "member";
@@ -162,6 +163,7 @@ pub fn remove_from_group(
     connection: &PgConnection,
     user_uuid: &Uuid,
     group_name: &str,
+    comment: Option<Value>,
 ) -> Result<(), Error> {
     let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid).with_user(*user_uuid);
@@ -175,7 +177,7 @@ pub fn remove_from_group(
                 &log_ctx,
                 LogTargetType::Membership,
                 LogOperationType::Deleted,
-                None,
+                comment,
             );
         })
         .map_err(Into::into)
@@ -261,5 +263,15 @@ pub fn get_members_not_current(
         .select(schema::memberships::user_uuid)
         .get_results(connection)
         .map(|r| r.into_iter().map(|user_uuid| User { user_uuid }).collect())
+        .map_err(Into::into)
+}
+
+pub fn get_memberships_expired_before(
+    connection: &PgConnection,
+    before: NaiveDateTime,
+) -> Result<Vec<Membership>, Error> {
+    schema::memberships::table
+        .filter(schema::memberships::expiration.le(before))
+        .get_results(connection)
         .map_err(Into::into)
 }

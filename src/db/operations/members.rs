@@ -24,6 +24,7 @@ use failure::format_err;
 use failure::Error;
 use futures::future::IntoFuture;
 use futures::Future;
+use serde_json::Value;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -117,6 +118,7 @@ fn db_leave(
     group_name: &str,
     user: &User,
     force: bool,
+    comment: Option<Value>,
 ) -> Result<(), Error> {
     if force || !internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
         return internal::member::remove_from_group(
@@ -124,6 +126,7 @@ fn db_leave(
             &connection,
             &user.user_uuid,
             group_name,
+            comment,
         );
     }
     Err(error::OperationError::LastAdmin.into())
@@ -199,7 +202,7 @@ pub fn remove(
                 .map(|_| connection)
         })
         .and_then(move |connection| {
-            db_leave(&host_uuid, &connection, &group_name_ff, &user_f, true).into_future()
+            db_leave(&host_uuid, &connection, &group_name_ff, &user_f, true, None).into_future()
         })
 }
 
@@ -229,7 +232,15 @@ pub fn leave(
                 .map(move |_| (connection, user))
         })
         .and_then(move |(connection, user)| {
-            db_leave(&user.user_uuid, &connection, &group_name_ff, &user, force).into_future()
+            db_leave(
+                &user.user_uuid,
+                &connection,
+                &group_name_ff,
+                &user,
+                force,
+                None,
+            )
+            .into_future()
         })
 }
 

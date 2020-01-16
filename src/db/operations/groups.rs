@@ -83,7 +83,6 @@ pub fn delete_group(
     let group_name_fff = name.to_owned();
     let pool_f = pool.clone();
     let pool_ff = pool.clone();
-    let _pool_fff = pool.clone();
     let scope_and_user_f = scope_and_user.clone();
     let scope_and_user_ff = scope_and_user.clone();
     let cis_client_f = Arc::clone(&cis_client);

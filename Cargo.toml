@@ -11,7 +11,7 @@ localuserscope = ["dino_park_gate/localuserscope"]
 [dependencies]
 cis_client = { git = "https://github.com/fiji-flo/cis_client-rust", branch = "0.3.1", version = "0.3.1" }
 cis_profile = { git = "https://github.com/fiji-flo/cis_profile-rust", branch = "0.3.1", version = "0.3.1", features = ["aws", "vendored"] }
-dino_park_gate = { git = "https://github.com/fiji-flo/dino-park-gate", branch = "0.2.0", version = "0.2.0" }
+dino_park_gate = { git = "https://github.com/mozilla-iam/dino-park-gate", branch = "0.2.0", version = "0.2.0" }
 diesel = { version = "1.4", features = ["postgres", "uuidv07", "r2d2", "chrono", "serde_json"] }
 diesel_migrations = "1.4"
 actix-web = "1.0"

@@ -333,7 +333,7 @@ paths:
                   example: 180
       responses:
         "201":
-          description: member added
+          description: member renewed
         "406":
           description: not acceptable
   "/groups/api/v1/members/{groupName}/{memberUuid}":
@@ -359,6 +359,7 @@ paths:
           description: member deleted
         "406":
           description: not acceptable
+  "/groups/api/v1/members/{groupName}":
     post:
       summary: add a member
       description: add a member to a group (admins only)
@@ -382,6 +383,10 @@ paths:
             schema:
               type: object
               properties:
+                user_uuid:
+                  type: string
+                  format: uuid
+                  example: 34a33a8e-d035-4051-acac-497a79235e73
                 group_expiration:
                   description: expiration period in days
                   type: integer
@@ -391,7 +396,6 @@ paths:
           description: member added
         "406":
           description: not acceptable
-  "/groups/api/v1/members/{groupName}":
     get:
       summary: paginated members
       description: |
