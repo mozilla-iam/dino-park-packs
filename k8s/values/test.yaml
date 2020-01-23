@@ -1,0 +1,3 @@
+env: test
+namespace: dinopark-test
+assume_role: arn:aws:iam::320464205386:role/dino-park-packs-role-test-us-west-2

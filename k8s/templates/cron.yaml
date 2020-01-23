@@ -11,9 +11,9 @@ spec:
         spec:
           containers:
           - name: {{ .Values.name }}-cron
-            image: curl
+            image: curlimages/curl
             args:
             - /bin/sh
             - -c
-            - curl -X POST localhost:8085/internal/expire/all
+            - curl -X POST dino-park-packs-service/internal/expire/all
           restartPolicy: OnFailure
