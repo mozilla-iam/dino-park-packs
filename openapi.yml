@@ -524,7 +524,22 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/MyInvitation"
-  "/groups/api/v1/self/join/{groupName}":
+  "/groups/api/v1/self/invitations/{groupName}":
+    delete:
+      summary: reject an invitation to a group
+      description: reject an invitation to a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: rejected invitation
+        "406":
+          description: not acceptable
     post:
       summary: join a group
       description: join a group

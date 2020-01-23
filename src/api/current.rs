@@ -66,6 +66,18 @@ fn leave(
     .map_err(Into::into)
 }
 
+fn reject(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+) -> impl Responder {
+    match operations::invitations::reject_invitation(&pool, &scope_and_user, &group_name) {
+        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Err(e) => Err(ApiError::NotAcceptableError(e)),
+    }
+}
+
 fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user, &user) {
@@ -83,7 +95,11 @@ pub fn current_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(web::resource("/join/{group_name}").route(web::post().to_async(join)))
+        .service(
+            web::resource("/invitations/{group_name}")
+                .route(web::delete().to(reject))
+                .route(web::post().to_async(join)),
+        )
         .service(web::resource("/invitations").route(web::get().to(invitations)))
         .service(web::resource("/{group_name}").route(web::delete().to_async(leave)))
 }

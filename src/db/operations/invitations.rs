@@ -1,4 +1,5 @@
 use crate::cis::operations::add_group_to_profile;
+use crate::db::internal;
 use crate::db::internal::invitation::*;
 use crate::db::operations::models::*;
 use crate::db::Pool;
@@ -33,6 +34,16 @@ pub fn delete_invitation(
     ))?;
     let connection = pool.get()?;
     delete(&connection, group_name, host, member)
+}
+
+pub fn reject_invitation(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    delete(&connection, group_name, User::default(), user)
 }
 
 pub fn update_invitation(
