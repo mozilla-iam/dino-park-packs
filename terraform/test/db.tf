@@ -1,5 +1,6 @@
 resource "aws_db_instance" "dino_park_packs_db" {
   name                        = "dino-park-packs-db-${var.environment}-${var.region}"
+  identifier                  = "dino-park-packs-db-${var.environment}-${var.region}"
   allocated_storage           = 10
   max_allocated_storage       = 100
   storage_type                = "gp2"
@@ -27,7 +28,7 @@ resource "aws_security_group" "dino_park_packs_db" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "TCP"
-    cidr_blocks = ["172.16.0.0/16"]
+    cidr_blocks = ["10.0.0.0/16"]
   }
 
   egress {
