@@ -6,5 +6,6 @@ pub mod internal;
 pub mod invitations;
 pub mod members;
 pub mod models;
+pub mod sudo;
 pub mod terms;
 pub mod users;

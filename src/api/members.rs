@@ -19,12 +19,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
-pub struct AddMember {
-    user_uuid: Uuid,
-    group_expiration: Option<i32>,
-}
-
-#[derive(Clone, Deserialize)]
 pub struct RenewMember {
     group_expiration: Option<i32>,
 }
@@ -79,31 +73,6 @@ fn get_members(
         Ok(members) => Ok(HttpResponse::Ok().json(members)),
         Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
-}
-
-fn add_member(
-    pool: web::Data<Pool>,
-    group_name: web::Path<String>,
-    scope_and_user: ScopeAndUser,
-    add_member: web::Json<AddMember>,
-    cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    let user_uuid = add_member.user_uuid;
-    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .into_future()
-        .and_then(move |host| {
-            operations::members::add(
-                &pool,
-                &scope_and_user,
-                &group_name,
-                &host,
-                &User { user_uuid },
-                add_member.group_expiration,
-                Arc::clone(&*cis_client),
-            )
-        })
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(ApiError::NotAcceptableError)
 }
 
 fn remove_member(
@@ -162,11 +131,7 @@ pub fn members_app() -> impl HttpServiceFactory {
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600),
         )
-        .service(
-            web::resource("/{group_name}")
-                .route(web::post().to_async(add_member))
-                .route(web::get().to(get_members)),
-        )
+        .service(web::resource("/{group_name}").route(web::get().to(get_members)))
         .service(
             web::resource("/{group_name}/{user_uuid}").route(web::delete().to_async(remove_member)),
         )

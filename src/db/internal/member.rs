@@ -192,11 +192,12 @@ pub fn add_to_group(
 ) -> Result<(), Error> {
     let group = internal::group::get_group(connection, group_name)?;
     let role = internal::member::member_role(connection, group_name)?;
+    let expiration = internal::expiration::map_expiration(expiration, group.group_expiration);
     let membership = InsertMembership {
         group_id: group.id,
         user_uuid: member.user_uuid,
         role_id: role.id,
-        expiration: expiration.map(to_expiration_ts),
+        expiration,
         added_by: host.user_uuid,
     };
     let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);

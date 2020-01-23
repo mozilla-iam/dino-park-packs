@@ -360,42 +360,6 @@ paths:
         "406":
           description: not acceptable
   "/groups/api/v1/members/{groupName}":
-    post:
-      summary: add a member
-      description: add a member to a group (admins only)
-      parameters:
-        - in: path
-          name: groupName
-          description: pass in the group name to interact with
-          required: true
-          schema:
-            type: string
-        - in: path
-          name: memberUuid
-          description: pass in the uuid of the member to add
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                user_uuid:
-                  type: string
-                  format: uuid
-                  example: 34a33a8e-d035-4051-acac-497a79235e73
-                group_expiration:
-                  description: expiration period in days
-                  type: integer
-                  example: 180
-      responses:
-        "201":
-          description: member added
-        "406":
-          description: not acceptable
     get:
       summary: paginated members
       description: |
@@ -589,6 +553,43 @@ paths:
                     type: string
                     enum: [pending, joined]
                     example: joined
+        "406":
+          description: not acceptable
+  "/groups/api/v1/sudo/member/{groupName}":
+    post:
+      summary: add a member
+      description: add a member to a group (admins only)
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberUuid
+          description: pass in the uuid of the member to add
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_uuid:
+                  type: string
+                  format: uuid
+                  example: 34a33a8e-d035-4051-acac-497a79235e73
+                group_expiration:
+                  description: expiration period in days
+                  type: integer
+                  example: 180
+      responses:
+        "201":
+          description: member added
         "406":
           description: not acceptable
 servers:

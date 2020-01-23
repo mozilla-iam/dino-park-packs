@@ -11,7 +11,6 @@ use crate::db::types::LogTargetType;
 use crate::db::types::TrustType;
 use crate::db::views;
 use crate::user::User;
-use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
@@ -249,11 +248,8 @@ pub fn accept(connection: &PgConnection, group_name: &str, member: &User) -> Res
                 .and(schema::invitations::group_id.eq(group.id)),
         )
         .first::<Invitation>(connection)?;
-    let expiration = match invitation.group_expiration {
-        Some(exp) => Some(exp),
-        None => group.group_expiration,
-    }
-    .map(to_expiration_ts);
+    let expiration =
+        internal::expiration::map_expiration(invitation.group_expiration, group.group_expiration);
     let role = internal::member::member_role(connection, group_name)?;
     let membership = InsertMembership {
         group_id: invitation.group_id,

@@ -2,6 +2,7 @@ use crate::db::model::Group;
 use crate::db::schema::*;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
+use serde::Serialize;
 use serde_json::json;
 use serde_json::Value;
 use uuid::Uuid;
@@ -10,7 +11,7 @@ use uuid::Uuid;
 #[belongs_to(Group)]
 #[primary_key(group_id)]
 #[table_name = "logs"]
-pub struct Log {
+pub struct InsertLog {
     pub ts: Option<NaiveDateTime>,
     pub target: LogTargetType,
     pub operation: LogOperationType,
@@ -18,7 +19,23 @@ pub struct Log {
     pub host_uuid: Uuid,
     pub user_uuid: Option<Uuid>,
     pub ok: bool,
-    pub body: Value,
+    pub body: Option<Value>,
+}
+
+#[derive(Identifiable, Associations, Queryable, PartialEq, Debug, Serialize)]
+#[belongs_to(Group)]
+#[primary_key(group_id)]
+#[table_name = "logs"]
+pub struct Log {
+    pub id: i32,
+    pub ts: NaiveDateTime,
+    pub target: LogTargetType,
+    pub operation: LogOperationType,
+    pub group_id: i32,
+    pub host_uuid: Uuid,
+    pub user_uuid: Option<Uuid>,
+    pub ok: bool,
+    pub body: Option<Value>,
 }
 
 pub fn log_comment_body(comment: &str) -> Option<Value> {

@@ -6,7 +6,6 @@ use crate::db::schema;
 use crate::db::types::*;
 
 use crate::user::User;
-use crate::utils::to_expiration_ts;
 use diesel::prelude::*;
 use failure::Error;
 use uuid::Uuid;
@@ -56,8 +55,8 @@ pub fn demote_to_member(
     user: &User,
     expiration: Option<i32>,
 ) -> Result<Membership, Error> {
-    let expiration = expiration.map(to_expiration_ts);
     let group = internal::group::get_group(connection, group_name)?;
+    let expiration = internal::expiration::map_expiration(expiration, group.group_expiration);
     let role = internal::member::member_role(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, *host_uuid).with_user(user.user_uuid);
     diesel::update(
