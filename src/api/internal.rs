@@ -1,6 +1,7 @@
 use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
+use crate::user::User;
 use actix_cors::Cors;
 use actix_multipart::Multipart;
 use actix_multipart::MultipartError;
@@ -20,6 +21,7 @@ use futures::Stream;
 use log::error;
 use serde_derive::Serialize;
 use std::sync::Arc;
+use uuid::Uuid;
 
 #[derive(Serialize)]
 pub struct UpdatedProfiles {
@@ -28,6 +30,13 @@ pub struct UpdatedProfiles {
 
 fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Responder {
     operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().finish())
+}
+
+fn delete_user(pool: web::Data<Pool>, user_uuid: web::Path<Uuid>) -> impl Responder {
+    let user = User {
+        user_uuid: user_uuid.into_inner(),
+    };
+    operations::users::delete_user(&pool, &user).map(|_| HttpResponse::Ok().finish())
 }
 
 fn expire_all(
@@ -93,5 +102,6 @@ pub fn internal_app() -> impl HttpServiceFactory {
         .data(web::JsonConfig::default().limit(1_048_576))
         .service(web::resource("/update/bulk").route(web::post().to_async(bulk_update_users)))
         .service(web::resource("/update/user").route(web::post().to(update_user)))
+        .service(web::resource("/delete/{user_uuid}").route(web::delete().to(delete_user)))
         .service(web::resource("/expire/all").route(web::post().to_async(expire_all)))
 }

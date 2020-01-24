@@ -42,7 +42,7 @@ macro_rules! scoped_members_and_host_for {
                     m::table
                         .filter(m::group_id.eq(group.id))
                         .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
-                        .inner_join(h::table.on(m::added_by.eq(h::user_uuid)))
+                        .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
                         .inner_join(r::table)
                         .filter(r::typ.eq_any(roles))
                         .filter(
@@ -68,11 +68,11 @@ macro_rules! scoped_members_and_host_for {
                             m::added_ts,
                             m::expiration,
                             r::typ,
-                            h::user_uuid,
-                            h::first_name,
-                            h::last_name,
-                            h::username,
-                            h::email,
+                            m::added_by,
+                            h::first_name.nullable(),
+                            h::last_name.nullable(),
+                            h::username.nullable(),
+                            h::email.nullable(),
                         ))
                         .offset(offset)
                         .limit(limit)

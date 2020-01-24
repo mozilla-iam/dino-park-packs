@@ -35,6 +35,11 @@ pub fn search_users(
     )
 }
 
+pub fn delete_user(pool: &Pool, user: &User) -> Result<(), Error> {
+    let connection = pool.get()?;
+    internal::user::delete_user(&connection, user)
+}
+
 pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
     let connection = pool.get()?;
     internal::user::update_user_cache(&connection, profile)

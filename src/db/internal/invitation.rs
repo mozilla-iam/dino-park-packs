@@ -31,7 +31,7 @@ macro_rules! scoped_invitations_for_user {
                 .filter(g::active.eq(true))
                 .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
                 .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
-                .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
+                .left_outer_join(h::table.on(h::user_uuid.eq(i::added_by)))
                 .select((
                     u::user_uuid,
                     u::picture,
@@ -44,11 +44,11 @@ macro_rules! scoped_invitations_for_user {
                     i::group_expiration,
                     g::name,
                     t::text.is_not_null(),
-                    h::user_uuid,
-                    h::first_name,
-                    h::last_name,
-                    h::username,
-                    h::email,
+                    i::added_by,
+                    h::first_name.nullable(),
+                    h::last_name.nullable(),
+                    h::username.nullable(),
+                    h::email.nullable(),
                 ))
                 .get_results::<InvitationAndHost>(connection)
                 .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
@@ -74,7 +74,7 @@ macro_rules! scoped_invitations_for {
                 .inner_join(i::table.on(i::group_id.eq(g::group_id)))
                 .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
                 .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
-                .inner_join(h::table.on(h::user_uuid.eq(i::added_by)))
+                .left_outer_join(h::table.on(h::user_uuid.eq(i::added_by)))
                 .select((
                     u::user_uuid,
                     u::picture,
@@ -87,11 +87,11 @@ macro_rules! scoped_invitations_for {
                     i::group_expiration,
                     g::name,
                     t::text.is_not_null(),
-                    h::user_uuid,
-                    h::first_name,
-                    h::last_name,
-                    h::username,
-                    h::email,
+                    i::added_by,
+                    h::first_name.nullable(),
+                    h::last_name.nullable(),
+                    h::username.nullable(),
+                    h::email.nullable(),
                 ))
                 .get_results::<InvitationAndHost>(connection)
                 .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())

@@ -83,7 +83,7 @@ pub struct InvitationAndHost {
     pub host_uuid: Uuid,
     pub host_first_name: Option<String>,
     pub host_last_name: Option<String>,
-    pub host_username: String,
+    pub host_username: Option<String>,
     pub host_email: Option<String>,
 }
 
@@ -130,7 +130,7 @@ pub struct DisplayHost {
     pub user_uuid: Uuid,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
-    pub username: String,
+    pub username: Option<String>,
     pub email: Option<String>,
 }
 
@@ -164,7 +164,7 @@ pub struct MemberAndHost {
     pub host_uuid: Uuid,
     pub host_first_name: Option<String>,
     pub host_last_name: Option<String>,
-    pub host_username: String,
+    pub host_username: Option<String>,
     pub host_email: Option<String>,
 }
 

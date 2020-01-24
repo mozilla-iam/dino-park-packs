@@ -8,6 +8,7 @@ use cis_profile::schema::Profile;
 use diesel::prelude::*;
 use failure::Error;
 use log::error;
+use log::info;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
@@ -40,6 +41,40 @@ pub fn user_profile_by_user_id(
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
         .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
+}
+
+pub fn delete_user(connection: &PgConnection, user: &User) -> Result<(), Error> {
+    diesel::delete(schema::invitations::table)
+        .filter(schema::invitations::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::memberships::table)
+        .filter(schema::memberships::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::users_staff::table)
+        .filter(schema::users_staff::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::users_ndaed::table)
+        .filter(schema::users_ndaed::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::users_vouched::table)
+        .filter(schema::users_vouched::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::users_authenticated::table)
+        .filter(schema::users_authenticated::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::users_public::table)
+        .filter(schema::users_public::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+
+    diesel::delete(schema::user_ids::table)
+        .filter(schema::user_ids::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+    diesel::delete(schema::profiles::table)
+        .filter(schema::profiles::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
+
+    info!("deleted user: {}", user.user_uuid);
+    Ok(())
 }
 
 pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result<(), Error> {
