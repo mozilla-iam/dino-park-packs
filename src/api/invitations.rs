@@ -27,7 +27,7 @@ pub struct Invitation {
     group_expiration: Option<i32>,
 }
 
-fn delete_invitation(
+async fn delete_invitation(
     _: HttpRequest,
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
@@ -48,7 +48,7 @@ fn delete_invitation(
     }
 }
 
-fn update_invitation(
+async fn update_invitation(
     _: HttpRequest,
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
@@ -75,7 +75,7 @@ fn update_invitation(
     }
 }
 
-fn invite_member(
+async fn invite_member(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -103,7 +103,7 @@ fn invite_member(
     }
 }
 
-pub fn pending(
+async fn pending(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -123,7 +123,8 @@ pub fn invitations_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET", "PUT", "POST"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
         .service(
             web::resource("/{group_name}/{user_uuid}")

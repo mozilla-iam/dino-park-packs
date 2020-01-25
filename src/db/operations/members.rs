@@ -22,8 +22,6 @@ use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::format_err;
 use failure::Error;
-use futures::future::IntoFuture;
-use futures::Future;
 use serde_json::Value;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -132,7 +130,7 @@ fn db_leave(
     Err(error::OperationError::LastAdmin.into())
 }
 
-pub fn add(
+pub async fn add(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     group_name: &str,
@@ -140,108 +138,64 @@ pub fn add(
     user: &User,
     expiration: Option<i32>,
     cis_client: Arc<CisClient>,
-) -> impl Future<Item = (), Error = Error> {
-    let group_name_f = group_name.to_owned();
-    let user_uuid_f = user.user_uuid;
-    ONLY_ADMINS
-        .run(&RuleContext::minimal(
-            &pool.clone(),
-            scope_and_user,
-            &group_name,
-            &host.user_uuid,
-        ))
-        .map_err(Into::into)
-        .and_then(move |_| pool.get().map_err(Into::into))
-        .and_then(move |connection| {
-            if expiration.is_none() {
-                internal::group::get_group(&connection, group_name)
-                    .map(|g| (connection, g.group_expiration))
-            } else {
-                Ok((connection, expiration))
-            }
-        })
-        .and_then(move |(connection, expiration)| {
-            internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)
-                .map(|_| connection)
-        })
-        .into_future()
-        .and_then(move |connection| internal::user::user_profile_by_uuid(&connection, &user_uuid_f))
-        .and_then(move |user_profile| {
-            add_group_to_profile(cis_client, group_name_f, user_profile.profile)
-        })
+) -> Result<(), Error> {
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let connection = pool.get()?;
+    let expiration = if expiration.is_none() {
+        internal::group::get_group(&connection, group_name)?.group_expiration
+    } else {
+        expiration
+    };
+    internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)?;
+    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
 
-pub fn remove(
+pub async fn remove(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     group_name: &str,
     host: &User,
     user: &User,
     cis_client: Arc<CisClient>,
-) -> impl Future<Item = (), Error = Error> {
-    let group_name_f = group_name.to_owned();
-    let group_name_ff = group_name.to_owned();
-    let user_f = *user;
+) -> Result<(), Error> {
     let host_uuid = host.user_uuid;
-    REMOVE_MEMBER
-        .run(&RuleContext::minimal(
-            &pool,
-            scope_and_user,
-            &group_name,
-            &host.user_uuid,
-        ))
-        .map_err(Into::into)
-        .and_then(move |_| pool.get().map_err(Into::into))
-        .and_then(|connection| {
-            internal::user::user_profile_by_uuid(&connection, &user.user_uuid)
-                .map(|user_profile| (connection, user_profile))
-        })
-        .into_future()
-        .and_then(move |(connection, user_profile)| {
-            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
-                .map(|_| connection)
-        })
-        .and_then(move |connection| {
-            db_leave(&host_uuid, &connection, &group_name_ff, &user_f, true, None).into_future()
-        })
+    REMOVE_MEMBER.run(&RuleContext::minimal(
+        &pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let connection = pool.get()?;
+    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    remove_group_from_profile(cis_client, &group_name, user_profile.profile).await?;
+    db_leave(&host_uuid, &connection, &group_name, &user, true, None)
 }
 
-pub fn leave(
+pub async fn leave(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     group_name: &str,
     force: bool,
     cis_client: Arc<CisClient>,
-) -> impl Future<Item = (), Error = Error> {
-    let group_name_f = group_name.to_owned();
-    let group_name_ff = group_name.to_owned();
-
-    pool.get()
-        .map_err(Into::into)
-        .and_then(|connection| {
-            internal::user::user_by_id(&connection, &scope_and_user.user_id)
-                .map(|user| (connection, user))
-        })
-        .and_then(|(connection, user)| {
-            operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)
-                .map(|user_profile| (connection, user_profile, user))
-        })
-        .into_future()
-        .and_then(move |(connection, user_profile, user)| {
-            remove_group_from_profile(cis_client, &group_name_f, user_profile.profile)
-                .map(move |_| (connection, user))
-        })
-        .and_then(move |(connection, user)| {
-            db_leave(
-                &user.user_uuid,
-                &connection,
-                &group_name_ff,
-                &user,
-                force,
-                None,
-            )
-            .into_future()
-        })
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    let user_profile = operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)?;
+    remove_group_from_profile(cis_client, &group_name, user_profile.profile).await?;
+    db_leave(
+        &user.user_uuid,
+        &connection,
+        &group_name,
+        &user,
+        force,
+        None,
+    )
 }
 
 pub fn renew(

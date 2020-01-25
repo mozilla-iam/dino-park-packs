@@ -11,9 +11,7 @@ use cis_profile::schema::Profile;
 use cis_profile::schema::PublisherAuthority;
 use failure::format_err;
 use failure::Error;
-use futures::future::Either;
-use futures::future::IntoFuture;
-use futures::Future;
+use futures::TryFutureExt;
 use log::warn;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -59,11 +57,11 @@ fn remove_kv_and_sign_values_field(
     Ok(())
 }
 
-pub fn add_group_to_profile(
+pub async fn add_group_to_profile(
     cis_client: Arc<CisClient>,
     group_name: String,
     profile: Profile,
-) -> impl Future<Item = (), Error = Error> {
+) -> Result<(), Error> {
     let now = &Utc::now();
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
@@ -76,20 +74,23 @@ pub fn add_group_to_profile(
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
-                Either::A(cis_client.update_user(&user_id, update_profile).map(|_| ()))
+                cis_client
+                    .update_user(&user_id, update_profile)
+                    .map_ok(|_| ())
+                    .await
             } else {
-                Either::B(Err(format_err!("invalid user_id")).into_future())
+                Err(format_err!("invalid user_id"))
             }
         }
-        Err(e) => Either::B(Err(e).into_future()),
+        Err(e) => Err(e),
     }
 }
 
-pub fn remove_group_from_profile(
+pub async fn remove_group_from_profile(
     cis_client: Arc<CisClient>,
     group_name: &str,
     profile: Profile,
-) -> impl Future<Item = (), Error = Error> {
+) -> Result<(), Error> {
     let now = &Utc::now();
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
@@ -102,11 +103,14 @@ pub fn remove_group_from_profile(
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
-                Either::A(cis_client.update_user(&user_id, update_profile).map(|_| ()))
+                cis_client
+                    .update_user(&user_id, update_profile)
+                    .map_ok(|_| ())
+                    .await
             } else {
-                Either::B(Err(format_err!("invalid user_id")).into_future())
+                Err(format_err!("invalid user_id"))
             }
         }
-        Err(e) => Either::B(Err(e).into_future()),
+        Err(e) => Err(e),
     }
 }

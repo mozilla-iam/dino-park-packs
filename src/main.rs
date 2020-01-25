@@ -25,23 +25,33 @@ use actix_web::HttpServer;
 use cis_client::CisClient;
 use dino_park_gate::provider::Provider;
 use dino_park_gate::scope::ScopeAndUserAuth;
-use failure::Error;
+use futures::TryFutureExt;
 use log::info;
+use std::io::Error;
+use std::io::ErrorKind;
 use std::sync::Arc;
 
 embed_migrations!();
 
-fn main() -> Result<(), Error> {
+fn map_io_err(e: impl Into<failure::Error>) -> Error {
+    Error::new(ErrorKind::Other, e.into())
+}
+
+#[actix_rt::main]
+async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
     info!("starting dino-park-packs");
 
-    let s = settings::Settings::new()?;
-    let cis_client = Arc::new(CisClient::from_settings(&s.cis)?);
+    let s = settings::Settings::new().map_err(map_io_err)?;
+    let cis_client = Arc::new(CisClient::from_settings(&s.cis).map_err(map_io_err)?);
 
     let pool = db::establish_connection(&s.packs.postgres_url);
-    embedded_migrations::run_with_output(&pool.get()?, &mut std::io::stdout())?;
-    let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")?;
+    embedded_migrations::run_with_output(&pool.get().map_err(map_io_err)?, &mut std::io::stdout())
+        .map_err(map_io_err)?;
+    let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")
+        .map_err(map_io_err)
+        .await?;
     HttpServer::new(move || {
         let scope_middleware = ScopeAndUserAuth {
             checker: provider.clone(),
@@ -67,5 +77,5 @@ fn main() -> Result<(), Error> {
     })
     .bind("0.0.0.0:8085")?
     .run()
-    .map_err(Into::into)
+    .await
 }

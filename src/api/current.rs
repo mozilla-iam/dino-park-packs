@@ -10,8 +10,6 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use futures::future::Future;
-use futures::future::IntoFuture;
 use serde_derive::Deserialize;
 use std::sync::Arc;
 
@@ -20,41 +18,34 @@ struct ForceLeave {
     force: Option<bool>,
 }
 
-fn join(
+async fn join(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    let pool_f = pool.clone();
-    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .and_then(move |user| {
-            operations::users::user_profile_by_uuid(&pool, &user.user_uuid)
-                .map(|user_profile| (user, user_profile))
-        })
-        .into_future()
-        .and_then(move |(user, user_profile)| {
-            operations::invitations::accept_invitation(
-                &pool_f,
-                &group_name,
-                &user,
-                Arc::clone(&*cis_client),
-                user_profile.profile,
-            )
-        })
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(Into::into)
+) -> Result<HttpResponse, ApiError> {
+    let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    let user_profile = operations::users::user_profile_by_uuid(&pool, &user.user_uuid)?;
+    operations::invitations::accept_invitation(
+        &pool,
+        &group_name,
+        &user,
+        Arc::clone(&*cis_client),
+        user_profile.profile,
+    )
+    .await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
-fn leave(
+async fn leave(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     force: web::Query<ForceLeave>,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+) -> Result<HttpResponse, ApiError> {
     operations::members::leave(
         &pool,
         &scope_and_user,
@@ -62,11 +53,11 @@ fn leave(
         force.force.unwrap_or_default(),
         Arc::clone(&*cis_client),
     )
-    .map(|_| HttpResponse::Ok().finish())
-    .map_err(Into::into)
+    .await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
-fn reject(
+async fn reject(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -78,7 +69,7 @@ fn reject(
     }
 }
 
-fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
+async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user, &user) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
@@ -93,13 +84,14 @@ pub fn current_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET", "PUT", "POST", "DELETE"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
         .service(
             web::resource("/invitations/{group_name}")
                 .route(web::delete().to(reject))
-                .route(web::post().to_async(join)),
+                .route(web::post().to(join)),
         )
         .service(web::resource("/invitations").route(web::get().to(invitations)))
-        .service(web::resource("/{group_name}").route(web::delete().to_async(leave)))
+        .service(web::resource("/{group_name}").route(web::delete().to(leave)))
 }

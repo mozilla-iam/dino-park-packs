@@ -11,8 +11,6 @@ use cis_client::CisClient;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
-use futures::future::IntoFuture;
-use futures::Future;
 use serde_derive::Serialize;
 use std::sync::Arc;
 
@@ -152,17 +150,14 @@ pub fn pending_invitations_for_user(
     }
 }
 
-pub fn accept_invitation(
+pub async fn accept_invitation(
     pool: &Pool,
     group_name: &str,
     user: &User,
     cis_client: Arc<CisClient>,
     profile: Profile,
-) -> impl Future<Item = (), Error = Error> {
-    let group_name_f = group_name.to_owned();
-    pool.get()
-        .map_err(Into::into)
-        .and_then(|connection| accept(&connection, group_name, user))
-        .into_future()
-        .and_then(move |_| add_group_to_profile(cis_client, group_name_f, profile))
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    accept(&connection, group_name, user)?;
+    add_group_to_profile(cis_client, group_name.to_owned(), profile).await
 }

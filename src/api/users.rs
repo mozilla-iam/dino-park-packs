@@ -16,7 +16,7 @@ struct SearchUsersQuery {
     q: String,
     t: Option<TrustType>,
 }
-fn search_users(
+async fn search_users(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     query: web::Query<SearchUsersQuery>,
@@ -34,7 +34,8 @@ pub fn users_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
         .service(web::resource("").route(web::get().to(search_users)))
 }

@@ -14,17 +14,16 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use futures::Future;
 use log::info;
 use std::sync::Arc;
 
-fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
+async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     operations::groups::get_group(&pool, &group_name)
         .map(|group| HttpResponse::Ok().json(group))
         .map_err(ApiError::NotAcceptableError)
 }
 
-fn update_group(
+async fn update_group(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     group_update: web::Json<GroupUpdate>,
@@ -40,32 +39,30 @@ fn update_group(
     .map_err(ApiError::NotAcceptableError)
 }
 
-fn add_group(
+async fn add_group(
     cis_client: web::Data<Arc<CisClient>>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     new_group: web::Json<NewGroup>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+) -> Result<HttpResponse, ApiError> {
     let new_group = new_group.into_inner();
-    let cis_client = Arc::clone(&cis_client);
     info!("trying to create new group: {}", new_group.name);
-    operations::groups::add_new_group(&pool, &scope_and_user, new_group, cis_client)
-        .map(|_| HttpResponse::Created().finish())
-        .map_err(ApiError::NotAcceptableError)
+    operations::groups::add_new_group(&pool, &scope_and_user, new_group, Arc::clone(&*cis_client)).await?;
+    Ok(HttpResponse::Created().finish())
 }
 
-fn delete_group(
+async fn delete_group(
     cis_client: web::Data<Arc<CisClient>>,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+) -> Result<HttpResponse, ApiError> {
     operations::groups::delete_group(&pool, &scope_and_user, &group_name, Arc::clone(&cis_client))
-        .map(|_| HttpResponse::Created().finish())
-        .map_err(ApiError::NotAcceptableError)
+        .await?;
+    Ok(HttpResponse::Created().finish())
 }
 
-fn group_details(
+async fn group_details(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
@@ -134,14 +131,15 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET", "PUT", "POST"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
-        .service(web::resource("").route(web::post().to_async(add_group)))
+        .service(web::resource("").route(web::post().to(add_group)))
         .service(
             web::resource("/{group_name}")
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group))
-                .route(web::delete().to_async(delete_group)),
+                .route(web::delete().to(delete_group)),
         )
         .service(web::resource("/{group_name}/details").route(web::get().to(group_details)))
 }
