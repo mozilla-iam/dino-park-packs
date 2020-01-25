@@ -15,14 +15,14 @@ pub struct TermsUpdate {
     text: String,
 }
 
-fn view_terms(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
+async fn view_terms(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     match operations::terms::get_terms(&pool, &group_name) {
         Ok(terms) => Ok(HttpResponse::Ok().json(terms)),
         Err(e) => Err(ApiError::NotAcceptableError(e)),
     }
 }
 
-fn delete_terms(
+async fn delete_terms(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
@@ -33,7 +33,7 @@ fn delete_terms(
     }
 }
 
-fn update_terms(
+async fn update_terms(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     terms_update: web::Json<TermsUpdate>,
@@ -57,7 +57,8 @@ pub fn terms_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET", "PUT", "POST", "DELETE"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
         .service(
             web::resource("/{group_name}")

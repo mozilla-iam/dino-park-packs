@@ -12,8 +12,6 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use futures::future::IntoFuture;
-use futures::Future;
 use serde_derive::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -48,7 +46,7 @@ pub struct GetMembersQuery {
     s: Option<i64>,
 }
 
-fn get_members(
+async fn get_members(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -75,32 +73,28 @@ fn get_members(
     }
 }
 
-fn remove_member(
+async fn remove_member(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
-    let pool_f = pool.clone();
+) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let user = User { user_uuid };
-    operations::users::user_by_id(&pool, &scope_and_user.user_id)
-        .into_future()
-        .and_then(move |host| {
-            operations::members::remove(
-                &pool_f,
-                &scope_and_user,
-                &group_name,
-                &host,
-                &user,
-                Arc::clone(&*cis_client),
-            )
-        })
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(ApiError::NotAcceptableError)
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    operations::members::remove(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &user,
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
-fn renew_member(
+async fn renew_member(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
@@ -129,12 +123,11 @@ pub fn members_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET", "PUT", "POST"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
         .service(web::resource("/{group_name}").route(web::get().to(get_members)))
-        .service(
-            web::resource("/{group_name}/{user_uuid}").route(web::delete().to_async(remove_member)),
-        )
+        .service(web::resource("/{group_name}/{user_uuid}").route(web::delete().to(remove_member)))
         .service(
             web::resource("/{group_name}/{user_uuid}/renew").route(web::post().to(renew_member)),
         )

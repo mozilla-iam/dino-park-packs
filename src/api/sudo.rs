@@ -10,8 +10,6 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use futures::future::IntoFuture;
-use futures::Future;
 use serde_derive::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -22,32 +20,29 @@ pub struct AddMember {
     group_expiration: Option<i32>,
 }
 
-fn add_member(
+async fn add_member(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     add_member: web::Json<AddMember>,
     cis_client: web::Data<Arc<CisClient>>,
-) -> impl Future<Item = HttpResponse, Error = ApiError> {
+) -> Result<HttpResponse, ApiError> {
     let user_uuid = add_member.user_uuid;
-    operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)
-        .into_future()
-        .and_then(move |host| {
-            operations::members::add(
-                &pool,
-                &scope_and_user,
-                &group_name,
-                &host,
-                &User { user_uuid },
-                add_member.group_expiration,
-                Arc::clone(&*cis_client),
-            )
-        })
-        .map(|_| HttpResponse::Ok().finish())
-        .map_err(ApiError::NotAcceptableError)
+    let host = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
+    operations::members::add(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &User { user_uuid },
+        add_member.group_expiration,
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
-fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
+async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::logs::raw_logs(&pool, &scope_and_user, &user) {
         Ok(logs) => Ok(HttpResponse::Ok().json(logs)),
@@ -62,8 +57,9 @@ pub fn sudo_app() -> impl HttpServiceFactory {
                 .allowed_methods(vec!["GET", "PUT", "POST"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600),
+                .max_age(3600)
+                .finish(),
         )
-        .service(web::resource("/member/{group_name}").route(web::post().to_async(add_member)))
+        .service(web::resource("/member/{group_name}").route(web::post().to(add_member)))
         .service(web::resource("/logs/all/raw").route(web::get().to(all_raw_logs)))
 }
