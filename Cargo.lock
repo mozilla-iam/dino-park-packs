@@ -805,7 +805,7 @@ dependencies = [
  "diesel 1.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "diesel-derive-enum 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "diesel_migrations 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "dino_park_gate 0.3.0 (git+https://github.com/mozilla-iam/dino-park-gate?branch=0.3.1)",
+ "dino_park_gate 0.3.1 (git+https://github.com/mozilla-iam/dino-park-gate?tag=0.3.1)",
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure_derive 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -820,8 +820,8 @@ dependencies = [
 
 [[package]]
 name = "dino_park_gate"
-version = "0.3.0"
-source = "git+https://github.com/mozilla-iam/dino-park-gate?branch=0.3.1#a4215f6f78ad73786fbd32936fa1a8b6899ecadd"
+version = "0.3.1"
+source = "git+https://github.com/mozilla-iam/dino-park-gate?tag=0.3.1#9c706a47f30330fa921c4d7875c71e50b377658e"
 dependencies = [
  "actix-service 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3329,7 +3329,7 @@ dependencies = [
 "checksum diesel_derives 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "45f5098f628d02a7a0f68ddba586fb61e80edec3bdc1be3b921f4ceec60858d3"
 "checksum diesel_migrations 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bf3cde8413353dc7f5d72fa8ce0b99a560a359d2c5ef1e5817ca731cd9008f4c"
 "checksum digest 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f3d0c8c8752312f9713efd397ff63acb9f85585afbf179282e720e7704954dd5"
-"checksum dino_park_gate 0.3.0 (git+https://github.com/mozilla-iam/dino-park-gate?branch=0.3.1)" = "<none>"
+"checksum dino_park_gate 0.3.1 (git+https://github.com/mozilla-iam/dino-park-gate?tag=0.3.1)" = "<none>"
 "checksum dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "3fd78930633bd1c6e35c4b42b1df7b0cbc6bc191146e512bb3bedf243fcc3901"
 "checksum dtoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "ea57b42383d091c85abcc2706240b94ab2a8fa1fc81c10ff23c4de06e2a90b5e"
 "checksum either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
