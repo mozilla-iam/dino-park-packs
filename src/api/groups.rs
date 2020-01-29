@@ -6,6 +6,7 @@ use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::NewGroup;
 use crate::db::types::*;
 use crate::db::Pool;
+use crate::utils::valid_group_name;
 use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::http;
@@ -46,8 +47,12 @@ async fn add_group(
     new_group: web::Json<NewGroup>,
 ) -> Result<HttpResponse, ApiError> {
     let new_group = new_group.into_inner();
+    if !valid_group_name(&new_group.name) {
+        return Err(ApiError::InvalidGroupName);
+    }
     info!("trying to create new group: {}", new_group.name);
-    operations::groups::add_new_group(&pool, &scope_and_user, new_group, Arc::clone(&*cis_client)).await?;
+    operations::groups::add_new_group(&pool, &scope_and_user, new_group, Arc::clone(&*cis_client))
+        .await?;
     Ok(HttpResponse::Created().finish())
 }
 

@@ -77,7 +77,7 @@ pub fn internal_app() -> impl HttpServiceFactory {
                 .max_age(3600)
                 .finish(),
         )
-        .data(web::JsonConfig::default().limit(1_048_576))
+        .app_data(web::JsonConfig::default().limit(1_048_576))
         .service(web::resource("/update/bulk").route(web::post().to(bulk_update_users)))
         .service(web::resource("/update/user").route(web::post().to(update_user)))
         .service(web::resource("/delete/{user_uuid}").route(web::delete().to(delete_user)))
