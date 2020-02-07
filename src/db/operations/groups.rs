@@ -3,11 +3,11 @@ use crate::db::internal;
 use crate::db::logs::LogContext;
 use crate::db::model::Group;
 use crate::db::operations;
-use crate::db::operations::error::OperationError;
 use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::operations::models::NewGroup;
 use crate::db::Pool;
+use crate::error::PacksError;
 use crate::rules::engine::CREATE_GROUP;
 use crate::rules::engine::HOST_IS_GROUP_ADMIN;
 use crate::rules::RuleContext;
@@ -51,7 +51,7 @@ pub async fn add_new_group(
         &user.user_uuid,
     ))?;
     let new_group_name = new_group.name.clone();
-    add_new_group_db(&connection, new_group, user)?;
+    add_new_group_db(&connection, new_group, user).map_err(|_| PacksError::GroupNameExists)?;
     add_group_to_profile(cis_client, new_group_name, user_profile.profile).await
 }
 
@@ -62,14 +62,6 @@ pub async fn delete_group(
     cis_client: Arc<CisClient>,
 ) -> Result<(), Error> {
     // TODO: clean up and reserve group name
-    let group_name_f = name.to_owned();
-    let group_name_ff = name.to_owned();
-    let group_name_fff = name.to_owned();
-    let pool_f = pool.clone();
-    let pool_ff = pool.clone();
-    let scope_and_user_f = scope_and_user.clone();
-    let scope_and_user_ff = scope_and_user.clone();
-    let cis_client_f = Arc::clone(&cis_client);
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
@@ -83,9 +75,9 @@ pub async fn delete_group(
         .iter()
         .map(|user| {
             operations::members::remove(
-                &pool_f,
-                &scope_and_user_f,
-                &group_name_f,
+                &pool,
+                &scope_and_user,
+                &name,
                 &host,
                 &user,
                 Arc::clone(&cis_client),
@@ -94,18 +86,10 @@ pub async fn delete_group(
         .collect::<Vec<_>>();
     log::info!("deleting {} members", v.len());
     try_join_all(v)
-        .map_err(|_| OperationError::ErrorDeletingMembers)
+        .map_err(|_| PacksError::ErrorDeletingMembers)
         .await?;
-    operations::members::remove(
-        &pool_ff,
-        &scope_and_user_ff,
-        &group_name_ff,
-        &host,
-        &host,
-        cis_client_f,
-    )
-    .await?;
-    internal::group::delete_group(&host.user_uuid, &connection, &group_name_fff)
+    operations::members::remove(&pool, &scope_and_user, &name, &host, &host, cis_client).await?;
+    internal::group::delete_group(&host.user_uuid, &connection, &name)
 }
 
 pub fn update_group(

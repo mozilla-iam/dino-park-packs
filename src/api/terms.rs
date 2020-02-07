@@ -18,7 +18,7 @@ pub struct TermsUpdate {
 async fn view_terms(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     match operations::terms::get_terms(&pool, &group_name) {
         Ok(terms) => Ok(HttpResponse::Ok().json(terms)),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -29,7 +29,7 @@ async fn delete_terms(
 ) -> impl Responder {
     match operations::terms::delete_terms(&pool, &scope_and_user, &group_name) {
         Ok(_) => Ok(HttpResponse::Created().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -46,7 +46,7 @@ async fn update_terms(
         terms_update.into_inner().text,
     ) {
         Ok(_) => Ok(HttpResponse::Created().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 

@@ -66,7 +66,7 @@ pub async fn downgrade(
         downgrade_admin.group_expiration,
     )
     .map(|_| HttpResponse::Created().finish())
-    .map_err(ApiError::NotAcceptableError)
+    .map_err(ApiError::GenericBadRequest)
 }
 
 pub fn admins_app() -> impl HttpServiceFactory {

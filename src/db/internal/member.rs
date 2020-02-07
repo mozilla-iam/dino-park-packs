@@ -18,6 +18,70 @@ use uuid::Uuid;
 
 const ROLE_MEMBER: &str = "member";
 
+macro_rules! scoped_members_for {
+    ($t:ident, $f:ident) => {
+        pub fn $f(
+            connection: &PgConnection,
+            group_name: &str,
+            query: Option<String>,
+            roles: &[RoleType],
+            limit: i64,
+            offset: Option<i64>,
+        ) -> Result<PaginatedDisplayMembersAndHost, Error> {
+            use schema::groups as g;
+            use schema::memberships as m;
+            use schema::roles as r;
+            use schema::$t as u;
+            let offset = offset.unwrap_or_default();
+            let q = format!("{}%", query.unwrap_or_default());
+            g::table
+                .filter(g::name.eq(group_name))
+                .first(connection)
+                .and_then(|group: Group| {
+                    m::table
+                        .filter(m::group_id.eq(group.id))
+                        .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
+                        .inner_join(r::table)
+                        .filter(r::typ.eq_any(roles))
+                        .filter(
+                            u::first_name
+                                .concat(" ")
+                                .concat(u::last_name)
+                                .ilike(&q)
+                                .or(u::first_name.ilike(&q))
+                                .or(u::last_name.ilike(&q))
+                                .or(u::username.ilike(&q))
+                                .or(u::email.ilike(&q)),
+                        )
+                        .order_by(r::typ)
+                        .then_order_by(u::username)
+                        .select((
+                            m::user_uuid,
+                            u::picture,
+                            u::first_name,
+                            u::last_name,
+                            u::username,
+                            u::email,
+                            u::trust.eq(TrustType::Staff),
+                            r::typ,
+                        ))
+                        .offset(offset)
+                        .limit(limit)
+                        .get_results::<Member>(connection)
+                        .map(|members| members.into_iter().map(|m| m.into()).collect())
+                })
+                .map(|members: Vec<DisplayMemberAndHost>| {
+                    let next = match members.len() {
+                        0 => None,
+                        l => Some(offset + l as i64),
+                    };
+                    PaginatedDisplayMembersAndHost { next, members }
+                })
+                .map_err(Into::into)
+        }
+    };
+}
+
 macro_rules! scoped_members_and_host_for {
     ($t:ident, $h:ident, $f:ident) => {
         pub fn $f(
@@ -91,7 +155,14 @@ macro_rules! scoped_members_and_host_for {
     };
 }
 
+// scoped_members_for!(users_staff, staff_scoped_members);
+scoped_members_for!(users_ndaed, ndaed_scoped_members);
+scoped_members_for!(users_vouched, vouched_scoped_members);
+scoped_members_for!(users_authenticated, authenticated_scoped_members);
+scoped_members_for!(users_public, public_scoped_members);
+
 scoped_members_and_host_for!(users_staff, hosts_staff, staff_scoped_members_and_host);
+/*
 scoped_members_and_host_for!(users_ndaed, hosts_ndaed, ndaed_scoped_members_and_host);
 scoped_members_and_host_for!(
     users_vouched,
@@ -104,6 +175,7 @@ scoped_members_and_host_for!(
     authenticated_scoped_members_and_host
 );
 scoped_members_and_host_for!(users_public, hosts_public, public_scoped_members_and_host);
+*/
 
 pub fn add_member_role(
     host_uuid: &Uuid,

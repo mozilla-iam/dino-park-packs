@@ -65,7 +65,7 @@ async fn reject(
 ) -> impl Responder {
     match operations::invitations::reject_invitation(&pool, &scope_and_user, &group_name) {
         Ok(_) => Ok(HttpResponse::Created().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -73,7 +73,7 @@ async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> imp
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user, &user) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 

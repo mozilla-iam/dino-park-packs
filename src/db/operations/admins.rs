@@ -1,7 +1,7 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::db::internal;
-use crate::db::operations::error::OperationError;
 use crate::db::Pool;
+use crate::error::PacksError;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
@@ -68,6 +68,6 @@ pub fn demote(
         )
         .map(|_| ())
     } else {
-        Err(OperationError::LastAdmin.into())
+        Err(PacksError::LastAdmin.into())
     }
 }

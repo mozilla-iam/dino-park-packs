@@ -3,6 +3,7 @@ use crate::db::schema;
 use crate::db::types::TrustType;
 use crate::db::users::UserProfile;
 use crate::db::users::*;
+use crate::error::PacksError;
 use crate::user::User;
 use cis_profile::schema::Profile;
 use diesel::prelude::*;
@@ -30,6 +31,7 @@ pub fn user_profile_by_uuid(
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
         .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
+        .map_err(|_| PacksError::ProfileNotFound.into())
 }
 
 pub fn user_profile_by_user_id(
@@ -41,6 +43,7 @@ pub fn user_profile_by_user_id(
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
         .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
+        .map_err(|_| PacksError::ProfileNotFound.into())
 }
 
 pub fn delete_user(connection: &PgConnection, user: &User) -> Result<(), Error> {

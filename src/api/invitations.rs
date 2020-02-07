@@ -44,7 +44,7 @@ async fn delete_invitation(
         member,
     ) {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -71,7 +71,7 @@ async fn update_invitation(
         group_expiration,
     ) {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -99,7 +99,7 @@ async fn invite_member(
         group_expiration,
     ) {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -112,7 +112,7 @@ async fn pending(
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations(&pool, &scope_and_user, &group_name, &host) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 

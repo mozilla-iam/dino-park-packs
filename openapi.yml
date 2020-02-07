@@ -24,9 +24,17 @@ paths:
         "201":
           description: group created
         "400":
-          description: invalid input, object invalid
-        "409":
-          description: an existing group already exists
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
   "/groups/api/v1/groups/{groupName}":
     get:
       summary: group information
@@ -47,6 +55,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Group"
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     put:
@@ -69,6 +89,18 @@ paths:
       responses:
         "201":
           description: updates applied
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     delete:
@@ -85,6 +117,18 @@ paths:
       responses:
         "201":
           description: group deleted
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/groups/{groupName}/details":
@@ -105,6 +149,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GroupDetails"
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
   "/groups/api/v1/terms/{groupName}":
     get:
       summary: group terms
@@ -124,6 +180,18 @@ paths:
               schema:
                 type: string
                 example: some terms
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     delete:
@@ -139,6 +207,18 @@ paths:
       responses:
         "201":
           description: terms deleted
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     post:
@@ -163,6 +243,18 @@ paths:
       responses:
         "201":
           description: terms created
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     put:
@@ -187,6 +279,18 @@ paths:
       responses:
         "201":
           description: terms updated
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/invitations/{groupName}":
@@ -209,6 +313,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Invitation"
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     post:
@@ -242,6 +358,18 @@ paths:
       responses:
         "201":
           description: member invited
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/invitations/{groupName}/{userUuid}":
@@ -279,6 +407,18 @@ paths:
       responses:
         "201":
           description: invitation updated
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     delete:
@@ -301,6 +441,18 @@ paths:
       responses:
         "201":
           description: invitation deleted
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/members/{groupName}/{memberUuid}/renew":
@@ -334,6 +486,18 @@ paths:
       responses:
         "201":
           description: member renewed
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/members/{groupName}/{memberUuid}":
@@ -357,6 +521,18 @@ paths:
       responses:
         "201":
           description: member deleted
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/members/{groupName}":
@@ -399,6 +575,18 @@ paths:
                   next:
                     type: integer
                     example: 20
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
   "/groups/api/v1/curators/{groupName}":
     post:
       summary: add a curator
@@ -425,6 +613,18 @@ paths:
       responses:
         "201":
           description: curator added
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/curators/{groupName}/{memberUuid}/downgrade":
@@ -458,6 +658,18 @@ paths:
       responses:
         "201":
           description: curator deleted
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/users":
@@ -509,6 +721,18 @@ paths:
       responses:
         "201":
           description: left group
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/self/invitations":
@@ -538,6 +762,18 @@ paths:
       responses:
         "201":
           description: rejected invitation
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
     post:
@@ -568,6 +804,18 @@ paths:
                     type: string
                     enum: [pending, joined]
                     example: joined
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
   "/groups/api/v1/sudo/member/{groupName}":
@@ -605,12 +853,32 @@ paths:
       responses:
         "201":
           description: member added
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
 servers:
   - url: http://localhost:8085
 components:
   schemas:
+    GenericError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Group name exists
     Group:
       type: object
       required:

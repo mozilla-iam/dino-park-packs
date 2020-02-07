@@ -23,7 +23,7 @@ async fn search_users(
 ) -> impl Responder {
     match operations::users::search_users(&pool, scope_and_user, query.t.clone(), &query.q) {
         Ok(users) => Ok(HttpResponse::Ok().json(users)),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 

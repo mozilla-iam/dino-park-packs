@@ -69,7 +69,7 @@ async fn get_members(
         query.n,
     ) {
         Ok(members) => Ok(HttpResponse::Ok().json(members)),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 
@@ -112,7 +112,7 @@ async fn renew_member(
         renew_member.group_expiration,
     ) {
         Ok(_) => Ok(HttpResponse::Created().finish()),
-        Err(e) => Err(ApiError::NotAcceptableError(e)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
 

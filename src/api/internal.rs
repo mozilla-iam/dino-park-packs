@@ -52,12 +52,13 @@ async fn bulk_update_users(
     while let Some(item) = multipart.next().await {
         let field = item.map_err(|_| ApiError::MultipartError)?;
         let buf = field
-            .try_fold(Vec::<u8>::new(), |mut acc: Vec<u8>, bytes: Bytes| {
-                async move {
+            .try_fold(
+                Vec::<u8>::new(),
+                |mut acc: Vec<u8>, bytes: Bytes| async move {
                     acc.extend(bytes.into_iter());
                     Ok(acc)
-                }
-            })
+                },
+            )
             .map_err(|_| ApiError::MultipartError)
             .await?;
         let profiles =

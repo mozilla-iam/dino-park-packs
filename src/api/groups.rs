@@ -21,7 +21,7 @@ use std::sync::Arc;
 async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     operations::groups::get_group(&pool, &group_name)
         .map(|group| HttpResponse::Ok().json(group))
-        .map_err(ApiError::NotAcceptableError)
+        .map_err(ApiError::GenericBadRequest)
 }
 
 async fn update_group(
@@ -37,7 +37,7 @@ async fn update_group(
         group_update.into_inner(),
     )
     .map(|_| HttpResponse::Created().finish())
-    .map_err(ApiError::NotAcceptableError)
+    .map_err(ApiError::GenericBadRequest)
 }
 
 async fn add_group(
@@ -77,7 +77,7 @@ async fn group_details(
     let page_size = 20;
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
-        Err(e) => return Err(ApiError::NotAcceptableError(e)),
+        Err(e) => return Err(ApiError::GenericBadRequest(e)),
     };
     let group = operations::groups::get_group_with_terms_flag(&pool, &group_name)?;
     let members = operations::members::scoped_members_and_host(

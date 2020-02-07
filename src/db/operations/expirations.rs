@@ -36,12 +36,10 @@ pub async fn expire_memberships(pool: &Pool, cis_client: Arc<CisClient>) -> Resu
     let connection = pool.get()?;
     let memberships =
         internal::member::get_memberships_expired_before(&connection, expires_before)?;
-    try_join_all(memberships.into_iter().map(|membership| {
-        async {
-            let cis_client = Arc::clone(&cis_client);
-            let pool = pool.clone();
-            expire_membership(&pool, cis_client, membership).await
-        }
+    try_join_all(memberships.into_iter().map(|membership| async {
+        let cis_client = Arc::clone(&cis_client);
+        let pool = pool.clone();
+        expire_membership(&pool, cis_client, membership).await
     }))
     .map_ok(|_| ())
     .await

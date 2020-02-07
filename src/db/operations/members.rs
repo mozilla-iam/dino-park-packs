@@ -3,12 +3,12 @@ use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
 use crate::db::model::Role;
 use crate::db::operations;
-use crate::db::operations::error;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::*;
 use crate::db::Pool;
+use crate::error;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::engine::RENEW_MEMBER;
@@ -47,7 +47,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "ndaed" => internal::member::ndaed_scoped_members_and_host(
+        "ndaed" => internal::member::ndaed_scoped_members(
             &connection,
             group_name,
             query,
@@ -55,7 +55,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "vouched" => internal::member::vouched_scoped_members_and_host(
+        "vouched" => internal::member::vouched_scoped_members(
             &connection,
             group_name,
             query,
@@ -63,7 +63,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "authenticated" => internal::member::authenticated_scoped_members_and_host(
+        "authenticated" => internal::member::authenticated_scoped_members(
             &connection,
             group_name,
             query,
@@ -71,7 +71,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "public" => internal::member::public_scoped_members_and_host(
+        "public" => internal::member::public_scoped_members(
             &connection,
             group_name,
             query,
@@ -127,7 +127,7 @@ fn db_leave(
             comment,
         );
     }
-    Err(error::OperationError::LastAdmin.into())
+    Err(error::PacksError::LastAdmin.into())
 }
 
 pub async fn add(

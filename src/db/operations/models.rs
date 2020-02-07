@@ -112,19 +112,6 @@ impl From<InvitationAndHost> for DisplayInvitation {
     }
 }
 
-#[derive(Queryable, Serialize)]
-pub struct DisplayMember {
-    pub user_uuid: Uuid,
-    pub picture: Option<String>,
-    pub name: Option<String>,
-    pub username: String,
-    pub email: Option<String>,
-    pub is_staff: bool,
-    pub since: NaiveDateTime,
-    pub expiration: Option<NaiveDateTime>,
-    pub role: RoleType,
-}
-
 #[derive(Serialize)]
 pub struct DisplayHost {
     pub user_uuid: Uuid,
@@ -143,10 +130,22 @@ pub struct DisplayMemberAndHost {
     pub username: String,
     pub email: Option<String>,
     pub is_staff: bool,
-    pub since: NaiveDateTime,
+    pub since: Option<NaiveDateTime>,
     pub expiration: Option<NaiveDateTime>,
     pub role: RoleType,
-    pub host: DisplayHost,
+    pub host: Option<DisplayHost>,
+}
+
+#[derive(Queryable, Serialize)]
+pub struct Member {
+    pub user_uuid: Uuid,
+    pub picture: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub username: String,
+    pub email: Option<String>,
+    pub is_staff: bool,
+    pub role: RoleType,
 }
 
 #[derive(Queryable, Serialize)]
@@ -168,6 +167,24 @@ pub struct MemberAndHost {
     pub host_email: Option<String>,
 }
 
+impl From<Member> for DisplayMemberAndHost {
+    fn from(m: Member) -> Self {
+        DisplayMemberAndHost {
+            user_uuid: m.user_uuid,
+            picture: m.picture,
+            first_name: m.first_name,
+            last_name: m.last_name,
+            username: m.username,
+            email: m.email,
+            is_staff: m.is_staff,
+            since: None,
+            expiration: None,
+            role: m.role,
+            host: None,
+        }
+    }
+}
+
 impl From<MemberAndHost> for DisplayMemberAndHost {
     fn from(m: MemberAndHost) -> Self {
         DisplayMemberAndHost {
@@ -178,24 +195,18 @@ impl From<MemberAndHost> for DisplayMemberAndHost {
             username: m.username,
             email: m.email,
             is_staff: m.is_staff,
-            since: m.since,
+            since: Some(m.since),
             expiration: m.expiration,
             role: m.role,
-            host: DisplayHost {
+            host: Some(DisplayHost {
                 user_uuid: m.host_uuid,
                 first_name: m.host_first_name,
                 last_name: m.host_last_name,
                 username: m.host_username,
                 email: m.host_email,
-            },
+            }),
         }
     }
-}
-
-#[derive(Serialize)]
-pub struct PaginatedDisplayMembers {
-    pub members: Vec<DisplayMember>,
-    pub next: Option<i64>,
 }
 
 #[derive(Serialize)]
