@@ -14,7 +14,8 @@ use serde_derive::Deserialize;
 #[derive(Deserialize)]
 struct SearchUsersQuery {
     q: String,
-    t: Option<TrustType>,
+    #[serde(default = "TrustType::ndaed")]
+    t: TrustType,
 }
 async fn search_users(
     pool: web::Data<Pool>,

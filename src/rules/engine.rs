@@ -7,8 +7,12 @@ pub const CREATE_GROUP: Engine = Engine {
     rules: &[&rule_is_creator],
 };
 
+pub const CAN_JOIN: Engine = Engine {
+    rules: &[&user_can_join],
+};
+
 pub const INVITE_MEMBER: Engine = Engine {
-    rules: &[&rule_host_can_invite],
+    rules: &[&rule_host_can_invite, &user_can_join],
 };
 
 pub const RENEW_MEMBER: Engine = Engine {

@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use serde_derive::Serialize;
 use uuid::Uuid;
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, Serialize)]
+#[derive(Identifiable, Queryable, PartialEq, Debug, Serialize, AsChangeset)]
 #[table_name = "groups"]
 pub struct Group {
     pub id: i32,

@@ -52,3 +52,5 @@ impl<'a> RuleContext<'a> {
         }
     }
 }
+
+pub use crate::rules::functions::is_nda_group;

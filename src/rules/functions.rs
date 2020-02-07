@@ -2,6 +2,13 @@ use crate::db::operations;
 use crate::db::types::*;
 use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
+use cis_profile::schema::Display;
+
+const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
+
+pub fn is_nda_group(group_name: &str) -> bool {
+    NDA_GROUPS.contains(&group_name)
+}
 
 pub type Rule = dyn Fn(&RuleContext) -> Result<(), RuleError>;
 
@@ -44,6 +51,15 @@ pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
         }
         _ => Err(RuleError::NotAllowedToRemoveMember),
     }
+}
+
+/// Check if the user is nda'd or the group is the nda group
+pub fn user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
+    let ndaed = ctx.scope_and_user.scope == Display::Ndaed.as_str();
+    if ndaed | is_nda_group(&ctx.group) {
+        return Ok(());
+    }
+    Err(RuleError::NotAllowedToJoinGroup)
 }
 
 /// Check if the host is either `RoleType::Admin` of `RoleType::Curator`

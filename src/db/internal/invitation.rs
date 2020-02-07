@@ -15,6 +15,7 @@ use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use failure::Error;
+use serde_json::Value;
 use uuid::Uuid;
 
 macro_rules! scoped_invitations_for_user {
@@ -179,6 +180,7 @@ pub fn delete(
     group_name: &str,
     host: User,
     member: User,
+    comment: Option<Value>,
 ) -> Result<(), Error> {
     let group = internal::group::get_group(connection, group_name)?;
     let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
@@ -192,7 +194,7 @@ pub fn delete(
                 &log_ctx,
                 LogTargetType::Invitation,
                 LogOperationType::Deleted,
-                None,
+                comment,
             );
         })
         .map_err(Error::from)
@@ -304,4 +306,17 @@ pub fn expire_before(connection: &PgConnection, before: NaiveDateTime) -> Result
         );
     }
     Ok(())
+}
+
+pub fn invited_groups_for_user(
+    connection: &PgConnection,
+    user_uuid: &Uuid,
+) -> Result<Vec<Group>, Error> {
+    schema::invitations::table
+        .filter(schema::invitations::user_uuid.eq(user_uuid))
+        .select(schema::invitations::group_id)
+        .inner_join(schema::groups::table)
+        .select(schema::groups::all_columns)
+        .get_results::<Group>(connection)
+        .map_err(Into::into)
 }

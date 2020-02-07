@@ -1,8 +1,8 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
+use crate::db::logs::add_to_comment_body;
 use crate::db::model::Role;
-use crate::db::operations;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
@@ -12,6 +12,7 @@ use crate::error;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::engine::RENEW_MEMBER;
+use crate::rules::is_nda_group;
 use crate::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
@@ -156,6 +157,78 @@ pub async fn add(
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
 
+pub async fn revoke_membership(
+    pool: &Pool,
+    group_names: &[&str],
+    host: &User,
+    user: &User,
+    force: bool,
+    cis_client: Arc<CisClient>,
+    comment: Option<Value>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    // are we droping nda membership -> remove all groups and invitations
+    if group_names
+        .iter()
+        .any(|group_name| is_nda_group(*group_name))
+    {
+        let all_groups = internal::group::groups_for_user(&connection, &user.user_uuid)?;
+        let all_groups = all_groups
+            .iter()
+            .map(|group| group.name.as_str())
+            .collect::<Vec<_>>();
+        let comment = add_to_comment_body("reason", "nda revoked", comment);
+        let invited = internal::invitation::invited_groups_for_user(&connection, &user.user_uuid)?;
+        for group in invited {
+            internal::invitation::delete(&connection, &group.name, *host, *user, comment.clone())?;
+        }
+        _revoke_membership(
+            &connection,
+            &all_groups,
+            host,
+            user,
+            force,
+            cis_client,
+            comment,
+        )
+        .await
+    } else {
+        _revoke_membership(
+            &connection,
+            group_names,
+            host,
+            user,
+            force,
+            cis_client,
+            comment,
+        )
+        .await
+    }
+}
+async fn _revoke_membership(
+    connection: &PgConnection,
+    group_names: &[&str],
+    host: &User,
+    user: &User,
+    force: bool,
+    cis_client: Arc<CisClient>,
+    comment: Option<Value>,
+) -> Result<(), Error> {
+    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    remove_group_from_profile(cis_client, group_names, user_profile.profile).await?;
+    for group_name in group_names {
+        db_leave(
+            &host.user_uuid,
+            &connection,
+            &group_name,
+            &user,
+            force,
+            comment.clone(),
+        )?;
+    }
+    Ok(())
+}
+
 pub async fn remove(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
@@ -164,17 +237,13 @@ pub async fn remove(
     user: &User,
     cis_client: Arc<CisClient>,
 ) -> Result<(), Error> {
-    let host_uuid = host.user_uuid;
     REMOVE_MEMBER.run(&RuleContext::minimal(
         &pool,
         scope_and_user,
         &group_name,
         &host.user_uuid,
     ))?;
-    let connection = pool.get()?;
-    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
-    remove_group_from_profile(cis_client, &group_name, user_profile.profile).await?;
-    db_leave(&host_uuid, &connection, &group_name, &user, true, None)
+    revoke_membership(pool, &[group_name], host, user, true, cis_client, None).await
 }
 
 pub async fn leave(
@@ -186,16 +255,8 @@ pub async fn leave(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
-    let user_profile = operations::users::user_profile_by_uuid(&pool.clone(), &user.user_uuid)?;
-    remove_group_from_profile(cis_client, &group_name, user_profile.profile).await?;
-    db_leave(
-        &user.user_uuid,
-        &connection,
-        &group_name,
-        &user,
-        force,
-        None,
-    )
+    let host = User::default();
+    revoke_membership(pool, &[group_name], &host, &user, force, cis_client, None).await
 }
 
 pub fn renew(

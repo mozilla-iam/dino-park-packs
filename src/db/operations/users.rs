@@ -22,7 +22,7 @@ pub fn batch_update_user_cache(pool: &Pool, profiles: Vec<Profile>) -> Result<us
 pub fn search_users(
     pool: &Pool,
     scope_and_user: ScopeAndUser,
-    trust: Option<TrustType>,
+    trust: TrustType,
     q: &str,
 ) -> Result<Vec<DisplayUser>, Error> {
     let connection = pool.get()?;
