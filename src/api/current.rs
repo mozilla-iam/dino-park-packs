@@ -29,6 +29,7 @@ async fn join(
     let user_profile = operations::users::user_profile_by_uuid(&pool, &user.user_uuid)?;
     operations::invitations::accept_invitation(
         &pool,
+        &scope_and_user,
         &group_name,
         &user,
         Arc::clone(&*cis_client),

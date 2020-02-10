@@ -1,34 +1,41 @@
-use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
 use crate::db::logs::log_comment_body;
 use crate::db::model::Membership;
+use crate::db::operations::members::revoke_membership;
 use crate::db::Pool;
+use crate::user::User;
 use chrono::Utc;
 use cis_client::CisClient;
 use failure::Error;
 use futures::future::try_join_all;
 use futures::TryFutureExt;
+use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
 async fn expire_membership(
     pool: &Pool,
     cis_client: Arc<CisClient>,
-    membership: Membership,
+    user: &User,
+    memberships: Vec<Membership>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
-    let group = internal::group::get_group_by_id(&connection, membership.group_id)?;
-    let user_profile = internal::user::user_profile_by_uuid(&connection, &membership.user_uuid)?;
-    let user_uuid = user_profile.user_uuid;
-    remove_group_from_profile(cis_client, &group.name, user_profile.profile).await?;
-    let host_uuid = Uuid::default();
-    internal::member::remove_from_group(
-        &host_uuid,
+    let groups = internal::group::get_groups_by_ids(
         &connection,
-        &user_uuid,
-        &group.name,
+        &memberships.iter().map(|m| m.group_id).collect::<Vec<i32>>(),
+    )?;
+    let group_names = groups.iter().map(|g| g.name.as_str()).collect::<Vec<_>>();
+    let host = User::default();
+    revoke_membership(
+        pool,
+        group_names.as_slice(),
+        &host,
+        &user,
+        true,
+        cis_client,
         log_comment_body("expired"),
     )
+    .await
 }
 
 pub async fn expire_memberships(pool: &Pool, cis_client: Arc<CisClient>) -> Result<(), Error> {
@@ -36,10 +43,24 @@ pub async fn expire_memberships(pool: &Pool, cis_client: Arc<CisClient>) -> Resu
     let connection = pool.get()?;
     let memberships =
         internal::member::get_memberships_expired_before(&connection, expires_before)?;
-    try_join_all(memberships.into_iter().map(|membership| async {
+    let memberships = memberships.into_iter().fold(
+        HashMap::new(),
+        |mut h: HashMap<Uuid, Vec<Membership>>, m| {
+            if let Some(v) = h.get_mut(&m.user_uuid) {
+                v.push(m);
+            } else {
+                h.insert(m.user_uuid.clone(), vec![m]);
+            }
+            h
+        },
+    );
+    try_join_all(memberships.into_iter().map(|(user_uuid, memberships)| {
+        let user = User { user_uuid };
         let cis_client = Arc::clone(&cis_client);
-        let pool = pool.clone();
-        expire_membership(&pool, cis_client, membership).await
+        async move {
+            let pool = pool.clone();
+            expire_membership(&pool, cis_client, &user, memberships).await
+        }
     }))
     .map_ok(|_| ())
     .await

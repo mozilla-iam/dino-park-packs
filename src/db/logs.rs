@@ -2,6 +2,7 @@ use crate::db::model::Group;
 use crate::db::schema::*;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
+use log::error;
 use serde::Serialize;
 use serde_json::json;
 use serde_json::Value;
@@ -40,6 +41,21 @@ pub struct Log {
 
 pub fn log_comment_body(comment: &str) -> Option<Value> {
     Some(json!({ "comment": comment }))
+}
+
+pub fn add_to_comment_body(key: &str, value: &str, body: Option<Value>) -> Option<Value> {
+    let body = match body {
+        Some(Value::Object(mut o)) => {
+            o.insert(key.into(), value.into());
+            o.into()
+        }
+        None => json!({ key: value }),
+        Some(v) => {
+            error!("Trying to modify a non-object log comment");
+            v
+        }
+    };
+    Some(body)
 }
 
 pub struct LogContext {

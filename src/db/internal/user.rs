@@ -182,12 +182,11 @@ macro_rules! scoped_search_users {
 
 pub fn search_users(
     connection: &PgConnection,
-    trust: Option<TrustType>,
+    trust: TrustType,
     scope: TrustType,
     q: &str,
     limit: i64,
 ) -> Result<Vec<DisplayUser>, Error> {
-    let trust = trust.unwrap_or(TrustType::Staff);
     let q: &str = &format!("{}%", q);
     match scope {
         TrustType::Staff => {

@@ -42,18 +42,26 @@ fn insert_kv_and_sign_values_field(
 
 fn remove_kv_and_sign_values_field(
     field: &mut AccessInformationProviderSubObject,
-    k: &str,
+    keys: &[&str],
     store: &SecretStore,
     now: &DateTime<Utc>,
 ) -> Result<(), Error> {
     if let Some(KeyValue(ref mut values)) = &mut field.values {
-        if values.remove(k).is_some() {
+        let mut changed = false;
+        for key in keys {
+            if values.remove(*key).is_some() {
+                changed = true;
+            } else {
+                warn!("group {} was not present when trying to delete", key);
+            }
+        }
+        if changed {
             field.metadata.last_modified = *now;
             field.signature.publisher.name = PublisherAuthority::Mozilliansorg;
             return store.sign_attribute(field);
         }
     }
-    warn!("group {} was not present when trying to delete", k);
+    warn!("groups {:?} where not present when trying to delete", keys);
     Ok(())
 }
 
@@ -88,7 +96,7 @@ pub async fn add_group_to_profile(
 
 pub async fn remove_group_from_profile(
     cis_client: Arc<CisClient>,
-    group_name: &str,
+    group_names: &[&str],
     profile: Profile,
 ) -> Result<(), Error> {
     let now = &Utc::now();
@@ -97,7 +105,7 @@ pub async fn remove_group_from_profile(
     update_profile.active = profile.active;
     match remove_kv_and_sign_values_field(
         &mut update_profile.access_information.mozilliansorg,
-        group_name,
+        group_names,
         cis_client.get_secret_store(),
         &now,
     ) {

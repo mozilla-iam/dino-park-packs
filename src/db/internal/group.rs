@@ -38,11 +38,14 @@ pub fn get_group(connection: &PgConnection, group_name: &str) -> Result<Group, E
         .map_err(Into::into)
 }
 
-pub fn get_group_by_id(connection: &PgConnection, group_id: i32) -> Result<Group, Error> {
+pub fn get_groups_by_ids(
+    connection: &PgConnection,
+    group_ids: &[i32],
+) -> Result<Vec<Group>, Error> {
     schema::groups::table
-        .filter(schema::groups::group_id.eq(group_id))
+        .filter(schema::groups::group_id.eq_any(group_ids))
         .filter(schema::groups::active.eq(true))
-        .first::<Group>(connection)
+        .get_results::<Group>(connection)
         .map_err(Into::into)
 }
 
@@ -167,5 +170,15 @@ pub fn delete_group(host_uuid: &Uuid, connection: &PgConnection, name: &str) -> 
         ))
         .execute(connection)
         .map(|_| log_delete(connection, &log_ctx, LogTargetType::Group, None))
+        .map_err(Into::into)
+}
+
+pub fn groups_for_user(connection: &PgConnection, user_uuid: &Uuid) -> Result<Vec<Group>, Error> {
+    schema::memberships::table
+        .filter(schema::memberships::user_uuid.eq(user_uuid))
+        .select(schema::memberships::group_id)
+        .inner_join(schema::groups::table)
+        .select(schema::groups::all_columns)
+        .get_results::<Group>(connection)
         .map_err(Into::into)
 }

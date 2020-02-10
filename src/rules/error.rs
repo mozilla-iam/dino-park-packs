@@ -1,5 +1,7 @@
 #[derive(Fail, Debug, PartialEq)]
 pub enum RuleError {
+    #[fail(display = "Not allowed to join groups")]
+    NotAllowedToJoinGroup,
     #[fail(display = "Not allowed to create groups")]
     NotAllowedToCreateGroups,
     #[fail(display = "Not allowed to invite member")]

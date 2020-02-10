@@ -13,6 +13,7 @@ use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
 use serde_derive::Serialize;
 use std::sync::Arc;
+use uuid::Uuid;
 
 #[derive(Queryable, Serialize)]
 pub struct PendingInvitations {}
@@ -31,7 +32,7 @@ pub fn delete_invitation(
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
-    delete(&connection, group_name, host, member)
+    delete(&connection, group_name, host, member, None)
 }
 
 pub fn reject_invitation(
@@ -41,7 +42,7 @@ pub fn reject_invitation(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
-    delete(&connection, group_name, User::default(), user)
+    delete(&connection, group_name, User::default(), user, None)
 }
 
 pub fn update_invitation(
@@ -152,11 +153,18 @@ pub fn pending_invitations_for_user(
 
 pub async fn accept_invitation(
     pool: &Pool,
+    scope_and_user: &ScopeAndUser,
     group_name: &str,
     user: &User,
     cis_client: Arc<CisClient>,
     profile: Profile,
 ) -> Result<(), Error> {
+    CAN_JOIN.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &Uuid::default(),
+    ))?;
     let connection = pool.get()?;
     accept(&connection, group_name, user)?;
     add_group_to_profile(cis_client, group_name.to_owned(), profile).await
