@@ -56,6 +56,20 @@ pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the user is nda'd or the group is the nda group
 pub fn user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
+    let trust = operations::users::user_trust(
+        &ctx.pool,
+        ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?,
+    )
+    .map_err(|_| RuleError::UserNotFound)?;
+    let ndaed = trust >= TrustType::Ndaed;
+    if ndaed | is_nda_group(&ctx.group) {
+        return Ok(());
+    }
+    Err(RuleError::NotAllowedToJoinGroup)
+}
+
+/// Check if the current user is nda'd or the group is the nda group
+pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     let ndaed = Display::try_from(ctx.scope_and_user.scope.as_str())
         .map_err(|_| RuleError::InvalidScope)?
         >= Display::Ndaed;

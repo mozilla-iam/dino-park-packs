@@ -81,11 +81,12 @@ pub fn invite_member(
     group_expiration: Option<i32>,
 ) -> Result<(), Error> {
     // TODO: check db rules
-    INVITE_MEMBER.run(&RuleContext::minimal(
+    INVITE_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
         &group_name,
         &host.user_uuid,
+        &member.user_uuid,
     ))?;
     let connection = pool.get()?;
     invite(
@@ -159,7 +160,7 @@ pub async fn accept_invitation(
     cis_client: Arc<CisClient>,
     profile: Profile,
 ) -> Result<(), Error> {
-    CAN_JOIN.run(&RuleContext::minimal(
+    CURRENT_USER_CAN_JOIN.run(&RuleContext::minimal(
         pool,
         scope_and_user,
         &group_name,

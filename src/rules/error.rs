@@ -20,4 +20,6 @@ pub enum RuleError {
     InvalidRuleContext,
     #[fail(display = "Error parsing scope")]
     InvalidScope,
+    #[fail(display = "User not found")]
+    UserNotFound,
 }
