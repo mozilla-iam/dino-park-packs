@@ -1,4 +1,5 @@
 use crate::db::error::DBError;
+use cis_profile::schema::Display;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::convert::TryFrom;
@@ -40,6 +41,19 @@ impl TryFrom<String> for TrustType {
             "authenticated" => Ok(TrustType::Authenticated),
             "public" => Ok(TrustType::Public),
             _ => Err(DBError::InvalidTurstLevel.into()),
+        }
+    }
+}
+
+impl From<Display> for TrustType {
+    fn from(d: Display) -> Self {
+        match d {
+            Display::Private => TrustType::Private,
+            Display::Staff => TrustType::Staff,
+            Display::Ndaed => TrustType::Ndaed,
+            Display::Vouched => TrustType::Vouched,
+            Display::Authenticated => TrustType::Authenticated,
+            Display::Public => TrustType::Public,
         }
     }
 }

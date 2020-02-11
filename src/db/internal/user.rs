@@ -13,6 +13,14 @@ use log::info;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
+pub fn user_trust(connection: &PgConnection, user_uuid: &Uuid) -> Result<TrustType, Error> {
+    schema::users_staff::table
+        .filter(schema::users_staff::user_uuid.eq(user_uuid))
+        .select(schema::users_staff::trust)
+        .first(connection)
+        .map_err(Into::into)
+}
+
 pub fn user_by_id(connection: &PgConnection, user_id: &str) -> Result<User, Error> {
     schema::user_ids::table
         .filter(schema::user_ids::user_id.eq(user_id))

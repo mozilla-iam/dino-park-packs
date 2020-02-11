@@ -167,10 +167,12 @@ pub async fn revoke_membership(
     comment: Option<Value>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
+    let is_staff = internal::user::user_trust(&connection, &user.user_uuid)? == TrustType::Staff;
     // are we droping nda membership -> remove all groups and invitations
     if group_names
         .iter()
         .any(|group_name| is_nda_group(*group_name))
+        && !is_staff
     {
         let all_groups = internal::group::groups_for_user(&connection, &user.user_uuid)?;
         let all_groups = all_groups

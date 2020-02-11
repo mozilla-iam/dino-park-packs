@@ -18,4 +18,6 @@ pub enum RuleError {
     NeverAllowed,
     #[fail(display = "Invalid rule context")]
     InvalidRuleContext,
+    #[fail(display = "Error parsing scope")]
+    InvalidScope,
 }

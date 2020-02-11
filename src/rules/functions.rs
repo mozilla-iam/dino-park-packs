@@ -3,6 +3,7 @@ use crate::db::types::*;
 use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
 use cis_profile::schema::Display;
+use std::convert::TryFrom;
 
 const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
 
@@ -55,7 +56,9 @@ pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the user is nda'd or the group is the nda group
 pub fn user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
-    let ndaed = ctx.scope_and_user.scope == Display::Ndaed.as_str();
+    let ndaed = Display::try_from(ctx.scope_and_user.scope.as_str())
+        .map_err(|_| RuleError::InvalidScope)?
+        >= Display::Ndaed;
     if ndaed | is_nda_group(&ctx.group) {
         return Ok(());
     }
