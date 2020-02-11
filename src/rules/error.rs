@@ -1,5 +1,9 @@
 #[derive(Fail, Debug, PartialEq)]
 pub enum RuleError {
+    #[fail(display = "Unknown DB error")]
+    DBError,
+    #[fail(display = "No DB connection available")]
+    PoolError,
     #[fail(display = "Not allowed to join groups")]
     NotAllowedToJoinGroup,
     #[fail(display = "Not allowed to create groups")]
@@ -22,4 +26,6 @@ pub enum RuleError {
     InvalidScope,
     #[fail(display = "User not found")]
     UserNotFound,
+    #[fail(display = "Already a member")]
+    AlreadyMember,
 }

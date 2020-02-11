@@ -1,5 +1,5 @@
 pub mod error;
-mod internal;
+pub(crate) mod internal;
 pub mod logs;
 pub mod model;
 pub mod operations;

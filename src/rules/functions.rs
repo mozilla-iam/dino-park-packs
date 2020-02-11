@@ -1,8 +1,9 @@
-use crate::db::operations;
+use crate::db::internal;
 use crate::db::types::*;
 use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
 use cis_profile::schema::Display;
+use diesel::result::Error as DieselError;
 use std::convert::TryFrom;
 
 const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
@@ -29,7 +30,8 @@ pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
 /// Check if the host is either `RoleTpye::Admin` or has `InviteMember` permissions for the given
 /// group.
 pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
-    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
         Ok(role)
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::InviteMember) =>
@@ -43,7 +45,8 @@ pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
 /// Check if the host is either `RoleTpye::Admin` or has `RemoveMember` permissions for the given
 /// group.
 pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
-    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
         Ok(role)
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::RemoveMember) =>
@@ -54,10 +57,26 @@ pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
+pub fn user_not_a_member(ctx: &RuleContext) -> Result<(), RuleError> {
+    let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, member_uuid, ctx.group) {
+        Ok(_) => Err(RuleError::AlreadyMember),
+        Err(e) => {
+            if let Some(DieselError::NotFound) = e.downcast_ref::<DieselError>() {
+                Ok(())
+            } else {
+                Err(RuleError::DBError)
+            }
+        }
+    }
+}
+
 /// Check if the user is nda'd or the group is the nda group
 pub fn user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
-    let trust = operations::users::user_trust(
-        &ctx.pool,
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    let trust = internal::user::user_trust(
+        &connection,
         ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?,
     )
     .map_err(|_| RuleError::UserNotFound)?;
@@ -81,7 +100,8 @@ pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the host is either `RoleType::Admin` of `RoleType::Curator`
 pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
-    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
         Ok(role) if role.typ == RoleType::Admin || role.typ == RoleType::Curator => Ok(()),
         _ => Err(RuleError::NotACurator),
     }
@@ -89,7 +109,8 @@ pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the host is either `RoleTpye::Admin` for the given group
 pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
-    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
         Ok(role) if role.typ == RoleType::Admin => Ok(()),
         _ => Err(RuleError::NotAnAdmin),
     }
@@ -98,7 +119,8 @@ pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
 /// Check if the host is either `RoleTpye::Admin` for the given group
 pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
-    match operations::members::role_for(ctx.pool, member_uuid, ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, member_uuid, ctx.group) {
         Ok(role) if role.typ == RoleType::Member => Ok(()),
         _ => Err(RuleError::NotAnAdmin),
     }
@@ -107,7 +129,8 @@ pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
 /// Check if the host is either `RoleTpye::Admin` or has `EditTerms` permissions for the given
 /// group.
 pub fn rule_host_can_edit_terms(ctx: &RuleContext) -> Result<(), RuleError> {
-    match operations::members::role_for(ctx.pool, ctx.host_uuid, ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
         Ok(role)
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::EditTerms) =>

@@ -54,8 +54,3 @@ pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile
     let connection = pool.get()?;
     internal::user::user_profile_by_uuid(&connection, user_uuid)
 }
-
-pub fn user_trust(pool: &Pool, user_uuid: &Uuid) -> Result<TrustType, Error> {
-    let connection = pool.get()?;
-    internal::user::user_trust(&connection, user_uuid)
-}

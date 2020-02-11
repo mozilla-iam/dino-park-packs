@@ -2,7 +2,6 @@ use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
 use crate::db::logs::add_to_comment_body;
-use crate::db::model::Role;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
@@ -278,9 +277,4 @@ pub fn renew(
     ))?;
     let connection = pool.get()?;
     internal::member::renew(&host.user_uuid, &connection, group_name, user, expiration)
-}
-
-pub fn role_for(pool: &Pool, user_uuid: &Uuid, group_name: &str) -> Result<Role, Error> {
-    let connection = pool.get()?;
-    internal::member::role_for(&connection, user_uuid, group_name)
 }

@@ -12,7 +12,7 @@ pub const CURRENT_USER_CAN_JOIN: Engine = Engine {
 };
 
 pub const INVITE_MEMBER: Engine = Engine {
-    rules: &[&rule_host_can_invite, &user_can_join],
+    rules: &[&rule_host_can_invite, &user_can_join, &user_not_a_member],
 };
 
 pub const RENEW_MEMBER: Engine = Engine {
