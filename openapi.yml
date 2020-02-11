@@ -686,6 +686,13 @@ paths:
             type: string
           example: Han
         - in: query
+          name: g
+          description: group name to filter out members / invitees
+          required: false
+          schema:
+            type: string
+          example: some-group-name
+        - in: query
           name: t
           description: trust filter for results
           required: false

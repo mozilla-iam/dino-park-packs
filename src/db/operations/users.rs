@@ -3,6 +3,8 @@ use crate::db::types::TrustType;
 use crate::db::users::DisplayUser;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
+use crate::rules::engine::SEARCH_USERS;
+use crate::rules::RuleContext;
 use crate::user::User;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
@@ -22,17 +24,38 @@ pub fn batch_update_user_cache(pool: &Pool, profiles: Vec<Profile>) -> Result<us
 pub fn search_users(
     pool: &Pool,
     scope_and_user: ScopeAndUser,
+    group_name: Option<String>,
     trust: TrustType,
     q: &str,
 ) -> Result<Vec<DisplayUser>, Error> {
     let connection = pool.get()?;
-    internal::user::search_users(
-        &connection,
-        trust,
-        TrustType::try_from(scope_and_user.scope)?,
-        q,
-        5,
-    )
+    match group_name {
+        Some(group_name) => {
+            let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+            SEARCH_USERS.run(&RuleContext::minimal(
+                pool,
+                &scope_and_user,
+                &group_name,
+                &host.user_uuid,
+            ))?;
+
+            internal::user::search_users_for_group(
+                &connection,
+                &group_name,
+                trust,
+                TrustType::try_from(scope_and_user.scope)?,
+                q,
+                5,
+            )
+        }
+        None => internal::user::search_users(
+            &connection,
+            trust,
+            TrustType::try_from(scope_and_user.scope)?,
+            q,
+            5,
+        ),
+    }
 }
 
 pub fn delete_user(pool: &Pool, user: &User) -> Result<(), Error> {

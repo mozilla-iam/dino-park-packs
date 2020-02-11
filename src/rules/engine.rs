@@ -11,6 +11,10 @@ pub const CURRENT_USER_CAN_JOIN: Engine = Engine {
     rules: &[&current_user_can_join],
 };
 
+pub const SEARCH_USERS: Engine = Engine {
+    rules: &[&rule_host_can_invite],
+};
+
 pub const INVITE_MEMBER: Engine = Engine {
     rules: &[&rule_host_can_invite, &user_can_join, &user_not_a_member],
 };

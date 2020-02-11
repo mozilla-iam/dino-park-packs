@@ -16,13 +16,20 @@ struct SearchUsersQuery {
     q: String,
     #[serde(default = "TrustType::ndaed")]
     t: TrustType,
+    g: Option<String>,
 }
 async fn search_users(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     query: web::Query<SearchUsersQuery>,
 ) -> impl Responder {
-    match operations::users::search_users(&pool, scope_and_user, query.t.clone(), &query.q) {
+    match operations::users::search_users(
+        &pool,
+        scope_and_user,
+        query.g.clone(),
+        query.t.clone(),
+        &query.q,
+    ) {
         Ok(users) => Ok(HttpResponse::Ok().json(users)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
