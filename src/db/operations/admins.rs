@@ -21,11 +21,12 @@ pub async fn add_admin(
     profile: Profile,
 ) -> Result<(), Error> {
     let group_name_f = group_name.to_owned();
-    HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
+    CAN_ADD_CURATOR.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
         &group_name,
         &host.user_uuid,
+        &user.user_uuid,
     ))?;
     let connection = pool.get()?;
     internal::admin::add_admin(&connection, &group_name, host, user)?;

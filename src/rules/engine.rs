@@ -16,7 +16,7 @@ pub const SEARCH_USERS: Engine = Engine {
 };
 
 pub const INVITE_MEMBER: Engine = Engine {
-    rules: &[&rule_host_can_invite, &user_can_join, &user_not_a_member],
+    rules: &[&rule_host_can_invite, &member_can_join, &user_not_a_member],
 };
 
 pub const RENEW_MEMBER: Engine = Engine {
@@ -29,6 +29,10 @@ pub const REMOVE_MEMBER: Engine = Engine {
 
 pub const EDIT_TERMS: Engine = Engine {
     rules: &[&rule_host_can_edit_terms],
+};
+
+pub const CAN_ADD_CURATOR: Engine = Engine {
+    rules: &[&rule_host_is_curator, &member_is_ndaed],
 };
 
 pub const HOST_IS_CURATOR: Engine = Engine {

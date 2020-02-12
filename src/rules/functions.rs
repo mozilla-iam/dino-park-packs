@@ -72,8 +72,22 @@ pub fn user_not_a_member(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
+/// Check if the member is nda'd
+pub fn member_is_ndaed(ctx: &RuleContext) -> Result<(), RuleError> {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    let trust = internal::user::user_trust(
+        &connection,
+        ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?,
+    )
+    .map_err(|_| RuleError::UserNotFound)?;
+    if trust >= TrustType::Ndaed {
+        return Ok(());
+    }
+    Err(RuleError::NotAllowedToJoinGroup)
+}
+
 /// Check if the user is nda'd or the group is the nda group
-pub fn user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
+pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     let trust = internal::user::user_trust(
         &connection,
