@@ -7,6 +7,8 @@ extern crate diesel_derive_enum;
 extern crate failure_derive;
 #[macro_use]
 extern crate diesel_migrations;
+#[macro_use]
+extern crate dino_park_guard;
 
 mod api;
 mod cis;

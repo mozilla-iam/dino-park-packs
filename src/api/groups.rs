@@ -24,6 +24,7 @@ async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl
         .map_err(ApiError::GenericBadRequest)
 }
 
+#[guard(Ndaed)]
 async fn update_group(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
@@ -40,6 +41,7 @@ async fn update_group(
     .map_err(ApiError::GenericBadRequest)
 }
 
+#[guard(Staff, Creator)]
 async fn add_group(
     cis_client: web::Data<Arc<CisClient>>,
     pool: web::Data<Pool>,
@@ -67,6 +69,7 @@ async fn delete_group(
     Ok(HttpResponse::Created().finish())
 }
 
+#[guard(Authenticated)]
 async fn group_details(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,

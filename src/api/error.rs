@@ -2,6 +2,8 @@ use crate::error::PacksError;
 use crate::rules::error::RuleError;
 use actix_web::error::ResponseError;
 use actix_web::HttpResponse;
+use dino_park_trust::GroupsTrustError;
+use dino_park_trust::TrustError;
 use log::warn;
 use serde_json::json;
 use serde_json::Value;
@@ -19,10 +21,26 @@ pub enum ApiError {
     PacksError(PacksError),
     #[fail(display = "Rule Error: {}", _0)]
     RuleError(RuleError),
+    #[fail(display = "Scope Error: {}", _0)]
+    ScopeError(TrustError),
+    #[fail(display = "Groups scope Error: {}", _0)]
+    GroupsScopeError(GroupsTrustError),
 }
 
 fn to_json_error(e: &impl Display) -> Value {
     json!({ "error": e.to_string() })
+}
+
+impl From<TrustError> for ApiError {
+    fn from(e: TrustError) -> Self {
+        ApiError::ScopeError(e)
+    }
+}
+
+impl From<GroupsTrustError> for ApiError {
+    fn from(e: GroupsTrustError) -> Self {
+        ApiError::GroupsScopeError(e)
+    }
 }
 
 impl From<failure::Error> for ApiError {
@@ -48,6 +66,8 @@ impl ResponseError for ApiError {
             }
             Self::PacksError(ref e) => HttpResponse::BadRequest().json(to_json_error(e)),
             Self::RuleError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
+            Self::ScopeError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
+            Self::GroupsScopeError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
             Self::InvalidGroupName => HttpResponse::BadRequest().json(to_json_error(self)),
             _ => HttpResponse::InternalServerError().finish(),
         }

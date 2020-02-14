@@ -15,6 +15,7 @@ pub struct TermsUpdate {
     text: String,
 }
 
+#[guard(Authenticated)]
 async fn view_terms(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
     match operations::terms::get_terms(&pool, &group_name) {
         Ok(terms) => Ok(HttpResponse::Ok().json(terms)),
@@ -22,6 +23,7 @@ async fn view_terms(pool: web::Data<Pool>, group_name: web::Path<String>) -> imp
     }
 }
 
+#[guard(Ndaed)]
 async fn delete_terms(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -33,6 +35,7 @@ async fn delete_terms(
     }
 }
 
+#[guard(Ndaed)]
 async fn update_terms(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,

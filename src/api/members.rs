@@ -46,6 +46,7 @@ pub struct GetMembersQuery {
     s: Option<i64>,
 }
 
+#[guard(Authenticated)]
 async fn get_members(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -73,6 +74,7 @@ async fn get_members(
     }
 }
 
+#[guard(Ndaed)]
 async fn remove_member(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
@@ -94,6 +96,7 @@ async fn remove_member(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[guard(Ndaed)]
 async fn renew_member(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,

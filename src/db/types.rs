@@ -1,5 +1,6 @@
 use crate::db::error::DBError;
 use cis_profile::schema::Display;
+use dino_park_trust::Trust;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::convert::TryFrom;
@@ -21,7 +22,6 @@ pub enum TrustType {
     Vouched,
     Ndaed,
     Staff,
-    Private,
 }
 
 impl TrustType {
@@ -30,30 +30,42 @@ impl TrustType {
     }
 }
 
+impl From<Trust> for TrustType {
+    fn from(t: Trust) -> Self {
+        match t {
+            Trust::Staff => TrustType::Staff,
+            Trust::Ndaed => TrustType::Ndaed,
+            Trust::Vouched => TrustType::Vouched,
+            Trust::Authenticated => TrustType::Authenticated,
+            Trust::Public => TrustType::Public,
+        }
+    }
+}
+
 impl TryFrom<String> for TrustType {
     type Error = failure::Error;
     fn try_from(s: String) -> Result<Self, Self::Error> {
         match s.as_str() {
-            "private" => Ok(TrustType::Private),
             "staff" => Ok(TrustType::Staff),
             "ndaed" => Ok(TrustType::Ndaed),
             "vouched" => Ok(TrustType::Vouched),
             "authenticated" => Ok(TrustType::Authenticated),
             "public" => Ok(TrustType::Public),
-            _ => Err(DBError::InvalidTurstLevel.into()),
+            _ => Err(DBError::InvalidTrustLevel.into()),
         }
     }
 }
 
-impl From<Display> for TrustType {
-    fn from(d: Display) -> Self {
+impl TryFrom<Display> for TrustType {
+    type Error = failure::Error;
+    fn try_from(d: Display) -> Result<Self, Self::Error> {
         match d {
-            Display::Private => TrustType::Private,
-            Display::Staff => TrustType::Staff,
-            Display::Ndaed => TrustType::Ndaed,
-            Display::Vouched => TrustType::Vouched,
-            Display::Authenticated => TrustType::Authenticated,
-            Display::Public => TrustType::Public,
+            Display::Staff => Ok(TrustType::Staff),
+            Display::Ndaed => Ok(TrustType::Ndaed),
+            Display::Vouched => Ok(TrustType::Vouched),
+            Display::Authenticated => Ok(TrustType::Authenticated),
+            Display::Public => Ok(TrustType::Public),
+            _ => Err(DBError::InvalidTrustLevel.into()),
         }
     }
 }

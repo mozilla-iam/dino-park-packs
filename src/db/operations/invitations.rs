@@ -10,6 +10,7 @@ use chrono::NaiveDateTime;
 use cis_client::CisClient;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
+use dino_park_trust::Trust;
 use failure::Error;
 use serde_derive::Serialize;
 use std::sync::Arc;
@@ -128,12 +129,12 @@ pub fn pending_invitations(
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
-    match scope_and_user.scope.as_str() {
-        "staff" => staff_scoped_invitations_and_host(&connection, group_name),
-        "ndaed" => ndaed_scoped_invitations_and_host(&connection, group_name),
-        "vouched" => vouched_scoped_invitations_and_host(&connection, group_name),
-        "authenticated" => authenticated_scoped_invitations_and_host(&connection, group_name),
-        _ => public_scoped_invitations_and_host(&connection, group_name),
+    match scope_and_user.scope {
+        Trust::Staff => staff_scoped_invitations_and_host(&connection, group_name),
+        Trust::Ndaed => ndaed_scoped_invitations_and_host(&connection, group_name),
+        Trust::Vouched => vouched_scoped_invitations_and_host(&connection, group_name),
+        Trust::Authenticated => authenticated_scoped_invitations_and_host(&connection, group_name),
+        Trust::Public => public_scoped_invitations_and_host(&connection, group_name),
     }
 }
 
@@ -143,12 +144,14 @@ pub fn pending_invitations_for_user(
     user: &User,
 ) -> Result<Vec<DisplayInvitation>, Error> {
     let connection = pool.get()?;
-    match scope_and_user.scope.as_str() {
-        "staff" => staff_scoped_invitations_and_host_for_user(&connection, user),
-        "ndaed" => ndaed_scoped_invitations_and_host_for_user(&connection, user),
-        "vouched" => vouched_scoped_invitations_and_host_for_user(&connection, user),
-        "authenticated" => authenticated_scoped_invitations_and_host_for_user(&connection, user),
-        _ => public_scoped_invitations_and_host_for_user(&connection, user),
+    match scope_and_user.scope {
+        Trust::Staff => staff_scoped_invitations_and_host_for_user(&connection, user),
+        Trust::Ndaed => ndaed_scoped_invitations_and_host_for_user(&connection, user),
+        Trust::Vouched => vouched_scoped_invitations_and_host_for_user(&connection, user),
+        Trust::Authenticated => {
+            authenticated_scoped_invitations_and_host_for_user(&connection, user)
+        }
+        Trust::Public => public_scoped_invitations_and_host_for_user(&connection, user),
     }
 }
 

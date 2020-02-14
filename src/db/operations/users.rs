@@ -9,7 +9,6 @@ use crate::user::User;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
-use std::convert::TryFrom;
 use uuid::Uuid;
 
 pub fn batch_update_user_cache(pool: &Pool, profiles: Vec<Profile>) -> Result<usize, Error> {
@@ -43,18 +42,12 @@ pub fn search_users(
                 &connection,
                 &group_name,
                 trust,
-                TrustType::try_from(scope_and_user.scope)?,
+                scope_and_user.scope.into(),
                 q,
                 5,
             )
         }
-        None => internal::user::search_users(
-            &connection,
-            trust,
-            TrustType::try_from(scope_and_user.scope)?,
-            q,
-            5,
-        ),
+        None => internal::user::search_users(&connection, trust, scope_and_user.scope.into(), q, 5),
     }
 }
 

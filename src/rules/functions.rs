@@ -2,9 +2,9 @@ use crate::db::internal;
 use crate::db::types::*;
 use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
-use cis_profile::schema::Display;
 use diesel::result::Error as DieselError;
-use std::convert::TryFrom;
+use dino_park_trust::GroupsTrust;
+use dino_park_trust::Trust;
 
 const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
 
@@ -21,8 +21,8 @@ pub fn rule_only_admins(_: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if curent user is allowed to create groups.
 pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
-    match ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) {
-        Some("creator") | Some("admin") => Ok(()),
+    match ctx.scope_and_user.groups_scope {
+        GroupsTrust::Creator | GroupsTrust::Admin => Ok(()),
         _ => Err(RuleError::NotAllowedToCreateGroups),
     }
 }
@@ -103,9 +103,7 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the current user is nda'd or the group is the nda group
 pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
-    let ndaed = Display::try_from(ctx.scope_and_user.scope.as_str())
-        .map_err(|_| RuleError::InvalidScope)?
-        >= Display::Ndaed;
+    let ndaed = ctx.scope_and_user.scope >= Trust::Ndaed;
     if ndaed | is_nda_group(&ctx.group) {
         return Ok(());
     }

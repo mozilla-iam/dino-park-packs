@@ -1,4 +1,3 @@
-use crate::db::error::DBError;
 use crate::db::internal;
 use crate::db::schema;
 use crate::db::types::TrustType;
@@ -279,7 +278,6 @@ pub fn search_users_for_group(
             limit,
             connection
         ),
-        _ => Err(DBError::InvalidTurstLevel.into()),
     }
 }
 
@@ -312,6 +310,5 @@ pub fn search_users(
         TrustType::Public => {
             scoped_search_users!(users_public, UsersPublic, q, trust, limit, connection)
         }
-        _ => Err(DBError::InvalidTurstLevel.into()),
     }
 }

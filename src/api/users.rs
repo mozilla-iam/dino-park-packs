@@ -18,6 +18,8 @@ struct SearchUsersQuery {
     t: TrustType,
     g: Option<String>,
 }
+
+#[guard(Ndaed)]
 async fn search_users(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,

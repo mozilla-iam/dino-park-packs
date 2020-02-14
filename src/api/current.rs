@@ -18,6 +18,7 @@ struct ForceLeave {
     force: Option<bool>,
 }
 
+#[guard(Authenticated)]
 async fn join(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -39,6 +40,7 @@ async fn join(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[guard(Authenticated)]
 async fn leave(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -58,6 +60,7 @@ async fn leave(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[guard(Authenticated)]
 async fn reject(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -70,6 +73,7 @@ async fn reject(
     }
 }
 
+#[guard(Authenticated)]
 async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user, &user) {

@@ -20,6 +20,7 @@ pub struct AddMember {
     group_expiration: Option<i32>,
 }
 
+#[guard(Staff, Admin)]
 async fn add_member(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -42,6 +43,7 @@ async fn add_member(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[guard(Staff, Admin)]
 async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::logs::raw_logs(&pool, &scope_and_user, &user) {

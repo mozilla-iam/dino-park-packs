@@ -20,7 +20,7 @@ use cis_client::CisClient;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
-use failure::format_err;
+use dino_park_trust::Trust;
 use failure::Error;
 use serde_json::Value;
 use std::sync::Arc;
@@ -31,15 +31,15 @@ const DEFAULT_RENEWAL_DAYS: i64 = 14;
 pub fn scoped_members_and_host(
     pool: &Pool,
     group_name: &str,
-    scope: &str,
+    scope: &Trust,
     query: Option<String>,
     roles: &[RoleType],
     limit: i64,
     offset: Option<i64>,
 ) -> Result<PaginatedDisplayMembersAndHost, Error> {
     let connection = pool.get()?;
-    match scope {
-        "staff" => internal::member::staff_scoped_members_and_host(
+    match *scope {
+        Trust::Staff => internal::member::staff_scoped_members_and_host(
             &connection,
             group_name,
             query,
@@ -47,7 +47,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "ndaed" => internal::member::ndaed_scoped_members(
+        Trust::Ndaed => internal::member::ndaed_scoped_members(
             &connection,
             group_name,
             query,
@@ -55,7 +55,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "vouched" => internal::member::vouched_scoped_members(
+        Trust::Vouched => internal::member::vouched_scoped_members(
             &connection,
             group_name,
             query,
@@ -63,7 +63,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "authenticated" => internal::member::authenticated_scoped_members(
+        Trust::Authenticated => internal::member::authenticated_scoped_members(
             &connection,
             group_name,
             query,
@@ -71,7 +71,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        "public" => internal::member::public_scoped_members(
+        Trust::Public => internal::member::public_scoped_members(
             &connection,
             group_name,
             query,
@@ -79,7 +79,6 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        _ => Err(format_err!("invalid scope")),
     }
 }
 

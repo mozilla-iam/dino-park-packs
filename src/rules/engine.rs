@@ -1,6 +1,7 @@
 use crate::rules::error::RuleError;
 use crate::rules::functions::*;
 use crate::rules::RuleContext;
+use dino_park_trust::GroupsTrust;
 use log::info;
 
 pub const CREATE_GROUP: Engine = Engine {
@@ -54,7 +55,7 @@ pub struct Engine<'a> {
 impl<'a> Engine<'a> {
     pub fn run(self: &Self, ctx: &RuleContext) -> Result<(), RuleError> {
         let ok = self.rules.iter().try_for_each(|rule| rule(ctx));
-        if ok.is_err() && ctx.scope_and_user.groups_scope.as_ref().map(|s| &**s) == Some("admin") {
+        if ok.is_err() && ctx.scope_and_user.groups_scope == GroupsTrust::Admin {
             info!("using admin priviledges for {}", ctx.host_uuid);
             return Ok(());
         }
@@ -68,6 +69,7 @@ mod test {
     use crate::db;
     use crate::settings;
     use dino_park_gate::scope::ScopeAndUser;
+    use dino_park_trust::Trust;
     use failure::Error;
     use uuid::Uuid;
 
@@ -77,8 +79,8 @@ mod test {
         let pool = db::establish_connection(&s.packs.postgres_url);
         let scope_and_user = ScopeAndUser {
             user_id: String::from("some_id"),
-            scope: String::from("staff"),
-            groups_scope: Some(String::from("admin")),
+            scope: Trust::Staff,
+            groups_scope: GroupsTrust::Admin,
         };
         let ctx = RuleContext {
             pool: &pool,
@@ -103,8 +105,8 @@ mod test {
         let pool = db::establish_connection(&s.packs.postgres_url);
         let scope_and_user = ScopeAndUser {
             user_id: String::from("some_id"),
-            scope: String::from("staff"),
-            groups_scope: None,
+            scope: Trust::Staff,
+            groups_scope: GroupsTrust::None,
         };
         let ctx = RuleContext {
             pool: &pool,
