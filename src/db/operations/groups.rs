@@ -6,6 +6,8 @@ use crate::db::operations;
 use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::operations::models::NewGroup;
+use crate::db::operations::models::PaginatedGroupsLists;
+use crate::db::operations::models::SortGroupsBy;
 use crate::db::Pool;
 use crate::error::PacksError;
 use crate::rules::engine::CREATE_GROUP;
@@ -122,4 +124,15 @@ pub fn get_group_with_terms_flag(
 ) -> Result<GroupWithTermsFlag, Error> {
     let connection = pool.get()?;
     internal::group::get_group_with_terms_flag(&connection, group_name)
+}
+
+pub fn list_groups(
+    pool: &Pool,
+    filter: Option<String>,
+    sort_by: SortGroupsBy,
+    limit: i64,
+    offset: i64,
+) -> Result<PaginatedGroupsLists, Error> {
+    let connection = pool.get()?;
+    internal::group::list_groups(&connection, filter, sort_by, limit, offset)
 }

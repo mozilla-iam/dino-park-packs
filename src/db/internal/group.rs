@@ -5,14 +5,17 @@ use crate::db::model::*;
 use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::operations::models::NewGroup;
+use crate::db::operations::models::PaginatedGroupsLists;
+use crate::db::operations::models::SortGroupsBy;
 use crate::db::schema;
 use crate::db::types::*;
-
+use crate::db::views;
 use diesel::dsl::exists;
 use diesel::dsl::select;
 use diesel::prelude::*;
 use failure::Error;
 use serde_json::Value;
+use std::convert::TryFrom;
 use uuid::Uuid;
 
 pub fn get_group_with_terms_flag(
@@ -181,4 +184,28 @@ pub fn groups_for_user(connection: &PgConnection, user_uuid: &Uuid) -> Result<Ve
         .select(schema::groups::all_columns)
         .get_results::<Group>(connection)
         .map_err(Into::into)
+}
+
+pub fn list_groups(
+    connection: &PgConnection,
+    filter: Option<String>,
+    sort_by: SortGroupsBy,
+    limit: i64,
+    offset: i64,
+) -> Result<PaginatedGroupsLists, Error> {
+    let mut query = views::groups_list::table.into_boxed();
+    if let Some(filter) = filter {
+        query = query.filter(views::groups_list::name.ilike(format!("{}%", filter)))
+    };
+    query = match sort_by {
+        SortGroupsBy::MembersCount => query.order(views::groups_list::members_count.desc()),
+        SortGroupsBy::NameAsc => query.order(views::groups_list::name.asc()),
+        SortGroupsBy::NameDesc => query.order(views::groups_list::name.desc()),
+    };
+    let groups: Vec<GroupsList> = query.offset(offset).limit(limit).get_results(connection)?;
+    let next = match i64::try_from(groups.len()) {
+        Ok(x) if x == limit => Some(offset + x),
+        _ => None,
+    };
+    Ok(PaginatedGroupsLists { groups, next })
 }

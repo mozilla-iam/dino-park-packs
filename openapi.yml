@@ -35,6 +35,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GenericError"
+    get:
+      summary: paginated groups
+      description: |
+        get paginated list of a groups
+      parameters:
+        - in: query
+          name: f
+          description: filter results based on name prefix
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: by
+          description: order by
+          required: false
+          schema:
+            type: string
+            enum: ["MemberCount", "NameAsc", "NameDesc"]
+        - in: query
+          name: "n"
+          description: next page id (offset)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: s
+          description: size of the result
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: a page of members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DisplayMember"
+                  next:
+                    type: integer
+                    example: 20
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
   "/groups/api/v1/groups/{groupName}":
     get:
       summary: group information

@@ -26,3 +26,15 @@ hosts_table!(hosts_ndaed, users_ndaed);
 hosts_table!(hosts_vouched, users_vouched);
 hosts_table!(hosts_authenticated, users_authenticated);
 hosts_table!(hosts_public, users_public);
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
+    groups_list (name) {
+        name -> VarChar,
+        typ -> Group_type,
+        trust -> Trust_type,
+        members_count -> BigInt,
+    }
+}

@@ -1,9 +1,23 @@
 use crate::db::model::Group;
+use crate::db::model::GroupsList;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use uuid::Uuid;
+
+#[derive(Deserialize)]
+pub enum SortGroupsBy {
+    MembersCount,
+    NameAsc,
+    NameDesc,
+}
+
+impl Default for SortGroupsBy {
+    fn default() -> Self {
+        Self::MembersCount
+    }
+}
 
 #[derive(Deserialize)]
 pub struct GroupUpdate {
@@ -212,6 +226,12 @@ impl From<MemberAndHost> for DisplayMemberAndHost {
 #[derive(Serialize)]
 pub struct PaginatedDisplayMembersAndHost {
     pub members: Vec<DisplayMemberAndHost>,
+    pub next: Option<i64>,
+}
+
+#[derive(Serialize)]
+pub struct PaginatedGroupsLists {
+    pub groups: Vec<GroupsList>,
     pub next: Option<i64>,
 }
 

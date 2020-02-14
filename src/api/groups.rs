@@ -4,6 +4,7 @@ use crate::api::models::GroupInfo;
 use crate::db::operations;
 use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::NewGroup;
+use crate::db::operations::models::SortGroupsBy;
 use crate::db::types::*;
 use crate::db::Pool;
 use crate::utils::valid_group_name;
@@ -16,11 +17,34 @@ use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use log::info;
+use serde_derive::Deserialize;
 use std::sync::Arc;
 
+#[derive(Deserialize)]
+struct ListGroupsQuery {
+    f: Option<String>,
+    #[serde(default)]
+    n: i64,
+    #[serde(default = "default_groups_list_size")]
+    s: i64,
+    #[serde(default)]
+    by: SortGroupsBy,
+}
+
+fn default_groups_list_size() -> i64 {
+    20
+}
+
+#[guard(Authenticated)]
 async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
-    operations::groups::get_group(&pool, &group_name)
-        .map(|group| HttpResponse::Ok().json(group))
+    operations::groups::get_group(&pool, &group_name).map(|group| HttpResponse::Ok().json(group))
+}
+
+#[guard(Authenticated)]
+async fn list_groups(pool: web::Data<Pool>, query: web::Query<ListGroupsQuery>) -> impl Responder {
+    let query = query.into_inner();
+    operations::groups::list_groups(&pool, query.f, query.by, query.s, query.n)
+        .map(|groups| HttpResponse::Ok().json(groups))
         .map_err(ApiError::GenericBadRequest)
 }
 
@@ -142,7 +166,11 @@ pub fn groups_app() -> impl HttpServiceFactory {
                 .max_age(3600)
                 .finish(),
         )
-        .service(web::resource("").route(web::post().to(add_group)))
+        .service(
+            web::resource("")
+                .route(web::post().to(add_group))
+                .route(web::get().to(list_groups)),
+        )
         .service(
             web::resource("/{group_name}")
                 .route(web::get().to(get_group))

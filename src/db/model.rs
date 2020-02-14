@@ -60,6 +60,14 @@ pub struct Invitation {
     pub added_by: Uuid,
 }
 
+#[derive(Queryable, Serialize)]
+pub struct GroupsList {
+    pub name: String,
+    pub typ: GroupType,
+    pub trust: TrustType,
+    pub member_count: i64,
+}
+
 #[derive(Insertable)]
 #[table_name = "groups"]
 pub struct InsertGroup {
