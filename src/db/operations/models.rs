@@ -2,6 +2,7 @@ use crate::db::model::Group;
 use crate::db::model::GroupsList;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
+use dino_park_trust::Trust;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use uuid::Uuid;
@@ -160,6 +161,7 @@ pub struct Member {
     pub email: Option<String>,
     pub is_staff: bool,
     pub role: RoleType,
+    pub since: NaiveDateTime,
 }
 
 #[derive(Queryable, Serialize)]
@@ -181,8 +183,13 @@ pub struct MemberAndHost {
     pub host_email: Option<String>,
 }
 
-impl From<Member> for DisplayMemberAndHost {
-    fn from(m: Member) -> Self {
+impl DisplayMemberAndHost {
+    pub fn from_with_socpe(m: Member, scope: &Trust) -> Self {
+        let since = if scope >= &Trust::Authenticated {
+            Some(m.since)
+        } else {
+            None
+        };
         DisplayMemberAndHost {
             user_uuid: m.user_uuid,
             picture: m.picture,
@@ -191,7 +198,7 @@ impl From<Member> for DisplayMemberAndHost {
             username: m.username,
             email: m.email,
             is_staff: m.is_staff,
-            since: None,
+            since,
             expiration: None,
             role: m.role,
             host: None,

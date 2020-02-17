@@ -47,7 +47,7 @@ pub fn scoped_members_and_host(
             limit,
             offset,
         ),
-        Trust::Ndaed => internal::member::ndaed_scoped_members(
+        Trust::Ndaed => internal::member::ndaed_scoped_members_and_host(
             &connection,
             group_name,
             query,
@@ -62,6 +62,7 @@ pub fn scoped_members_and_host(
             roles,
             limit,
             offset,
+            scope,
         ),
         Trust::Authenticated => internal::member::authenticated_scoped_members(
             &connection,
@@ -70,6 +71,7 @@ pub fn scoped_members_and_host(
             roles,
             limit,
             offset,
+            scope,
         ),
         Trust::Public => internal::member::public_scoped_members(
             &connection,
@@ -78,6 +80,7 @@ pub fn scoped_members_and_host(
             roles,
             limit,
             offset,
+            scope,
         ),
     }
 }

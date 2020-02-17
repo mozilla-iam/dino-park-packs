@@ -12,6 +12,7 @@ use crate::user::User;
 use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use dino_park_trust::Trust;
 use failure::Error;
 use serde_json::Value;
 use uuid::Uuid;
@@ -27,6 +28,7 @@ macro_rules! scoped_members_for {
             roles: &[RoleType],
             limit: i64,
             offset: Option<i64>,
+            scope: &Trust,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
             use schema::groups as g;
             use schema::memberships as m;
@@ -64,11 +66,17 @@ macro_rules! scoped_members_for {
                             u::email,
                             u::trust.eq(TrustType::Staff),
                             r::typ,
+                            m::added_ts,
                         ))
                         .offset(offset)
                         .limit(limit)
                         .get_results::<Member>(connection)
-                        .map(|members| members.into_iter().map(|m| m.into()).collect())
+                        .map(|members| {
+                            members
+                                .into_iter()
+                                .map(|m| DisplayMemberAndHost::from_with_socpe(m, scope))
+                                .collect()
+                        })
                 })
                 .map(|members: Vec<DisplayMemberAndHost>| {
                     let next = match members.len() {
@@ -156,14 +164,14 @@ macro_rules! scoped_members_and_host_for {
 }
 
 // scoped_members_for!(users_staff, staff_scoped_members);
-scoped_members_for!(users_ndaed, ndaed_scoped_members);
+// scoped_members_for!(users_ndaed, ndaed_scoped_members);
 scoped_members_for!(users_vouched, vouched_scoped_members);
 scoped_members_for!(users_authenticated, authenticated_scoped_members);
 scoped_members_for!(users_public, public_scoped_members);
 
 scoped_members_and_host_for!(users_staff, hosts_staff, staff_scoped_members_and_host);
-/*
 scoped_members_and_host_for!(users_ndaed, hosts_ndaed, ndaed_scoped_members_and_host);
+/*
 scoped_members_and_host_for!(
     users_vouched,
     hosts_vouched,
