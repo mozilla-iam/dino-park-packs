@@ -42,7 +42,7 @@ paths:
       parameters:
         - in: query
           name: f
-          description: filter results based on name prefix
+          description: filter results based on f contained in group name
           required: false
           schema:
             type: string

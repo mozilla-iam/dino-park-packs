@@ -195,7 +195,7 @@ pub fn list_groups(
 ) -> Result<PaginatedGroupsLists, Error> {
     let mut query = views::groups_list::table.into_boxed();
     if let Some(filter) = filter {
-        query = query.filter(views::groups_list::name.ilike(format!("{}%", filter)))
+        query = query.filter(views::groups_list::name.ilike(format!("%{}%", filter)))
     };
     query = match sort_by {
         SortGroupsBy::MembersCount => query.order(views::groups_list::members_count.desc()),
