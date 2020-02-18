@@ -83,6 +83,7 @@ pub struct InsertGroup {
 
 #[derive(Insertable, AsChangeset)]
 #[table_name = "memberships"]
+#[changeset_options(treat_none_as_null = "true")]
 pub struct InsertMembership {
     pub user_uuid: Uuid,
     pub group_id: i32,
