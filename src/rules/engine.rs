@@ -16,6 +16,10 @@ pub const SEARCH_USERS: Engine = Engine {
     rules: &[&rule_host_can_invite],
 };
 
+pub const DELETE_INVITATION: Engine = Engine {
+    rules: &[&rule_host_can_invite],
+};
+
 pub const INVITE_MEMBER: Engine = Engine {
     rules: &[&rule_host_can_invite, &member_can_join, &user_not_a_member],
 };

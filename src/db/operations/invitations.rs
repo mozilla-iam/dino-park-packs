@@ -26,7 +26,7 @@ pub fn delete_invitation(
     host: User,
     member: User,
 ) -> Result<(), Error> {
-    INVITE_MEMBER.run(&RuleContext::minimal(
+    DELETE_INVITATION.run(&RuleContext::minimal(
         pool,
         scope_and_user,
         &group_name,
@@ -55,11 +55,12 @@ pub fn update_invitation(
     invitation_expiration: Option<NaiveDateTime>,
     group_expiration: Option<i32>,
 ) -> Result<(), Error> {
-    INVITE_MEMBER.run(&RuleContext::minimal(
+    INVITE_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
         &group_name,
         &host.user_uuid,
+        &member.user_uuid,
     ))?;
     let connection = pool.get()?;
     update(
