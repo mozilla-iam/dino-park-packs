@@ -4,6 +4,7 @@ use crate::db::users::DisplayUser;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
 use crate::rules::engine::SEARCH_USERS;
+use crate::rules::is_nda_group;
 use crate::rules::RuleContext;
 use crate::user::User;
 use cis_profile::schema::Profile;
@@ -24,7 +25,7 @@ pub fn search_users(
     pool: &Pool,
     scope_and_user: ScopeAndUser,
     group_name: Option<String>,
-    trust: TrustType,
+    trust: Option<TrustType>,
     q: &str,
 ) -> Result<Vec<DisplayUser>, Error> {
     let connection = pool.get()?;
@@ -38,6 +39,14 @@ pub fn search_users(
                 &host.user_uuid,
             ))?;
 
+            let trust = if let Some(trust) = trust {
+                trust
+            } else if is_nda_group(&group_name) {
+                TrustType::Authenticated
+            } else {
+                TrustType::Ndaed
+            };
+
             internal::user::search_users_for_group(
                 &connection,
                 &group_name,
@@ -47,7 +56,13 @@ pub fn search_users(
                 5,
             )
         }
-        None => internal::user::search_users(&connection, trust, scope_and_user.scope.into(), q, 5),
+        None => internal::user::search_users(
+            &connection,
+            trust.unwrap_or(TrustType::Ndaed),
+            scope_and_user.scope.into(),
+            q,
+            5,
+        ),
     }
 }
 

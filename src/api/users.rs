@@ -14,8 +14,7 @@ use serde_derive::Deserialize;
 #[derive(Deserialize)]
 struct SearchUsersQuery {
     q: String,
-    #[serde(default = "TrustType::ndaed")]
-    t: TrustType,
+    t: Option<TrustType>,
     g: Option<String>,
 }
 
