@@ -70,7 +70,7 @@ pub fn demote_to_member(
         schema::memberships::role_id.eq(role.id),
         schema::memberships::expiration.eq(expiration),
     ))
-    .get_result(&*connection)
+    .get_result(connection)
     .map_err(Into::into)
     .map(|membership| {
         internal::log::db_log(
@@ -100,7 +100,7 @@ pub fn add_admin(
         added_by: host.user_uuid,
     };
     let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(user.user_uuid);
-    diesel::insert_into(schema::memberships::table)
+    let membership = diesel::insert_into(schema::memberships::table)
         .values(&admin_membership)
         .on_conflict((
             schema::memberships::user_uuid,
@@ -108,8 +108,7 @@ pub fn add_admin(
         ))
         .do_update()
         .set(&admin_membership)
-        .get_result(&*connection)
-        .map_err(Into::into)
+        .get_result(connection)
         .map(|membership| {
             internal::log::db_log(
                 connection,
@@ -119,7 +118,22 @@ pub fn add_admin(
                 log_comment_body("admin"),
             );
             membership
-        })
+        })?;
+    let deleted = diesel::delete(schema::invitations::table)
+        .filter(schema::invitations::group_id.eq(group.id))
+        .filter(schema::invitations::user_uuid.eq(user.user_uuid))
+        .execute(connection)
+        .map(|rows| rows > 0)?;
+    if deleted {
+        internal::log::db_log(
+            connection,
+            &log_ctx,
+            LogTargetType::Invitation,
+            LogOperationType::Deleted,
+            log_comment_body("added as admin"),
+        );
+    }
+    Ok(membership)
 }
 
 pub fn is_last_admin(
