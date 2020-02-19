@@ -758,6 +758,13 @@ paths:
           schema:
             $ref: "#/components/schemas/TrustType"
           example: Ndaed
+        - in: query
+          name: c
+          description: search for potential curators (requires g to be set)
+          required: false
+          schema:
+            type: string
+          example: true
       responses:
         "200":
           description: the top matches of users

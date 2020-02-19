@@ -25,6 +25,8 @@ pub enum ApiError {
     ScopeError(TrustError),
     #[fail(display = "Groups scope Error: {}", _0)]
     GroupsScopeError(GroupsTrustError),
+    #[fail(display = "Invalid query parameters.")]
+    InvalidQuery,
 }
 
 fn to_json_error(e: &impl Display) -> Value {

@@ -16,6 +16,8 @@ struct SearchUsersQuery {
     q: String,
     t: Option<TrustType>,
     g: Option<String>,
+    #[serde(default)]
+    c: bool,
 }
 
 #[guard(Ndaed)]
@@ -24,13 +26,18 @@ async fn search_users(
     scope_and_user: ScopeAndUser,
     query: web::Query<SearchUsersQuery>,
 ) -> impl Responder {
-    match operations::users::search_users(
-        &pool,
-        scope_and_user,
-        query.g.clone(),
-        query.t.clone(),
-        &query.q,
-    ) {
+    let query = query.into_inner();
+    let users = if query.c {
+        match query.g {
+            Some(group_name) => {
+                operations::users::search_admins(&pool, scope_and_user, group_name, &query.q)
+            }
+            _ => return Err(ApiError::InvalidQuery),
+        }
+    } else {
+        operations::users::search_users(&pool, scope_and_user, query.g, query.t, &query.q)
+    };
+    match users {
         Ok(users) => Ok(HttpResponse::Ok().json(users)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }

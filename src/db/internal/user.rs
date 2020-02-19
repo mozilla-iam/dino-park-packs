@@ -1,5 +1,6 @@
 use crate::db::internal;
 use crate::db::schema;
+use crate::db::types::RoleType;
 use crate::db::types::TrustType;
 use crate::db::users::UserProfile;
 use crate::db::users::*;
@@ -165,6 +166,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
         .execute(connection)?;
     Ok(())
 }
+
 macro_rules! scoped_search_users_for_group {
     ($g:ident, $t:ident, $typ:ident, $q:ident, $trust:ident, $limit:ident, $connection:ident) => {{
         use schema::$t as u;
@@ -200,6 +202,51 @@ macro_rules! scoped_search_users_for_group {
     }};
 }
 
+/*
+                .inner_join(schema::roles::table)
+                .on(schema::roles::role_id.eq(schema::memberships::role_id))
+                .filter(schema::memberships::group_id.eq($g))
+                .filter(schema::roles::typ.ne(RoleType::Member))
+                .select(schema::memberships::all_columns))
+*/
+macro_rules! scoped_search_curators_for_group {
+    ($g:ident, $t:ident, $typ:ident, $q:ident, $trust:ident, $limit:ident, $connection:ident) => {{
+        use schema::$t as u;
+        u::table
+            .filter(
+                u::first_name
+                    .concat(" ")
+                    .concat(u::last_name)
+                    .ilike($q)
+                    .or(u::first_name.ilike($q))
+                    .or(u::last_name.ilike($q))
+                    .or(u::username.ilike($q))
+                    .or(u::email.ilike($q)),
+            )
+            .filter(u::trust.ge($trust))
+            .left_outer_join(
+                schema::memberships::table.on(schema::memberships::user_uuid
+                    .eq(u::user_uuid)
+                    .and(schema::memberships::group_id.eq($g))),
+            )
+            .left_outer_join(
+                schema::roles::table.on(schema::roles::role_id.eq(schema::memberships::role_id)),
+            )
+            .filter(
+                schema::memberships::group_id
+                    .is_null()
+                    .or(schema::memberships::group_id
+                        .ne($g)
+                        .or(schema::roles::typ.eq(RoleType::Member))),
+            )
+            .select(u::all_columns)
+            .limit($limit)
+            .get_results::<$typ>($connection)
+            .map(|users| users.into_iter().map(|u| u.into()).collect())
+            .map_err(Into::into)
+    }};
+}
+
 macro_rules! scoped_search_users {
     ($t:ident, $typ:ident, $q:ident, $trust:ident, $limit:ident, $connection:ident) => {{
         use schema::$t as u;
@@ -222,6 +269,64 @@ macro_rules! scoped_search_users {
     }};
 }
 
+pub fn search_curators_for_group(
+    connection: &PgConnection,
+    group_name: &str,
+    scope: TrustType,
+    q: &str,
+    limit: i64,
+) -> Result<Vec<DisplayUser>, Error> {
+    let q: &str = &format!("{}%", q);
+    let group_id = internal::group::get_group(connection, group_name)?.id;
+    let trust = TrustType::Ndaed;
+    match scope {
+        TrustType::Staff => scoped_search_curators_for_group!(
+            group_id,
+            users_staff,
+            UsersStaff,
+            q,
+            trust,
+            limit,
+            connection
+        ),
+        TrustType::Ndaed => scoped_search_curators_for_group!(
+            group_id,
+            users_ndaed,
+            UsersNdaed,
+            q,
+            trust,
+            limit,
+            connection
+        ),
+        TrustType::Vouched => scoped_search_curators_for_group!(
+            group_id,
+            users_vouched,
+            UsersVouched,
+            q,
+            trust,
+            limit,
+            connection
+        ),
+        TrustType::Authenticated => scoped_search_curators_for_group!(
+            group_id,
+            users_authenticated,
+            UsersAuthenticated,
+            q,
+            trust,
+            limit,
+            connection
+        ),
+        TrustType::Public => scoped_search_curators_for_group!(
+            group_id,
+            users_public,
+            UsersPublic,
+            q,
+            trust,
+            limit,
+            connection
+        ),
+    }
+}
 pub fn search_users_for_group(
     connection: &PgConnection,
     group_name: &str,

@@ -66,6 +66,30 @@ pub fn search_users(
     }
 }
 
+pub fn search_admins(
+    pool: &Pool,
+    scope_and_user: ScopeAndUser,
+    group_name: String,
+    q: &str,
+) -> Result<Vec<DisplayUser>, Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    SEARCH_USERS.run(&RuleContext::minimal(
+        pool,
+        &scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+
+    internal::user::search_curators_for_group(
+        &connection,
+        &group_name,
+        scope_and_user.scope.into(),
+        q,
+        5,
+    )
+}
+
 pub fn delete_user(pool: &Pool, user: &User) -> Result<(), Error> {
     let connection = pool.get()?;
     internal::user::delete_user(&connection, user)
