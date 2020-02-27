@@ -146,6 +146,7 @@ async fn group_details(
             } else {
                 None
             },
+            created: group.group.created,
             terms: group.terms,
         },
         members,

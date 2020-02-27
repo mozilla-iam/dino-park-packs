@@ -1,5 +1,6 @@
 use crate::db::operations::models::PaginatedDisplayMembersAndHost;
 use crate::db::types::GroupType;
+use chrono::NaiveDateTime;
 use serde_derive::Serialize;
 
 #[derive(Serialize)]
@@ -8,6 +9,7 @@ pub struct GroupInfo {
     pub description: String,
     pub typ: GroupType,
     pub expiration: Option<i32>,
+    pub created: NaiveDateTime,
     pub terms: bool,
 }
 

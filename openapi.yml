@@ -996,6 +996,10 @@ components:
         expiration:
           type: integer
           example: 90
+        created:
+          type: string
+          format: datetime
+          example: 2014-11-28T12:45:59Z
         terms:
           type: boolean
           example: true
