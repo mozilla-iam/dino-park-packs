@@ -1,6 +1,7 @@
 use crate::db::model::Group;
 use crate::db::model::GroupsList;
 use crate::db::types::*;
+use crate::utils::maybe_to_utc;
 use chrono::NaiveDateTime;
 use dino_park_trust::Trust;
 use serde_derive::Deserialize;
@@ -75,6 +76,7 @@ pub struct DisplayInvitation {
     pub username: String,
     pub email: Option<String>,
     pub is_staff: bool,
+    #[serde(serialize_with = "maybe_to_utc")]
     pub invitation_expiration: Option<NaiveDateTime>,
     pub group_expiration: Option<i32>,
     pub group_name: String,
@@ -82,7 +84,7 @@ pub struct DisplayInvitation {
     pub added_by: DisplayHost,
 }
 
-#[derive(Queryable, Serialize)]
+#[derive(Queryable)]
 pub struct InvitationAndHost {
     pub user_uuid: Uuid,
     pub picture: Option<String>,
@@ -145,13 +147,15 @@ pub struct DisplayMemberAndHost {
     pub username: String,
     pub email: Option<String>,
     pub is_staff: bool,
+    #[serde(serialize_with = "maybe_to_utc")]
     pub since: Option<NaiveDateTime>,
+    #[serde(serialize_with = "maybe_to_utc")]
     pub expiration: Option<NaiveDateTime>,
     pub role: RoleType,
     pub host: Option<DisplayHost>,
 }
 
-#[derive(Queryable, Serialize)]
+#[derive(Queryable)]
 pub struct Member {
     pub user_uuid: Uuid,
     pub picture: Option<String>,
@@ -164,7 +168,7 @@ pub struct Member {
     pub since: NaiveDateTime,
 }
 
-#[derive(Queryable, Serialize)]
+#[derive(Queryable)]
 pub struct MemberAndHost {
     pub user_uuid: Uuid,
     pub picture: Option<String>,

@@ -1,7 +1,31 @@
+use crate::db::model::Group;
 use crate::db::operations::models::PaginatedDisplayMembersAndHost;
 use crate::db::types::GroupType;
+use crate::utils::to_utc;
 use chrono::NaiveDateTime;
 use serde_derive::Serialize;
+
+#[derive(Serialize)]
+pub struct DisplayGroup {
+    pub name: String,
+    pub description: String,
+    pub typ: GroupType,
+    pub expiration: Option<i32>,
+    #[serde(serialize_with = "to_utc")]
+    pub created: NaiveDateTime,
+}
+
+impl From<Group> for DisplayGroup {
+    fn from(g: Group) -> Self {
+        DisplayGroup {
+            name: g.name,
+            description: g.description,
+            typ: g.typ,
+            expiration: g.group_expiration,
+            created: g.created,
+        }
+    }
+}
 
 #[derive(Serialize)]
 pub struct GroupInfo {
@@ -9,6 +33,7 @@ pub struct GroupInfo {
     pub description: String,
     pub typ: GroupType,
     pub expiration: Option<i32>,
+    #[serde(serialize_with = "to_utc")]
     pub created: NaiveDateTime,
     pub terms: bool,
 }

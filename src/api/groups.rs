@@ -1,4 +1,5 @@
 use crate::api::error::ApiError;
+use crate::api::models::DisplayGroup;
 use crate::api::models::DisplayGroupDetails;
 use crate::api::models::GroupInfo;
 use crate::db::operations;
@@ -37,7 +38,8 @@ fn default_groups_list_size() -> i64 {
 
 #[guard(Authenticated)]
 async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
-    operations::groups::get_group(&pool, &group_name).map(|group| HttpResponse::Ok().json(group))
+    operations::groups::get_group(&pool, &group_name)
+        .map(|group| HttpResponse::Ok().json(DisplayGroup::from(group)))
 }
 
 #[guard(Authenticated)]
