@@ -613,12 +613,34 @@ paths:
           schema:
             type: string
             enum: [Any, Member, Curator]
+            default: Any
         - in: query
           name: q
           description: search query to filter results
           required: false
           schema:
             type: string
+        - in: query
+          name: s
+          description: number of results
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: "n"
+          description: next results token
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: by
+          description: sort by
+          required: false
+          schema:
+            type: string
+            enum: [None, ExpirationAsc, ExpirationDesc, RoleAsc, RoleDesc]
+            default: None
       responses:
         "200":
           description: a page of members
@@ -1219,17 +1241,6 @@ components:
         curator:
           type: boolean
           example: true
-        members:
-          type: object
-          properties:
-            members:
-              type: array
-              items:
-                $ref: "#/components/schemas/DisplayMember"
-            next:
-              type: integer
-              nullable: true
-              example: 20
         group:
           $ref: "#/components/schemas/GroupWithTerms"
         member_count:

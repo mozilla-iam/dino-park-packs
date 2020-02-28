@@ -1,9 +1,8 @@
 use crate::db::model::Group;
-use crate::db::operations::models::PaginatedDisplayMembersAndHost;
 use crate::db::types::GroupType;
 use crate::utils::to_utc;
 use chrono::NaiveDateTime;
-use serde_derive::Serialize;
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct DisplayGroup {
@@ -42,7 +41,6 @@ pub struct GroupInfo {
 pub struct DisplayGroupDetails {
     pub curator: bool,
     pub group: GroupInfo,
-    pub members: PaginatedDisplayMembersAndHost,
     pub member_count: i64,
     pub invitation_count: Option<i64>,
     pub renewal_count: Option<i64>,

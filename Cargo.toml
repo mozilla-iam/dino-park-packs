@@ -1,6 +1,6 @@
 [package]
 name = "dino-park-packs"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Florian Merz <flomerz@gmail.com>"]
 edition = "2018"
 
@@ -9,9 +9,9 @@ default = []
 localuserscope = ["dino_park_gate/localuserscope"]
 
 [dependencies]
-cis_client = { git = "https://github.com/mozilla-iam/cis_client-rust", branch = "0.4.0", version = "0.4.0" }
-cis_profile = { git = "https://github.com/mozilla-iam/cis_profile-rust", branch = "0.3.1", version = "0.3.1", features = ["aws", "vendored"] }
-dino_park_gate = { git = "https://github.com/mozilla-iam/dino-park-gate", tag = "0.4.0", version = "0.4.0" }
+cis_client = { git = "https://github.com/mozilla-iam/cis_client-rust", tag = "0.5.0", version = "0.5.0" }
+cis_profile = { git = "https://github.com/mozilla-iam/cis_profile-rust", tag = "0.3.2", version = "0.3.2", features = ["aws", "vendored"] }
+dino_park_gate = { git = "https://github.com/mozilla-iam/dino-park-gate", tag = "0.5.1", version = "0.5.1" }
 dino_park_trust = { git = "https://github.com/mozilla-iam/dino-park-trust", tag = "0.0.4", version = "0.0.4" }
 dino_park_guard = { git = "https://github.com/mozilla-iam/dino-park-guard", tag = "0.0.1", version = "0.0.1" }
 diesel = { version = "1.4", features = ["postgres", "uuidv07", "r2d2", "chrono", "serde_json"] }
@@ -20,9 +20,8 @@ actix-web = "2.0"
 actix-rt = "1.0"
 actix-cors = "0.2"
 actix-multipart = "0.2"
-serde = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_derive = "1.0"
 uuid = { version = "0.7", features = ["serde", "v4"] }
 log = "0.4"
 env_logger = "0.7"

@@ -9,7 +9,7 @@ use actix_web::web;
 use actix_web::HttpResponse;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
 

@@ -11,7 +11,7 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use uuid::Uuid;
 
 #[derive(Deserialize)]

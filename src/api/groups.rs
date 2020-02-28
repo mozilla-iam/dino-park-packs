@@ -6,7 +6,6 @@ use crate::db::operations;
 use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::NewGroup;
 use crate::db::operations::models::SortGroupsBy;
-use crate::db::types::*;
 use crate::db::Pool;
 use crate::utils::valid_group_name;
 use actix_cors::Cors;
@@ -18,7 +17,7 @@ use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
 use log::info;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::sync::Arc;
 
 #[derive(Deserialize)]
@@ -103,21 +102,11 @@ async fn group_details(
 ) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let curator = operations::admins::is_admin(&pool, &scope_and_user, &group_name, &host);
-    let page_size = 20;
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
         Err(e) => return Err(ApiError::GenericBadRequest(e)),
     };
     let group = operations::groups::get_group_with_terms_flag(&pool, &group_name)?;
-    let members = operations::members::scoped_members_and_host(
-        &pool,
-        &group_name,
-        &scope_and_user.scope,
-        None,
-        &[RoleType::Admin, RoleType::Curator, RoleType::Member],
-        page_size,
-        None,
-    )?;
     let invitation_count = if curator {
         Some(operations::invitations::pending_invitations_count(
             &pool,
@@ -151,7 +140,6 @@ async fn group_details(
             created: group.group.created,
             terms: group.terms,
         },
-        members,
         member_count,
         invitation_count,
         renewal_count,

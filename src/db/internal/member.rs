@@ -24,68 +24,57 @@ macro_rules! scoped_members_for {
         pub fn $f(
             connection: &PgConnection,
             group_name: &str,
-            query: Option<String>,
-            roles: &[RoleType],
-            limit: i64,
-            offset: Option<i64>,
+            options: MembersQueryOptions,
             scope: &Trust,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
             use schema::groups as g;
             use schema::memberships as m;
             use schema::roles as r;
             use schema::$t as u;
-            let offset = offset.unwrap_or_default();
-            let q = format!("{}%", query.unwrap_or_default());
-            g::table
-                .filter(g::name.eq(group_name))
-                .first(connection)
-                .and_then(|group: Group| {
-                    m::table
-                        .filter(m::group_id.eq(group.id))
-                        .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
-                        .inner_join(r::table)
-                        .filter(r::typ.eq_any(roles))
-                        .filter(
-                            u::first_name
-                                .concat(" ")
-                                .concat(u::last_name)
-                                .ilike(&q)
-                                .or(u::first_name.ilike(&q))
-                                .or(u::last_name.ilike(&q))
-                                .or(u::username.ilike(&q))
-                                .or(u::email.ilike(&q)),
-                        )
-                        .order_by(r::typ)
-                        .then_order_by(u::username)
-                        .select((
-                            m::user_uuid,
-                            u::picture,
-                            u::first_name,
-                            u::last_name,
-                            u::username,
-                            u::email,
-                            u::trust.eq(TrustType::Staff),
-                            r::typ,
-                            m::added_ts,
-                        ))
-                        .offset(offset)
-                        .limit(limit)
-                        .get_results::<Member>(connection)
-                        .map(|members| {
-                            members
-                                .into_iter()
-                                .map(|m| DisplayMemberAndHost::from_with_socpe(m, scope))
-                                .collect()
-                        })
-                })
-                .map(|members: Vec<DisplayMemberAndHost>| {
-                    let next = match members.len() {
-                        0 => None,
-                        l => Some(offset + l as i64),
-                    };
-                    PaginatedDisplayMembersAndHost { next, members }
-                })
-                .map_err(Into::into)
+            let offset = options.offset.unwrap_or_default();
+            let q = format!("{}%", options.query.unwrap_or_default());
+            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
+            let members: Vec<DisplayMemberAndHost> = m::table
+                .filter(m::group_id.eq(group.id))
+                .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
+                .inner_join(r::table)
+                .filter(r::typ.eq_any(options.roles))
+                .filter(
+                    u::first_name
+                        .concat(" ")
+                        .concat(u::last_name)
+                        .ilike(&q)
+                        .or(u::first_name.ilike(&q))
+                        .or(u::last_name.ilike(&q))
+                        .or(u::username.ilike(&q))
+                        .or(u::email.ilike(&q)),
+                )
+                .then_order_by(u::username)
+                .select((
+                    m::user_uuid,
+                    u::picture,
+                    u::first_name,
+                    u::last_name,
+                    u::username,
+                    u::email,
+                    u::trust.eq(TrustType::Staff),
+                    r::typ,
+                    m::added_ts,
+                ))
+                .offset(offset)
+                .limit(options.limit)
+                .get_results::<Member>(connection)
+                .map(|members| {
+                    members
+                        .into_iter()
+                        .map(|m| DisplayMemberAndHost::from_with_socpe(m, scope))
+                        .collect()
+                })?;
+            let next = match members.len() {
+                0 => None,
+                l => Some(offset + l as i64),
+            };
+            Ok(PaginatedDisplayMembersAndHost { next, members })
         }
     };
 }
@@ -95,70 +84,70 @@ macro_rules! scoped_members_and_host_for {
         pub fn $f(
             connection: &PgConnection,
             group_name: &str,
-            query: Option<String>,
-            roles: &[RoleType],
-            limit: i64,
-            offset: Option<i64>,
+            options: MembersQueryOptions,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
             use schema::groups as g;
             use schema::memberships as m;
             use schema::roles as r;
             use schema::$t as u;
             use views::$h as h;
-            let offset = offset.unwrap_or_default();
-            let q = format!("{}%", query.unwrap_or_default());
-            g::table
-                .filter(g::name.eq(group_name))
-                .first(connection)
-                .and_then(|group: Group| {
-                    m::table
-                        .filter(m::group_id.eq(group.id))
-                        .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
-                        .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
-                        .inner_join(r::table)
-                        .filter(r::typ.eq_any(roles))
-                        .filter(
-                            u::first_name
-                                .concat(" ")
-                                .concat(u::last_name)
-                                .ilike(&q)
-                                .or(u::first_name.ilike(&q))
-                                .or(u::last_name.ilike(&q))
-                                .or(u::username.ilike(&q))
-                                .or(u::email.ilike(&q)),
-                        )
-                        .order_by(r::typ)
-                        .then_order_by(u::username)
-                        .select((
-                            m::user_uuid,
-                            u::picture,
-                            u::first_name,
-                            u::last_name,
-                            u::username,
-                            u::email,
-                            u::trust.eq(TrustType::Staff),
-                            m::added_ts,
-                            m::expiration,
-                            r::typ,
-                            m::added_by,
-                            h::first_name.nullable(),
-                            h::last_name.nullable(),
-                            h::username.nullable(),
-                            h::email.nullable(),
-                        ))
-                        .offset(offset)
-                        .limit(limit)
-                        .get_results::<MemberAndHost>(connection)
-                        .map(|members| members.into_iter().map(|m| m.into()).collect())
-                })
-                .map(|members: Vec<DisplayMemberAndHost>| {
-                    let next = match members.len() {
-                        0 => None,
-                        l => Some(offset + l as i64),
-                    };
-                    PaginatedDisplayMembersAndHost { next, members }
-                })
-                .map_err(Into::into)
+            let offset = options.offset.unwrap_or_default();
+            let q = format!("{}%", options.query.unwrap_or_default());
+            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
+            let mut query = m::table
+                .filter(m::group_id.eq(group.id))
+                .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
+                .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
+                .inner_join(r::table)
+                .filter(r::typ.eq_any(options.roles))
+                .filter(
+                    u::first_name
+                        .concat(" ")
+                        .concat(u::last_name)
+                        .ilike(&q)
+                        .or(u::first_name.ilike(&q))
+                        .or(u::last_name.ilike(&q))
+                        .or(u::username.ilike(&q))
+                        .or(u::email.ilike(&q)),
+                )
+                .select((
+                    m::user_uuid,
+                    u::picture,
+                    u::first_name,
+                    u::last_name,
+                    u::username,
+                    u::email,
+                    u::trust.eq(TrustType::Staff),
+                    m::added_ts,
+                    m::expiration,
+                    r::typ,
+                    m::added_by,
+                    h::first_name.nullable(),
+                    h::last_name.nullable(),
+                    h::username.nullable(),
+                    h::email.nullable(),
+                ))
+                .into_boxed();
+            query = match options.order {
+                SortMembersBy::None => query,
+                SortMembersBy::ExpirationAsc => query.order_by((m::expiration.asc(), r::typ)),
+                SortMembersBy::ExpirationDesc => query.order_by((m::expiration.desc(), r::typ)),
+                SortMembersBy::RoleAsc => query.order_by((r::typ.asc(), m::expiration)),
+                SortMembersBy::RoleDesc => query.order_by((r::typ.desc(), m::expiration)),
+            };
+
+            query = query
+                .then_order_by(u::username)
+                .offset(offset)
+                .limit(options.limit);
+            let members: Vec<DisplayMemberAndHost> = query
+                .get_results::<MemberAndHost>(connection)
+                .map(|members| members.into_iter().map(|m| m.into()).collect())?;
+            let next = match members.len() {
+                0 => None,
+                l => Some(offset + l as i64),
+            };
+            Ok(PaginatedDisplayMembersAndHost { next, members })
         }
     };
 }

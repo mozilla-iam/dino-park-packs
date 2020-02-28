@@ -1,8 +1,8 @@
 use crate::db::error::DBError;
 use cis_profile::schema::Display;
 use dino_park_trust::Trust;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use std::convert::TryFrom;
 
 #[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]

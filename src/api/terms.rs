@@ -8,7 +8,7 @@ use actix_web::web;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct TermsUpdate {

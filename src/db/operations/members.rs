@@ -32,56 +32,25 @@ pub fn scoped_members_and_host(
     pool: &Pool,
     group_name: &str,
     scope: &Trust,
-    query: Option<String>,
-    roles: &[RoleType],
-    limit: i64,
-    offset: Option<i64>,
+    options: MembersQueryOptions,
 ) -> Result<PaginatedDisplayMembersAndHost, Error> {
     let connection = pool.get()?;
     match *scope {
-        Trust::Staff => internal::member::staff_scoped_members_and_host(
-            &connection,
-            group_name,
-            query,
-            roles,
-            limit,
-            offset,
-        ),
-        Trust::Ndaed => internal::member::ndaed_scoped_members_and_host(
-            &connection,
-            group_name,
-            query,
-            roles,
-            limit,
-            offset,
-        ),
-        Trust::Vouched => internal::member::vouched_scoped_members(
-            &connection,
-            group_name,
-            query,
-            roles,
-            limit,
-            offset,
-            scope,
-        ),
-        Trust::Authenticated => internal::member::authenticated_scoped_members(
-            &connection,
-            group_name,
-            query,
-            roles,
-            limit,
-            offset,
-            scope,
-        ),
-        Trust::Public => internal::member::public_scoped_members(
-            &connection,
-            group_name,
-            query,
-            roles,
-            limit,
-            offset,
-            scope,
-        ),
+        Trust::Staff => {
+            internal::member::staff_scoped_members_and_host(&connection, group_name, options)
+        }
+        Trust::Ndaed => {
+            internal::member::ndaed_scoped_members_and_host(&connection, group_name, options)
+        }
+        Trust::Vouched => {
+            internal::member::vouched_scoped_members(&connection, group_name, options, scope)
+        }
+        Trust::Authenticated => {
+            internal::member::authenticated_scoped_members(&connection, group_name, options, scope)
+        }
+        Trust::Public => {
+            internal::member::public_scoped_members(&connection, group_name, options, scope)
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 use crate::api::error::ApiError;
 use crate::db::operations;
+use crate::db::operations::models::MembersQueryOptions;
+use crate::db::operations::models::SortMembersBy;
 use crate::db::types::RoleType;
 use crate::db::Pool;
 use crate::user::User;
@@ -12,7 +14,7 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -44,6 +46,20 @@ pub struct GetMembersQuery {
     r: Option<MemberRoles>,
     n: Option<i64>,
     s: Option<i64>,
+    by: Option<SortMembersBy>,
+}
+
+impl From<GetMembersQuery> for MembersQueryOptions {
+    fn from(q: GetMembersQuery) -> Self {
+        let roles = q.r.unwrap_or_else(|| MemberRoles::Any).get_role_types();
+        MembersQueryOptions {
+            query: q.q,
+            roles,
+            limit: q.s.unwrap_or_else(|| 20),
+            offset: q.n,
+            order: q.by.unwrap_or_default(),
+        }
+    }
 }
 
 #[guard(Authenticated)]
@@ -54,20 +70,11 @@ async fn get_members(
     scope_and_user: ScopeAndUser,
     query: web::Query<GetMembersQuery>,
 ) -> impl Responder {
-    let page_size = query.s.unwrap_or_else(|| 20);
-    let roles = query
-        .r
-        .clone()
-        .unwrap_or_else(|| MemberRoles::Any)
-        .get_role_types();
     match operations::members::scoped_members_and_host(
         &pool,
         &group_name,
         &scope_and_user.scope,
-        query.q.clone(),
-        &roles,
-        page_size,
-        query.n,
+        query.into_inner().into(),
     ) {
         Ok(members) => Ok(HttpResponse::Ok().json(members)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),

@@ -12,7 +12,7 @@ use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
 use failure::Error;
-use serde_derive::Serialize;
+use serde::Serialize;
 use std::sync::Arc;
 use uuid::Uuid;
 

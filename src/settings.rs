@@ -1,6 +1,6 @@
 use cis_client::settings::CisSettings;
 use config::{Config, ConfigError, Environment, File};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::env;
 
 #[derive(Debug, Deserialize)]

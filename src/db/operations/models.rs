@@ -4,8 +4,8 @@ use crate::db::types::*;
 use crate::utils::maybe_to_utc;
 use chrono::NaiveDateTime;
 use dino_park_trust::Trust;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -13,6 +13,41 @@ pub enum SortGroupsBy {
     MembersCount,
     NameAsc,
     NameDesc,
+}
+
+#[derive(Deserialize)]
+pub enum SortMembersBy {
+    None,
+    RoleAsc,
+    RoleDesc,
+    ExpirationAsc,
+    ExpirationDesc,
+}
+
+impl Default for SortMembersBy {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+pub struct MembersQueryOptions {
+    pub query: Option<String>,
+    pub roles: Vec<RoleType>,
+    pub limit: i64,
+    pub offset: Option<i64>,
+    pub order: SortMembersBy,
+}
+
+impl Default for MembersQueryOptions {
+    fn default() -> Self {
+        MembersQueryOptions {
+            query: None,
+            roles: vec![RoleType::Admin, RoleType::Curator, RoleType::Member],
+            limit: 20,
+            offset: None,
+            order: SortMembersBy::RoleAsc,
+        }
+    }
 }
 
 impl Default for SortGroupsBy {

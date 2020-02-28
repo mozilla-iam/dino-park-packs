@@ -1,7 +1,7 @@
 use crate::db::schema::*;
 use crate::db::types::*;
 use chrono::NaiveDateTime;
-use serde_derive::Serialize;
+use serde::Serialize;
 use uuid::Uuid;
 
 #[derive(Identifiable, Queryable, PartialEq, Debug, AsChangeset)]
