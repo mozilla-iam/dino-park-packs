@@ -206,14 +206,15 @@ pub fn role_for(
     connection: &PgConnection,
     user_uuid: &Uuid,
     group_name: &str,
-) -> Result<Role, Error> {
+) -> Result<Option<Role>, Error> {
     schema::memberships::table
         .filter(schema::memberships::user_uuid.eq(user_uuid))
         .inner_join(schema::groups::table)
         .filter(schema::groups::name.eq(group_name))
         .inner_join(schema::roles::table)
-        .get_result::<(Membership, Group, Role)>(connection)
-        .map(|(_, _, r)| r)
+        .select(schema::roles::all_columns)
+        .get_result::<Role>(connection)
+        .optional()
         .map_err(Into::into)
 }
 

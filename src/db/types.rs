@@ -97,6 +97,15 @@ pub enum RoleType {
     Member,
 }
 
+impl RoleType {
+    pub fn is_curator(&self) -> bool {
+        match *self {
+            Self::Admin | Self::Curator => true,
+            Self::Member => false,
+        }
+    }
+}
+
 #[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Group_type"]
 pub enum GroupType {

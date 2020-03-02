@@ -16,6 +16,7 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use cis_client::CisClient;
 use dino_park_gate::scope::ScopeAndUser;
+use dino_park_trust::GroupsTrust;
 use log::info;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -101,7 +102,10 @@ async fn group_details(
     scope_and_user: ScopeAndUser,
 ) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    let curator = operations::admins::is_admin(&pool, &scope_and_user, &group_name, &host);
+    let role = operations::members::role_for_current(&pool, &scope_and_user, &group_name)?;
+    let curator = role.as_ref().map(|r| r.is_curator()).unwrap_or_default()
+        || scope_and_user.groups_scope == GroupsTrust::Admin;
+    let is_member = role.is_some();
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
         Err(e) => return Err(ApiError::GenericBadRequest(e)),
@@ -128,6 +132,7 @@ async fn group_details(
     };
     let result = DisplayGroupDetails {
         curator,
+        member: is_member,
         group: GroupInfo {
             name: group.group.name,
             description: group.group.description,

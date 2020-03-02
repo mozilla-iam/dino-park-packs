@@ -1241,6 +1241,9 @@ components:
         curator:
           type: boolean
           example: true
+        member:
+          type: boolean
+          example: true
         group:
           $ref: "#/components/schemas/GroupWithTerms"
         member_count:

@@ -249,3 +249,14 @@ pub fn renew(
     let connection = pool.get()?;
     internal::member::renew(&host.user_uuid, &connection, group_name, user, expiration)
 }
+
+pub fn role_for_current(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<Option<RoleType>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    internal::member::role_for(&connection, &user.user_uuid, group_name)
+        .map(|role| role.map(|role| role.typ))
+}

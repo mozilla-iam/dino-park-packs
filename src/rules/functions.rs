@@ -33,7 +33,7 @@ pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
-        Ok(role)
+        Ok(Some(role))
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::InviteMember) =>
         {
@@ -48,7 +48,7 @@ pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
-        Ok(role)
+        Ok(Some(role))
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::RemoveMember) =>
         {
@@ -115,7 +115,7 @@ pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
-        Ok(role) if role.typ == RoleType::Admin || role.typ == RoleType::Curator => Ok(()),
+        Ok(Some(role)) if role.typ == RoleType::Admin || role.typ == RoleType::Curator => Ok(()),
         _ => Err(RuleError::NotACurator),
     }
 }
@@ -124,7 +124,7 @@ pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
-        Ok(role) if role.typ == RoleType::Admin => Ok(()),
+        Ok(Some(role)) if role.typ == RoleType::Admin => Ok(()),
         _ => Err(RuleError::NotAnAdmin),
     }
 }
@@ -134,7 +134,7 @@ pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, member_uuid, ctx.group) {
-        Ok(role) if role.typ == RoleType::Member => Ok(()),
+        Ok(Some(role)) if role.typ == RoleType::Member => Ok(()),
         _ => Err(RuleError::NotAnAdmin),
     }
 }
@@ -144,7 +144,7 @@ pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn rule_host_can_edit_terms(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
-        Ok(role)
+        Ok(Some(role))
             if role.typ == RoleType::Admin
                 || role.permissions.contains(&PermissionType::EditTerms) =>
         {
