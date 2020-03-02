@@ -26,4 +26,6 @@ pub enum RuleError {
     UserNotFound,
     #[fail(display = "Already a member")]
     AlreadyMember,
+    #[fail(display = "Invalid group name")]
+    InvalidGroupName,
 }

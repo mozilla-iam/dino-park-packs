@@ -11,7 +11,7 @@ pub fn to_expiration_ts(days: i32) -> NaiveDateTime {
 pub fn valid_group_name(group_name: &str) -> bool {
     group_name
         .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        .all(|c| c.is_ascii_alphanumeric() && c.is_lowercase() || c == '-' || c == '_')
 }
 
 pub fn maybe_to_utc<S>(naive: &Option<NaiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>

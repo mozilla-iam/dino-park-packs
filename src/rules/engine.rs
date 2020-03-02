@@ -5,7 +5,7 @@ use dino_park_trust::GroupsTrust;
 use log::info;
 
 pub const CREATE_GROUP: Engine = Engine {
-    rules: &[&rule_is_creator],
+    rules: &[&rule_is_creator, &rule_valid_group_name],
 };
 
 pub const CURRENT_USER_CAN_JOIN: Engine = Engine {

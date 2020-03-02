@@ -2,6 +2,7 @@ use crate::db::internal;
 use crate::db::types::*;
 use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
+use crate::utils::valid_group_name;
 use diesel::result::Error as DieselError;
 use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
@@ -150,5 +151,14 @@ pub fn rule_host_can_edit_terms(ctx: &RuleContext) -> Result<(), RuleError> {
             Ok(())
         }
         _ => Err(RuleError::NotAllowedToEditTerms),
+    }
+}
+
+/// Check if the group name is in a valid format
+pub fn rule_valid_group_name(ctx: &RuleContext) -> Result<(), RuleError> {
+    if valid_group_name(ctx.group) {
+        Ok(())
+    } else {
+        Err(RuleError::InvalidGroupName)
     }
 }
