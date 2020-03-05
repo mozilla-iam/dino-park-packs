@@ -105,6 +105,17 @@ pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     Err(RuleError::NotAllowedToJoinGroup)
 }
 
+/// Check if the groups is of type `Reviewed`
+pub fn is_reviewed_group(ctx: &RuleContext) -> Result<(), RuleError> {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    let group =
+        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+    match group.typ {
+        GroupType::Reviewed => Ok(()),
+        _ => Err(RuleError::NotReviewedGroup),
+    }
+}
+
 /// Check if the host is either `RoleType::Admin` of `RoleType::Curator`
 pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;

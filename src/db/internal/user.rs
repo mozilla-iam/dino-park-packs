@@ -90,7 +90,8 @@ pub fn delete_user(connection: &PgConnection, user: &User) -> Result<(), Error> 
 }
 
 pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result<(), Error> {
-    let user_profile = UserProfileValue::try_from(UserProfile::try_from(profile.clone())?)?;
+    let user_profile = UserProfile::try_from(profile.clone())?;
+    let user_profile = UserProfileValue::try_from(user_profile)?;
 
     diesel::insert_into(schema::profiles::table)
         .values(&user_profile)

@@ -27,14 +27,12 @@ async fn join<T: AsyncCisClientTrait>(
     cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    let user_profile = operations::users::user_profile_by_uuid(&pool, &user.user_uuid)?;
     operations::invitations::accept_invitation(
         &pool,
         &scope_and_user,
         &group_name,
         &user,
         Arc::clone(&*cis_client),
-        user_profile.profile,
     )
     .await?;
     Ok(HttpResponse::Ok().finish())
@@ -60,8 +58,34 @@ async fn leave<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[guard(Ndaed)]
+async fn request(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+) -> impl Responder {
+    match operations::requests::request_membership(&pool, &scope_and_user, &group_name, None) {
+        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
+#[guard(Ndaed)]
+async fn cancel_request(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+) -> impl Responder {
+    match operations::requests::cancel_request(&pool, &scope_and_user, &group_name) {
+        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
 #[guard(Authenticated)]
-async fn reject(
+async fn reject_invitation(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -75,8 +99,15 @@ async fn reject(
 
 #[guard(Authenticated)]
 async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
-    let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
-    match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user, &user) {
+    match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user) {
+        Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
+#[guard(Authenticated)]
+async fn requests(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
+    match operations::requests::pending_requests_for_user(&pool, &scope_and_user) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
@@ -94,9 +125,15 @@ pub fn current_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactor
         )
         .service(
             web::resource("/invitations/{group_name}")
-                .route(web::delete().to(reject))
+                .route(web::delete().to(reject_invitation))
                 .route(web::post().to(join::<T>)),
         )
         .service(web::resource("/invitations").route(web::get().to(invitations)))
         .service(web::resource("/{group_name}").route(web::delete().to(leave::<T>)))
+        .service(
+            web::resource("/requests/{group_name}")
+                .route(web::post().to(request))
+                .route(web::delete().to(cancel_request)),
+        )
+        .service(web::resource("/requests").route(web::get().to(request)))
 }

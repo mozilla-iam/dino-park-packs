@@ -3,7 +3,9 @@ use crate::db::logs::log_comment_body;
 use crate::db::logs::LogContext;
 use crate::db::model::*;
 use crate::db::operations::models::DisplayInvitation;
+use crate::db::operations::models::DisplayInvitationForUser;
 use crate::db::operations::models::InvitationAndHost;
+use crate::db::operations::models::InvitationAndHostForUser;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::LogOperationType;
@@ -19,28 +21,23 @@ use serde_json::Value;
 use uuid::Uuid;
 
 macro_rules! scoped_invitations_for_user {
-    ($t:ident, $h:ident, $f:ident) => {
-        pub fn $f(connection: &PgConnection, user: &User) -> Result<Vec<DisplayInvitation>, Error> {
+    ($h:ident, $f:ident) => {
+        pub fn $f(
+            connection: &PgConnection,
+            user: &User,
+        ) -> Result<Vec<DisplayInvitationForUser>, Error> {
             use schema::groups as g;
             use schema::invitations as i;
             use schema::terms as t;
-            use schema::$t as u;
             use views::$h as h;
             i::table
                 .filter(i::user_uuid.eq(user.user_uuid))
                 .inner_join(g::table.on(g::group_id.eq(i::group_id)))
                 .filter(g::active.eq(true))
                 .left_outer_join(t::table.on(t::group_id.eq(i::group_id)))
-                .inner_join(u::table.on(u::user_uuid.eq(i::user_uuid)))
                 .left_outer_join(h::table.on(h::user_uuid.eq(i::added_by)))
                 .select((
-                    u::user_uuid,
-                    u::picture,
-                    u::first_name,
-                    u::last_name,
-                    u::username,
-                    u::email,
-                    u::trust.eq(TrustType::Staff),
+                    i::user_uuid,
                     i::invitation_expiration,
                     i::group_expiration,
                     g::name,
@@ -51,7 +48,7 @@ macro_rules! scoped_invitations_for_user {
                     h::username.nullable(),
                     h::email.nullable(),
                 ))
-                .get_results::<InvitationAndHost>(connection)
+                .get_results::<InvitationAndHostForUser>(connection)
                 .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
                 .map_err(Into::into)
         }
@@ -119,31 +116,14 @@ scoped_invitations_for!(
     public_scoped_invitations_and_host
 );
 
+scoped_invitations_for_user!(hosts_staff, staff_scoped_invitations_and_host_for_user);
+scoped_invitations_for_user!(hosts_ndaed, ndaed_scoped_invitations_and_host_for_user);
+scoped_invitations_for_user!(hosts_vouched, vouched_scoped_invitations_and_host_for_user);
 scoped_invitations_for_user!(
-    users_staff,
-    hosts_staff,
-    staff_scoped_invitations_and_host_for_user
-);
-scoped_invitations_for_user!(
-    users_ndaed,
-    hosts_ndaed,
-    ndaed_scoped_invitations_and_host_for_user
-);
-scoped_invitations_for_user!(
-    users_vouched,
-    hosts_vouched,
-    vouched_scoped_invitations_and_host_for_user
-);
-scoped_invitations_for_user!(
-    users_authenticated,
     hosts_authenticated,
     authenticated_scoped_invitations_and_host_for_user
 );
-scoped_invitations_for_user!(
-    users_public,
-    hosts_public,
-    public_scoped_invitations_and_host_for_user
-);
+scoped_invitations_for_user!(hosts_public, public_scoped_invitations_and_host_for_user);
 
 pub fn update(
     connection: &PgConnection,

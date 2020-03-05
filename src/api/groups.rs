@@ -130,6 +130,15 @@ async fn group_details(
     } else {
         None
     };
+    let request_count = if curator {
+        Some(operations::requests::request_count(
+            &pool,
+            &scope_and_user,
+            &group_name,
+        )?)
+    } else {
+        None
+    };
     let result = DisplayGroupDetails {
         curator,
         member: is_member,
@@ -148,6 +157,7 @@ async fn group_details(
         member_count,
         invitation_count,
         renewal_count,
+        request_count,
     };
     Ok(HttpResponse::Ok().json(result))
 }

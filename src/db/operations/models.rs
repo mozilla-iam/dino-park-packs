@@ -2,6 +2,7 @@ use crate::db::model::Group;
 use crate::db::model::GroupsList;
 use crate::db::types::*;
 use crate::utils::maybe_to_utc;
+use crate::utils::to_utc;
 use chrono::NaiveDateTime;
 use dino_park_trust::Trust;
 use serde::Deserialize;
@@ -87,7 +88,7 @@ impl GroupUpdate {
 pub struct NewGroup {
     pub name: String,
     pub description: String,
-    #[serde(default)]
+    #[serde(default, rename = "type")]
     pub typ: GroupType,
     #[serde(default)]
     pub capabilities: Vec<CapabilityType>,
@@ -117,6 +118,78 @@ pub struct DisplayInvitation {
     pub group_name: String,
     pub terms: bool,
     pub added_by: DisplayHost,
+}
+
+#[derive(Serialize)]
+pub struct DisplayInvitationForUser {
+    pub user_uuid: Uuid,
+    #[serde(serialize_with = "maybe_to_utc")]
+    pub invitation_expiration: Option<NaiveDateTime>,
+    pub group_expiration: Option<i32>,
+    pub group_name: String,
+    pub terms: bool,
+    pub added_by: DisplayHost,
+}
+
+#[derive(Serialize, Queryable)]
+pub struct DisplayRequestForUser {
+    pub user_uuid: Uuid,
+    #[serde(serialize_with = "to_utc")]
+    pub created: NaiveDateTime,
+    #[serde(serialize_with = "maybe_to_utc")]
+    pub request_expiration: Option<NaiveDateTime>,
+    pub group_name: String,
+    pub terms: bool,
+}
+
+#[derive(Serialize, Queryable)]
+pub struct DisplayRequest {
+    pub user_uuid: Uuid,
+    pub picture: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub username: String,
+    pub email: Option<String>,
+    pub is_staff: bool,
+    #[serde(serialize_with = "to_utc")]
+    pub created: NaiveDateTime,
+    #[serde(serialize_with = "maybe_to_utc")]
+    pub request_expiration: Option<NaiveDateTime>,
+    pub group_name: String,
+    pub terms: bool,
+}
+
+#[derive(Queryable)]
+pub struct InvitationAndHostForUser {
+    pub user_uuid: Uuid,
+    pub invitation_expiration: Option<NaiveDateTime>,
+    pub group_expiration: Option<i32>,
+    pub group_name: String,
+    pub terms: bool,
+    pub host_uuid: Uuid,
+    pub host_first_name: Option<String>,
+    pub host_last_name: Option<String>,
+    pub host_username: Option<String>,
+    pub host_email: Option<String>,
+}
+
+impl From<InvitationAndHostForUser> for DisplayInvitationForUser {
+    fn from(m: InvitationAndHostForUser) -> Self {
+        DisplayInvitationForUser {
+            user_uuid: m.user_uuid,
+            invitation_expiration: m.invitation_expiration,
+            group_expiration: m.group_expiration,
+            group_name: m.group_name,
+            terms: m.terms,
+            added_by: DisplayHost {
+                user_uuid: m.host_uuid,
+                first_name: m.host_first_name,
+                last_name: m.host_last_name,
+                username: m.host_username,
+                email: m.host_email,
+            },
+        }
+    }
 }
 
 #[derive(Queryable)]

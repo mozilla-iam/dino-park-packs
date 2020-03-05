@@ -4,6 +4,8 @@ pub enum RuleError {
     DBError,
     #[fail(display = "No DB connection available")]
     PoolError,
+    #[fail(display = "Not a reviewed group")]
+    NotReviewedGroup,
     #[fail(display = "Not allowed to join groups")]
     NotAllowedToJoinGroup,
     #[fail(display = "Not allowed to create groups")]

@@ -5,5 +5,6 @@ pub mod invitations;
 pub mod logs;
 pub mod members;
 pub mod models;
+pub mod requests;
 pub mod terms;
 pub mod users;

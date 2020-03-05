@@ -128,6 +128,7 @@ pub enum LogTargetType {
     Membership,
     Role,
     Invitation,
+    Request,
 }
 
 #[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]

@@ -45,4 +45,5 @@ pub struct DisplayGroupDetails {
     pub member_count: i64,
     pub invitation_count: Option<i64>,
     pub renewal_count: Option<i64>,
+    pub request_count: Option<i64>,
 }

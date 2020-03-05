@@ -1,4 +1,5 @@
-use crate::helpers::get_pool;
+use crate::db::get_pool;
+use crate::db::reset;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_packs::rules::engine::*;
 use dino_park_packs::rules::error::RuleError;
@@ -11,6 +12,7 @@ use uuid::Uuid;
 
 #[test]
 fn simple_rule_stuct_creator_success() -> Result<(), Error> {
+    reset()?;
     let pool = get_pool();
     let scope_and_user = ScopeAndUser {
         user_id: String::from("some_id"),
@@ -36,6 +38,7 @@ fn simple_rule_stuct_creator_success() -> Result<(), Error> {
 
 #[test]
 fn simple_rule_stuct_creator_fail() -> Result<(), Error> {
+    reset()?;
     let pool = get_pool();
     let scope_and_user = ScopeAndUser {
         user_id: String::from("some_id"),

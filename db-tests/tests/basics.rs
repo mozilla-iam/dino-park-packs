@@ -1,38 +1,54 @@
-use crate::cis::CisFakeClient;
-use crate::helpers::get_pool;
-use actix_web::middleware::Logger;
+use crate::api::*;
+use crate::db::reset;
+use crate::helpers::read_json;
+use crate::helpers::test_app;
+use crate::helpers::Soa;
+use crate::users::basic_user;
 use actix_web::test;
-use actix_web::web;
 use actix_web::App;
+use dino_park_trust::GroupsTrust;
+use dino_park_trust::Trust;
 use failure::Error;
-use std::sync::Arc;
-
-use dino_park_packs::*;
+use serde_json::json;
 
 #[actix_rt::test]
 async fn basic() -> Result<(), Error> {
-    let cis_client = Arc::new(CisFakeClient::new());
-    let pool = get_pool();
-    let app = App::new()
-        .data(Arc::clone(&cis_client))
-        .data(pool.clone())
-        .wrap(Logger::default().exclude("/healthz"))
-        .service(healthz::healthz_app())
-        .service(api::internal::internal_app::<CisFakeClient>())
-        .service(
-            web::scope("/groups/api/v1/")
-                .service(api::groups::groups_app::<CisFakeClient>())
-                .service(api::members::members_app::<CisFakeClient>())
-                .service(api::current::current_app::<CisFakeClient>())
-                .service(api::invitations::invitations_app())
-                .service(api::terms::terms_app())
-                .service(api::users::users_app())
-                .service(api::admins::admins_app::<CisFakeClient>())
-                .service(api::sudo::sudo_app::<CisFakeClient>()),
-        );
+    reset()?;
+    let app = App::new().service(test_app().await);
     let mut app = test::init_service(app).await;
     let req = test::TestRequest::get().uri("/healthz").to_request();
     let res = test::call_service(&mut app, req).await;
     assert!(res.status().is_success());
+    Ok(())
+}
+
+#[actix_rt::test]
+async fn create() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+    let scope = Soa::from(&basic_user(1, true)).creator();
+    let res = get(&mut app, "/groups/api/v1/groups", &scope).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await, json!({ "groups": [], "next": null }));
+
+    let scope = Soa::new("nobody", Trust::Public, GroupsTrust::None);
+    let res = get(&mut app, "/groups/api/v1/groups", &scope).await;
+    assert_eq!(res.status().as_u16(), 403);
+
+    let scope = Soa::from(&basic_user(1, true)).creator();
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "nda", "description": "the nda group" }),
+        &scope,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/groups", &scope).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await["groups"][0]["name"], "nda");
+
     Ok(())
 }
