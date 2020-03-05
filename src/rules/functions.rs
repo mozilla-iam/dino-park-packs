@@ -62,14 +62,9 @@ pub fn user_not_a_member(ctx: &RuleContext) -> Result<(), RuleError> {
     let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, member_uuid, ctx.group) {
-        Ok(_) => Err(RuleError::AlreadyMember),
-        Err(e) => {
-            if let Some(DieselError::NotFound) = e.downcast_ref::<DieselError>() {
-                Ok(())
-            } else {
-                Err(RuleError::DBError)
-            }
-        }
+        Ok(Some(_)) => Err(RuleError::AlreadyMember),
+        Ok(None) => Ok(()),
+        Err(_) => Err(RuleError::DBError),
     }
 }
 
