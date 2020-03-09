@@ -11,11 +11,11 @@ use std::fmt::Display;
 
 #[derive(Fail, Debug)]
 pub enum ApiError {
-    #[fail(display = "A mulipart error occured.")]
+    #[fail(display = "A multipart error occurred.")]
     MultipartError,
     #[fail(display = "Bad API request.")]
     GenericBadRequest(failure::Error),
-    #[fail(display = "Group names must ony containe alphanumeric charactars, -, and _")]
+    #[fail(display = "Group names must ony contain lowercase alphanumeric characters, -, and _")]
     InvalidGroupName,
     #[fail(display = "Operation Error: {}", _0)]
     PacksError(PacksError),

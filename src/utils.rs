@@ -11,7 +11,7 @@ pub fn to_expiration_ts(days: i32) -> NaiveDateTime {
 pub fn valid_group_name(group_name: &str) -> bool {
     group_name
         .chars()
-        .all(|c| c.is_ascii_alphanumeric() && c.is_lowercase() || c == '-' || c == '_')
+        .all(|c| (c.is_ascii_lowercase() || c.is_ascii_digit()) || c == '-' || c == '_')
 }
 
 pub fn maybe_to_utc<S>(naive: &Option<NaiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>
@@ -37,6 +37,13 @@ mod test {
     use super::*;
     use failure::Error;
     use serde_json;
+
+    #[test]
+    fn test_group_names() {
+        assert!(valid_group_name("group-test-1"));
+        assert!(!valid_group_name("group-Test-1"));
+        assert!(!valid_group_name("group-Test.1"));
+    }
 
     #[test]
     fn test_to_utc() -> Result<(), Error> {

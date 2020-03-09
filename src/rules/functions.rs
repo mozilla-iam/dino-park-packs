@@ -3,7 +3,6 @@ use crate::db::types::*;
 use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
 use crate::utils::valid_group_name;
-use diesel::result::Error as DieselError;
 use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
 
