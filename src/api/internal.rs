@@ -10,7 +10,7 @@ use actix_web::web;
 use actix_web::web::Bytes;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use futures::StreamExt;
 use futures::TryFutureExt;
@@ -35,9 +35,9 @@ async fn delete_user(pool: web::Data<Pool>, user_uuid: web::Path<Uuid>) -> impl 
     operations::users::delete_user(&pool, &user).map(|_| HttpResponse::Ok().finish())
 }
 
-async fn expire_all(
+async fn expire_all<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
-    cis_client: web::Data<Arc<CisClient>>,
+    cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     operations::expirations::expire_invitations(&pool)?;
     operations::expirations::expire_memberships(&pool, Arc::clone(&*cis_client)).await?;
@@ -68,7 +68,7 @@ async fn bulk_update_users(
     Ok(HttpResponse::Ok().json(UpdatedProfiles { updated }))
 }
 
-pub fn internal_app() -> impl HttpServiceFactory {
+pub fn internal_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/internal")
         .wrap(
             Cors::new()
@@ -82,5 +82,5 @@ pub fn internal_app() -> impl HttpServiceFactory {
         .service(web::resource("/update/bulk").route(web::post().to(bulk_update_users)))
         .service(web::resource("/update/user").route(web::post().to(update_user)))
         .service(web::resource("/delete/{user_uuid}").route(web::delete().to(delete_user)))
-        .service(web::resource("/expire/all").route(web::post().to(expire_all)))
+        .service(web::resource("/expire/all").route(web::post().to(expire_all::<T>)))
 }

@@ -5,7 +5,7 @@ use crate::db::operations::members::revoke_membership;
 use crate::db::Pool;
 use crate::user::User;
 use chrono::Utc;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use failure::Error;
 use futures::future::try_join_all;
 use futures::TryFutureExt;
@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 async fn expire_membership(
     pool: &Pool,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     user: &User,
     memberships: Vec<Membership>,
 ) -> Result<(), Error> {
@@ -38,7 +38,10 @@ async fn expire_membership(
     .await
 }
 
-pub async fn expire_memberships(pool: &Pool, cis_client: Arc<CisClient>) -> Result<(), Error> {
+pub async fn expire_memberships(
+    pool: &Pool,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
     let expires_before = Utc::now().naive_utc();
     let connection = pool.get()?;
     let memberships =

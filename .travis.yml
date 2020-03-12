@@ -1,0 +1,23 @@
+language: rust
+rust:
+  - stable
+services:
+  - docker
+
+env:
+  - DPP_PG_URL=postgres://postgres:passw@localhost/dino-park-packs-test
+
+before_script:
+  - rustup component add rustfmt
+  - rustup component add clippy
+
+script:
+  - docker run --rm -d -p 5432:5432 --name dino-park-postgres-test -e POSTGRES_PASSWORD=passw -e POSTGRES_DB=dino-park-packs-test postgres
+  - cargo fmt --all -- --check
+  - cargo clippy
+  - cargo build --all
+  - cargo test --all
+  - (cd db-tests && cargo test --features localuserscope -- --test-threads=1)
+  - docker stop dino-park-postgres-test
+
+cache: cargo

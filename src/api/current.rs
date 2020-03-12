@@ -8,7 +8,7 @@ use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -19,12 +19,12 @@ struct ForceLeave {
 }
 
 #[guard(Authenticated)]
-async fn join(
+async fn join<T: AsyncCisClientTrait>(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-    cis_client: web::Data<Arc<CisClient>>,
+    cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let user_profile = operations::users::user_profile_by_uuid(&pool, &user.user_uuid)?;
@@ -41,13 +41,13 @@ async fn join(
 }
 
 #[guard(Authenticated)]
-async fn leave(
+async fn leave<T: AsyncCisClientTrait>(
     _: HttpRequest,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     force: web::Query<ForceLeave>,
-    cis_client: web::Data<Arc<CisClient>>,
+    cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     operations::members::leave(
         &pool,
@@ -82,7 +82,7 @@ async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> imp
     }
 }
 
-pub fn current_app() -> impl HttpServiceFactory {
+pub fn current_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/self")
         .wrap(
             Cors::new()
@@ -95,8 +95,8 @@ pub fn current_app() -> impl HttpServiceFactory {
         .service(
             web::resource("/invitations/{group_name}")
                 .route(web::delete().to(reject))
-                .route(web::post().to(join)),
+                .route(web::post().to(join::<T>)),
         )
         .service(web::resource("/invitations").route(web::get().to(invitations)))
-        .service(web::resource("/{group_name}").route(web::delete().to(leave)))
+        .service(web::resource("/{group_name}").route(web::delete().to(leave::<T>)))
 }

@@ -14,7 +14,7 @@ use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::GroupsTrust;
 use log::info;
@@ -68,8 +68,8 @@ async fn update_group(
 }
 
 #[guard(Staff, Creator)]
-async fn add_group(
-    cis_client: web::Data<Arc<CisClient>>,
+async fn add_group<T: AsyncCisClientTrait>(
+    cis_client: web::Data<T>,
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     new_group: web::Json<NewGroup>,
@@ -84,8 +84,8 @@ async fn add_group(
     Ok(HttpResponse::Created().finish())
 }
 
-async fn delete_group(
-    cis_client: web::Data<Arc<CisClient>>,
+async fn delete_group<T: AsyncCisClientTrait>(
+    cis_client: web::Data<T>,
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
@@ -152,7 +152,7 @@ async fn group_details(
     Ok(HttpResponse::Ok().json(result))
 }
 
-pub fn groups_app() -> impl HttpServiceFactory {
+pub fn groups_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/groups")
         .wrap(
             Cors::new()
@@ -164,14 +164,14 @@ pub fn groups_app() -> impl HttpServiceFactory {
         )
         .service(
             web::resource("")
-                .route(web::post().to(add_group))
+                .route(web::post().to(add_group::<T>))
                 .route(web::get().to(list_groups)),
         )
         .service(
             web::resource("/{group_name}")
                 .route(web::get().to(get_group))
                 .route(web::put().to(update_group))
-                .route(web::delete().to(delete_group)),
+                .route(web::delete().to(delete_group::<T>)),
         )
         .service(web::resource("/{group_name}/details").route(web::get().to(group_details)))
 }

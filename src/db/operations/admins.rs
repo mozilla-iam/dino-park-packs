@@ -5,7 +5,7 @@ use crate::error::PacksError;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
@@ -17,7 +17,7 @@ pub async fn add_admin(
     group_name: &str,
     host: &User,
     user: &User,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     profile: Profile,
 ) -> Result<(), Error> {
     let group_name_f = group_name.to_owned();
