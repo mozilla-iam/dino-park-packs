@@ -1,7 +1,6 @@
 use chrono::DateTime;
 use chrono::Utc;
 use cis_client::AsyncCisClientTrait;
-use cis_client::CisClient;
 use cis_profile::crypto::SecretStore;
 use cis_profile::crypto::Signer;
 use cis_profile::schema::AccessInformationProviderSubObject;
@@ -66,7 +65,7 @@ fn remove_kv_and_sign_values_field(
 }
 
 pub async fn add_group_to_profile(
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     group_name: String,
     profile: Profile,
 ) -> Result<(), Error> {
@@ -95,7 +94,7 @@ pub async fn add_group_to_profile(
 }
 
 pub async fn remove_group_from_profile(
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     group_names: &[&str],
     profile: Profile,
 ) -> Result<(), Error> {

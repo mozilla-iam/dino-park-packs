@@ -12,7 +12,7 @@ use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -82,11 +82,11 @@ async fn get_members(
 }
 
 #[guard(Ndaed)]
-async fn remove_member(
+async fn remove_member<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
-    cis_client: web::Data<Arc<CisClient>>,
+    cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let user = User { user_uuid };
@@ -126,7 +126,7 @@ async fn renew_member(
     }
 }
 
-pub fn members_app() -> impl HttpServiceFactory {
+pub fn members_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/members")
         .wrap(
             Cors::new()
@@ -137,7 +137,9 @@ pub fn members_app() -> impl HttpServiceFactory {
                 .finish(),
         )
         .service(web::resource("/{group_name}").route(web::get().to(get_members)))
-        .service(web::resource("/{group_name}/{user_uuid}").route(web::delete().to(remove_member)))
+        .service(
+            web::resource("/{group_name}/{user_uuid}").route(web::delete().to(remove_member::<T>)),
+        )
         .service(
             web::resource("/{group_name}/{user_uuid}/renew").route(web::post().to(renew_member)),
         )

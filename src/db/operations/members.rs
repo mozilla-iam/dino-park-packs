@@ -16,7 +16,7 @@ use crate::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
 use chrono::Utc;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
@@ -108,7 +108,7 @@ pub async fn add(
     host: &User,
     user: &User,
     expiration: Option<i32>,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     ONLY_ADMINS.run(&RuleContext::minimal(
         &pool.clone(),
@@ -133,7 +133,7 @@ pub async fn revoke_membership(
     host: &User,
     user: &User,
     force: bool,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
@@ -183,7 +183,7 @@ async fn _revoke_membership(
     host: &User,
     user: &User,
     force: bool,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
 ) -> Result<(), Error> {
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
@@ -207,7 +207,7 @@ pub async fn remove(
     group_name: &str,
     host: &User,
     user: &User,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     REMOVE_MEMBER.run(&RuleContext::minimal(
         &pool,
@@ -223,7 +223,7 @@ pub async fn leave(
     scope_and_user: &ScopeAndUser,
     group_name: &str,
     force: bool,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;

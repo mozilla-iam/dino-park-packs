@@ -7,7 +7,7 @@ use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
@@ -161,7 +161,7 @@ pub async fn accept_invitation(
     scope_and_user: &ScopeAndUser,
     group_name: &str,
     user: &User,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
     profile: Profile,
 ) -> Result<(), Error> {
     CURRENT_USER_CAN_JOIN.run(&RuleContext::minimal(

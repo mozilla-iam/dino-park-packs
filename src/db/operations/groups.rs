@@ -14,7 +14,7 @@ use crate::rules::engine::CREATE_GROUP;
 use crate::rules::engine::HOST_IS_GROUP_ADMIN;
 use crate::rules::RuleContext;
 use crate::user::User;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use diesel::pg::PgConnection;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
@@ -40,7 +40,7 @@ pub async fn add_new_group(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     new_group: NewGroup,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let user_profile =
@@ -61,7 +61,7 @@ pub async fn delete_group(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     name: &str,
-    cis_client: Arc<CisClient>,
+    cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     // TODO: clean up and reserve group name
     let connection = pool.get()?;

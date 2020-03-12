@@ -7,7 +7,7 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
-use cis_client::CisClient;
+use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -24,12 +24,12 @@ pub struct DowngradeAdmin {
 }
 
 #[guard(Ndaed)]
-async fn add_admin(
+async fn add_admin<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     add_admin: web::Json<AddAdmin>,
-    cis_client: web::Data<Arc<CisClient>>,
+    cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     let pool_f = pool.clone();
     let user_uuid = add_admin.member_uuid;
@@ -71,7 +71,7 @@ pub async fn downgrade(
     .map_err(ApiError::GenericBadRequest)
 }
 
-pub fn admins_app() -> impl HttpServiceFactory {
+pub fn admins_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/curators")
         .wrap(
             Cors::new()
@@ -81,7 +81,7 @@ pub fn admins_app() -> impl HttpServiceFactory {
                 .max_age(3600)
                 .finish(),
         )
-        .service(web::resource("/{group_name}").route(web::post().to(add_admin)))
+        .service(web::resource("/{group_name}").route(web::post().to(add_admin::<T>)))
         .service(
             web::resource("/{group_name}/{user_uuid}/downgrade").route(web::post().to(downgrade)),
         )

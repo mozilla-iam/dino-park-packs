@@ -4,6 +4,8 @@ env:
   name: dino-park-packs
   rev: latest
 tasks:
+  test:
+    cmd: cargo test && (cd db-tests && cargo test)
   run-dev:
     cmd: cargo run
   compile-release:
