@@ -13,7 +13,7 @@ paths:
     post:
       summary: creates a group
       operationId: addGroup
-      description: creates a new acces group
+      description: creates a new access group
       requestBody:
         content:
           application/json:
@@ -352,6 +352,75 @@ paths:
                 $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
+  "/groups/api/v1/requests/{groupName}":
+    get:
+      summary: group invitation requests
+      description: get invitation requests for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: list of initation requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Request"
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "406":
+          description: not acceptable
+  "/groups/api/v1/requests/{groupName}/{userUuid}":
+    delete:
+      summary: reject an invitation request
+      description: reject an invitation request for a group
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userUuid
+          description: user uuid of invitation request to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: invitation request deleted
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "406":
+          description: not acceptable
   "/groups/api/v1/invitations/{groupName}":
     get:
       summary: group invitations
@@ -434,7 +503,7 @@ paths:
   "/groups/api/v1/invitations/{groupName}/{userUuid}":
     put:
       summary: update an invitation
-      description: update inviation of a user
+      description: update invitation of a user
       parameters:
         - in: path
           name: groupName
@@ -830,13 +899,81 @@ paths:
                 $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
+  "/groups/api/v1/self/requests":
+    get:
+      summary: invitation requests from the logged in user
+      description: get all invitation requests from the logged in user
+      responses:
+        "200":
+          description: list of invitation requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyRequest"
+  "/groups/api/v1/self/requests/{groupName}":
+    post:
+      summary: request to be invited
+      description: request to be invited
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: requested
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "406":
+          description: not acceptable
+    delete:
+      summary: cancel a request to be invited
+      description: cancel a request to be invited
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: canceled
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "406":
+          description: not acceptable
   "/groups/api/v1/self/invitations":
     get:
-      summary: inviations for the logged in user
+      summary: invitations for the logged in user
       description: get all invitations for the logged in user
       responses:
         "200":
-          description: list of inviatations
+          description: list of invitations
           content:
             application/json:
               schema:
@@ -924,13 +1061,6 @@ paths:
           required: true
           schema:
             type: string
-        - in: path
-          name: memberUuid
-          description: pass in the uuid of the member to add
-          required: true
-          schema:
-            type: string
-            format: uuid
       requestBody:
         content:
           application/json:
@@ -1170,6 +1300,73 @@ components:
           example: true
         added_by:
           $ref: "#/components/schemas/AddedBy"
+    MyRequest:
+      type: object
+      properties:
+        group_name:
+          type: string
+          example: dinos
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        created:
+          type: string
+          format: datetime
+          example: 2014-11-28T12:45:59Z
+        request_expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        terms:
+          type: boolean
+          example: true
+    Request:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        picture:
+          type: string
+          nullable: true
+          example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
+        first_name:
+          type: string
+          nullable: true
+          example: Hans
+        last_name:
+          type: string
+          nullable: true
+          example: Knall
+        username:
+          type: string
+          example: hans
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: hans@knall.org
+        isStaff:
+          type: boolean
+          example: true
+        created:
+          type: string
+          format: datetime
+          example: 2014-11-28T12:45:59Z
+        request_expiration:
+          type: integer
+          nullable: true
+          example: 90
+          description: days after which membership will expire
+        group_name:
+          type: string
+          example: test-group
+        terms:
+          type: boolean
+          example: false
     Invitation:
       type: object
       properties:
@@ -1210,6 +1407,12 @@ components:
           nullable: true
           example: 90
           description: days after which membership will expire
+        group_name:
+          type: string
+          example: test-group
+        terms:
+          type: boolean
+          example: false
         added_by:
           $ref: "#/components/schemas/AddedBy"
     AddedBy:
@@ -1257,3 +1460,7 @@ components:
           nullable: true
           type: integer
           example: 3
+        request_count:
+          nullable: true
+          type: integer
+          example: 1

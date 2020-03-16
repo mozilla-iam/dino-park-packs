@@ -57,6 +57,7 @@ async fn main() -> std::io::Result<()> {
                     .service(api::terms::terms_app())
                     .service(api::users::users_app())
                     .service(api::admins::admins_app::<CisClient>())
+                    .service(api::requests::requests_app())
                     .service(api::sudo::sudo_app::<CisClient>()),
             )
     })

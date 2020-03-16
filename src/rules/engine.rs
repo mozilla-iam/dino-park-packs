@@ -12,6 +12,10 @@ pub const CURRENT_USER_CAN_JOIN: Engine = Engine {
     rules: &[&current_user_can_join],
 };
 
+pub const CURRENT_USER_CAN_REQUEST: Engine = Engine {
+    rules: &[&current_user_can_join, &is_reviewed_group],
+};
+
 pub const SEARCH_USERS: Engine = Engine {
     rules: &[&rule_host_can_invite],
 };
@@ -60,7 +64,7 @@ impl<'a> Engine<'a> {
     pub fn run(self: &Self, ctx: &RuleContext) -> Result<(), RuleError> {
         let ok = self.rules.iter().try_for_each(|rule| rule(ctx));
         if ok.is_err() && ctx.scope_and_user.groups_scope == GroupsTrust::Admin {
-            info!("using admin priviledges for {}", ctx.host_uuid);
+            info!("using admin privileges for {}", ctx.host_uuid);
             return Ok(());
         }
         ok

@@ -1,6 +1,7 @@
 use crate::cis::operations::add_group_to_profile;
 use crate::db::internal;
 use crate::db::internal::invitation::*;
+use crate::db::logs::log_comment_body;
 use crate::db::operations::models::*;
 use crate::db::Pool;
 use crate::rules::engine::*;
@@ -8,7 +9,6 @@ use crate::rules::RuleContext;
 use crate::user::User;
 use chrono::NaiveDateTime;
 use cis_client::AsyncCisClientTrait;
-use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
 use failure::Error;
@@ -91,6 +91,14 @@ pub fn invite_member(
         &member.user_uuid,
     ))?;
     let connection = pool.get()?;
+    // delete the pending request if it exists
+    internal::request::delete(
+        &connection,
+        group_name,
+        Some(host),
+        &member,
+        log_comment_body("invited"),
+    )?;
     invite(
         &connection,
         group_name,
@@ -142,17 +150,17 @@ pub fn pending_invitations(
 pub fn pending_invitations_for_user(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
-    user: &User,
-) -> Result<Vec<DisplayInvitation>, Error> {
+) -> Result<Vec<DisplayInvitationForUser>, Error> {
     let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     match scope_and_user.scope {
-        Trust::Staff => staff_scoped_invitations_and_host_for_user(&connection, user),
-        Trust::Ndaed => ndaed_scoped_invitations_and_host_for_user(&connection, user),
-        Trust::Vouched => vouched_scoped_invitations_and_host_for_user(&connection, user),
+        Trust::Staff => staff_scoped_invitations_and_host_for_user(&connection, &user),
+        Trust::Ndaed => ndaed_scoped_invitations_and_host_for_user(&connection, &user),
+        Trust::Vouched => vouched_scoped_invitations_and_host_for_user(&connection, &user),
         Trust::Authenticated => {
-            authenticated_scoped_invitations_and_host_for_user(&connection, user)
+            authenticated_scoped_invitations_and_host_for_user(&connection, &user)
         }
-        Trust::Public => public_scoped_invitations_and_host_for_user(&connection, user),
+        Trust::Public => public_scoped_invitations_and_host_for_user(&connection, &user),
     }
 }
 
@@ -162,7 +170,6 @@ pub async fn accept_invitation(
     group_name: &str,
     user: &User,
     cis_client: Arc<impl AsyncCisClientTrait>,
-    profile: Profile,
 ) -> Result<(), Error> {
     CURRENT_USER_CAN_JOIN.run(&RuleContext::minimal(
         pool,
@@ -171,6 +178,7 @@ pub async fn accept_invitation(
         &Uuid::default(),
     ))?;
     let connection = pool.get()?;
+    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     accept(&connection, group_name, user)?;
-    add_group_to_profile(cis_client, group_name.to_owned(), profile).await
+    add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }

@@ -60,6 +60,16 @@ pub struct Invitation {
     pub added_by: Uuid,
 }
 
+#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, AsChangeset)]
+#[belongs_to(Group)]
+#[primary_key(group_id, user_uuid)]
+pub struct Request {
+    pub group_id: i32,
+    pub user_uuid: Uuid,
+    pub created: NaiveDateTime,
+    pub request_expiration: Option<NaiveDateTime>,
+}
+
 #[derive(Queryable, Serialize)]
 pub struct GroupsList {
     pub name: String,
@@ -99,4 +109,12 @@ pub struct InsertRole {
     pub typ: RoleType,
     pub name: String,
     pub permissions: Vec<PermissionType>,
+}
+
+#[derive(Insertable)]
+#[table_name = "requests"]
+pub struct InsertRequest {
+    pub group_id: i32,
+    pub user_uuid: Uuid,
+    pub request_expiration: Option<NaiveDateTime>,
 }
