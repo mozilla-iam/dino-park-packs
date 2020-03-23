@@ -52,7 +52,8 @@ paths:
           required: false
           schema:
             type: string
-            enum: ["MemberCount", "NameAsc", "NameDesc"]
+            enum: ["MemberCountAsc", "MemberCountDesc", "NameAsc", "NameDesc"]
+            default: "MemberCountDesc"
         - in: query
           name: "n"
           description: next page id (offset)

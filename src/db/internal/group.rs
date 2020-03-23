@@ -198,7 +198,8 @@ pub fn list_groups(
         query = query.filter(views::groups_list::name.ilike(format!("%{}%", filter)))
     };
     query = match sort_by {
-        SortGroupsBy::MembersCount => query.order(views::groups_list::members_count.desc()),
+        SortGroupsBy::MemberCountAsc => query.order(views::groups_list::members_count.asc()),
+        SortGroupsBy::MemberCountDesc => query.order(views::groups_list::members_count.desc()),
         SortGroupsBy::NameAsc => query.order(views::groups_list::name.asc()),
         SortGroupsBy::NameDesc => query.order(views::groups_list::name.desc()),
     };

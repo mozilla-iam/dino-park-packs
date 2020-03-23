@@ -11,9 +11,16 @@ use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub enum SortGroupsBy {
-    MembersCount,
+    MemberCountAsc,
+    MemberCountDesc,
     NameAsc,
     NameDesc,
+}
+
+impl Default for SortGroupsBy {
+    fn default() -> Self {
+        Self::MemberCountDesc
+    }
 }
 
 #[derive(Deserialize)]
@@ -48,12 +55,6 @@ impl Default for MembersQueryOptions {
             offset: None,
             order: SortMembersBy::RoleAsc,
         }
-    }
-}
-
-impl Default for SortGroupsBy {
-    fn default() -> Self {
-        Self::MembersCount
     }
 }
 
