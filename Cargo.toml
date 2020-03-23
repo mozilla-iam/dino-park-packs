@@ -11,7 +11,6 @@ path = "src/lib.rs"
 name = "dino-park-packs"
 path = "src/main.rs"
 
-
 [features]
 default = []
 localuserscope = ["dino_park_gate/localuserscope"]
@@ -30,7 +29,7 @@ actix-cors = "0.2"
 actix-multipart = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-uuid = { version = "0.7", features = ["serde", "v4"] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
 log = "0.4"
 env_logger = "0.7"
 failure = "0.1"
