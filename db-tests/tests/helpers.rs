@@ -11,8 +11,6 @@ use base64::encode;
 use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
-use dino_park_packs::db::operations::users::update_user_cache;
-use dino_park_packs::db::Pool;
 use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
 use serde::Deserialize;
