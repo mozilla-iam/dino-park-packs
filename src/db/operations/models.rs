@@ -261,7 +261,7 @@ pub struct DisplayMemberAndHost {
     #[serde(serialize_with = "maybe_to_utc")]
     pub expiration: Option<NaiveDateTime>,
     pub role: RoleType,
-    pub host: Option<DisplayHost>,
+    pub added_by: Option<DisplayHost>,
 }
 
 #[derive(Queryable)]
@@ -314,7 +314,7 @@ impl DisplayMemberAndHost {
             since,
             expiration: None,
             role: m.role,
-            host: None,
+            added_by: None,
         }
     }
 }
@@ -332,7 +332,7 @@ impl From<MemberAndHost> for DisplayMemberAndHost {
             since: Some(m.since),
             expiration: m.expiration,
             role: m.role,
-            host: Some(DisplayHost {
+            added_by: Some(DisplayHost {
                 user_uuid: m.host_uuid,
                 first_name: m.host_first_name,
                 last_name: m.host_last_name,
