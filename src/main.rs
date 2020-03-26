@@ -11,7 +11,6 @@ use actix_web::HttpServer;
 use cis_client::CisClient;
 use dino_park_gate::provider::Provider;
 use dino_park_gate::scope::ScopeAndUserAuth;
-use futures::TryFutureExt;
 use log::info;
 use std::io::Error;
 use std::io::ErrorKind;
@@ -29,18 +28,16 @@ async fn main() -> std::io::Result<()> {
     info!("starting dino-park-packs");
 
     let s = settings::Settings::new().map_err(map_io_err)?;
-    let cis_client = CisClient::from_settings(&s.cis).map_err(map_io_err)?;
+    let cis_client = CisClient::from_settings(&s.cis).await.map_err(map_io_err)?;
 
     let pool = db::establish_connection(&s.packs.postgres_url);
     embedded_migrations::run_with_output(&pool.get().map_err(map_io_err)?, &mut std::io::stdout())
         .map_err(map_io_err)?;
     let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")
-        .map_err(map_io_err)
-        .await?;
+        .await
+        .map_err(map_io_err)?;
     HttpServer::new(move || {
-        let scope_middleware = ScopeAndUserAuth {
-            checker: provider.clone(),
-        };
+        let scope_middleware = ScopeAndUserAuth::new(provider.clone());
         App::new()
             .data(cis_client.clone())
             .data(pool.clone())

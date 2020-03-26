@@ -42,7 +42,7 @@ async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl
         .map(|group| HttpResponse::Ok().json(DisplayGroup::from(group)))
 }
 
-#[guard(Authenticated)]
+#[guard(Ndaed)]
 async fn list_groups(pool: web::Data<Pool>, query: web::Query<ListGroupsQuery>) -> impl Responder {
     let query = query.into_inner();
     operations::groups::list_groups(&pool, query.f, query.by, query.s, query.n)
