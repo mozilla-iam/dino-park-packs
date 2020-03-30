@@ -70,9 +70,9 @@ macro_rules! scoped_members_for {
                         .map(|m| DisplayMemberAndHost::from_with_socpe(m, scope))
                         .collect()
                 })?;
-            let next = match members.len() {
-                0 => None,
-                l => Some(offset + l as i64),
+            let next = match members.len() as i64 {
+                l if l == options.limit => Some(offset + l),
+                _ => None,
             };
             Ok(PaginatedDisplayMembersAndHost { next, members })
         }
