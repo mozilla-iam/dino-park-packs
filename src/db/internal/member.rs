@@ -32,9 +32,10 @@ macro_rules! scoped_members_for {
             use schema::roles as r;
             use schema::$t as u;
             let offset = options.offset.unwrap_or_default();
+            let limit = options.limit;
             let q = format!("{}%", options.query.unwrap_or_default());
             let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
-            let members: Vec<DisplayMemberAndHost> = m::table
+            let (members, next) = m::table
                 .filter(m::group_id.eq(group.id))
                 .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
                 .inner_join(r::table)
@@ -62,18 +63,20 @@ macro_rules! scoped_members_for {
                     m::added_ts,
                 ))
                 .offset(offset)
-                .limit(options.limit)
+                .limit(limit + 1)
                 .get_results::<Member>(connection)
                 .map(|members| {
-                    members
+                    let next = match members.len() as i64 {
+                        l if l > limit => Some(offset + limit),
+                        _ => None,
+                    };
+                    let members: Vec<DisplayMemberAndHost> = members
                         .into_iter()
+                        .take(limit as usize)
                         .map(|m| DisplayMemberAndHost::from_with_socpe(m, scope))
-                        .collect()
+                        .collect();
+                    (members, next)
                 })?;
-            let next = match members.len() as i64 {
-                l if l == options.limit => Some(offset + l),
-                _ => None,
-            };
             Ok(PaginatedDisplayMembersAndHost { next, members })
         }
     };
@@ -92,6 +95,7 @@ macro_rules! scoped_members_and_host_for {
             use schema::$t as u;
             use views::$h as h;
             let offset = options.offset.unwrap_or_default();
+            let limit = options.limit;
             let q = format!("{}%", options.query.unwrap_or_default());
             let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
             let mut query = m::table
@@ -139,14 +143,22 @@ macro_rules! scoped_members_and_host_for {
             query = query
                 .then_order_by(u::username)
                 .offset(offset)
-                .limit(options.limit);
-            let members: Vec<DisplayMemberAndHost> = query
-                .get_results::<MemberAndHost>(connection)
-                .map(|members| members.into_iter().map(|m| m.into()).collect())?;
-            let next = match members.len() {
-                0 => None,
-                l => Some(offset + l as i64),
-            };
+                .limit(limit + 1);
+            let (members, next) =
+                query
+                    .get_results::<MemberAndHost>(connection)
+                    .map(|members| {
+                        let next = match members.len() as i64 {
+                            l if l > limit => Some(offset + limit),
+                            _ => None,
+                        };
+                        let members: Vec<DisplayMemberAndHost> = members
+                            .into_iter()
+                            .take(limit as usize)
+                            .map(|m| m.into())
+                            .collect();
+                        (members, next)
+                    })?;
             Ok(PaginatedDisplayMembersAndHost { next, members })
         }
     };
