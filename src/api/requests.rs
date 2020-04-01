@@ -10,13 +10,7 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
-use serde::Deserialize;
 use uuid::Uuid;
-
-#[derive(Deserialize)]
-struct Rejection {
-    pub reason: Option<String>,
-}
 
 #[guard(Ndaed)]
 async fn reject(
@@ -24,7 +18,6 @@ async fn reject(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
-    _rejection: web::Json<Rejection>,
 ) -> impl Responder {
     let (group_name, user_uuid) = path.into_inner();
     let member = User { user_uuid };
@@ -51,7 +44,7 @@ pub fn requests_app() -> impl HttpServiceFactory {
     web::scope("/requests")
         .wrap(
             Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
+                .allowed_methods(vec!["POST", "DELETE"])
                 .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                 .allowed_header(http::header::CONTENT_TYPE)
                 .max_age(3600)

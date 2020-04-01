@@ -25,3 +25,7 @@ pub fn basic_user(n: u64, staff: bool) -> Profile {
     }
     p
 }
+
+pub fn user_uuid(p: &Profile) -> String {
+    p.uuid.value.clone().unwrap()
+}

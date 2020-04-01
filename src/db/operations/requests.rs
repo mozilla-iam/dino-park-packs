@@ -35,6 +35,12 @@ pub fn reject_request(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
     reject(&connection, group_name, &host, user)
 }
 
