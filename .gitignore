@@ -1,6 +1,4 @@
 /target
-db-tests/Cargo.lock
-db-tests/target
 **/*.rs.bk
 .settings*.json
 .vscode

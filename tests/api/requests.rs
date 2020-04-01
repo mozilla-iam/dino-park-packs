@@ -1,10 +1,10 @@
-use crate::api::*;
-use crate::db::reset;
-use crate::helpers::read_json;
-use crate::helpers::test_app;
-use crate::helpers::Soa;
-use crate::users::basic_user;
-use crate::users::user_uuid;
+use crate::helpers::api::*;
+use crate::helpers::db::reset;
+use crate::helpers::misc::read_json;
+use crate::helpers::misc::test_app;
+use crate::helpers::misc::Soa;
+use crate::helpers::users::basic_user;
+use crate::helpers::users::user_uuid;
 use actix_web::test;
 use actix_web::App;
 use dino_park_trust::GroupsTrust;

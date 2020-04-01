@@ -1,6 +1,6 @@
-use crate::cis::CisFakeClient;
-use crate::db::get_pool;
-use crate::users::basic_user;
+use crate::helpers::cis::CisFakeClient;
+use crate::helpers::db::get_pool;
+use crate::helpers::users::basic_user;
 use actix_web::dev::*;
 use actix_web::http::header::HeaderMap;
 use actix_web::test;

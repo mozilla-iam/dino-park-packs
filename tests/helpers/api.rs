@@ -1,4 +1,4 @@
-use crate::helpers::Soa;
+use crate::helpers::misc::Soa;
 use actix_http::Request;
 use actix_web::dev::*;
 use actix_web::test;

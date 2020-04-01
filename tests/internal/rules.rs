@@ -1,5 +1,5 @@
-use crate::db::get_pool;
-use crate::db::reset;
+use crate::helpers::db::get_pool;
+use crate::helpers::db::reset;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_packs::rules::engine::*;
 use dino_park_packs::rules::error::RuleError;

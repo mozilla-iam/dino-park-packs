@@ -26,7 +26,7 @@ impl CisFakeClient {
             SecretStore::default()
                 .with_sign_keys_from_inline_iter(vec![(
                     String::from("mozilliansorg"),
-                    include_str!("data/fake_key.json").to_owned(),
+                    include_str!("../data/fake_key.json").to_owned(),
                 )])
                 .unwrap(),
         );

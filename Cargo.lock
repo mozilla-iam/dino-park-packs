@@ -787,9 +787,11 @@ name = "dino-park-packs"
 version = "0.5.0"
 dependencies = [
  "actix-cors",
+ "actix-http",
  "actix-multipart",
  "actix-rt",
  "actix-web",
+ "base64 0.12.0",
  "chrono",
  "cis_client",
  "cis_profile",
@@ -2803,6 +2805,7 @@ checksum = "9fde2f6a4bea1d6e007c4ad38c6839fa71cbb63b6dbf5b595aa38dc9b1093c11"
 dependencies = [
  "rand",
  "serde 1.0.105",
+ "sha1",
 ]
 
 [[package]]

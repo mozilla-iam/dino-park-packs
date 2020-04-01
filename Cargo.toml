@@ -43,3 +43,6 @@ chrono = "0.4"
 [dev-dependencies]
 tokio = "0.2"
 url = "2.1"
+uuid = { version = "0.8", features = ["v5"] }
+base64 = "0.12"
+actix-http = "1.0"
