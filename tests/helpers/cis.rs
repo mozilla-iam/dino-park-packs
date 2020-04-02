@@ -57,7 +57,7 @@ impl AsyncCisClientTrait for CisFakeClient {
         };
         match update_user_cache(&self.pool, &p) {
             Ok(_) => Box::pin(ok(json!({}))),
-            Err(e) => Box::pin(err(e.into())),
+            Err(e) => Box::pin(err(e)),
         }
     }
     fn update_users(&self, profiles: &[Profile]) -> CisFut<Value> {

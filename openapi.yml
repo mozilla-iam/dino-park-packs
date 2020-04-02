@@ -1255,7 +1255,7 @@ components:
           format: email
           nullable: true
           example: hans@knall.org
-        isStaff:
+        is_staff:
           type: boolean
           example: true
         since:
@@ -1350,7 +1350,7 @@ components:
           format: email
           nullable: true
           example: hans@knall.org
-        isStaff:
+        is_staff:
           type: boolean
           example: true
         created:
@@ -1395,7 +1395,7 @@ components:
           format: email
           nullable: true
           example: hans@knall.org
-        isStaff:
+        is_staff:
           type: boolean
           example: true
         invitation_expiration:
