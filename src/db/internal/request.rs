@@ -1,3 +1,4 @@
+use crate::db::error::DBError;
 use crate::db::internal;
 use crate::db::logs::log_comment_body;
 use crate::db::logs::LogContext;
@@ -93,10 +94,11 @@ pub fn request(
         request_expiration,
     };
     let log_ctx = LogContext::with(group.id, member.user_uuid);
-    diesel::insert_into(schema::requests::table)
+    let rows = diesel::insert_into(schema::requests::table)
         .values(&req)
+        .on_conflict_do_nothing()
         .execute(&*connection)
-        .map(|_| {
+        .map(|r| {
             internal::log::db_log(
                 connection,
                 &log_ctx,
@@ -104,8 +106,13 @@ pub fn request(
                 LogOperationType::Created,
                 None,
             );
+            r
         })
-        .map_err(Error::from)
+        .map_err(Error::from)?;
+    match rows {
+        1 => Ok(()),
+        _ => Err(DBError::NotApplicable.into()),
+    }
 }
 
 pub fn delete(

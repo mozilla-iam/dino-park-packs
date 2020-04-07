@@ -4,4 +4,6 @@ pub enum DBError {
     InvalidProfile,
     #[fail(display = "Trust level not supported is invalid")]
     InvalidTrustLevel,
+    #[fail(display = "N/A")]
+    NotApplicable,
 }

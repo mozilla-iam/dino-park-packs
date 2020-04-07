@@ -85,7 +85,7 @@ dependencies = [
  "pin-project",
  "rand",
  "regex",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "serde_urlencoded",
  "sha1",
@@ -132,7 +132,7 @@ dependencies = [
  "http",
  "log",
  "regex",
- "serde 1.0.105",
+ "serde 1.0.106",
 ]
 
 [[package]]
@@ -270,7 +270,7 @@ dependencies = [
  "net2",
  "pin-project",
  "regex",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "serde_urlencoded",
  "time 0.1.42",
@@ -332,9 +332,9 @@ checksum = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
 
 [[package]]
 name = "async-trait"
-version = "0.1.29"
+version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bab5c215748dc1ad11a145359b1067107ae0f8ca5e99844fa64067ed5bf198e3"
+checksum = "da71fef07bc806586090247e971229289f64c210a278ee5ae419314eb386b31d"
 dependencies = [
  "proc-macro2",
  "quote 1.0.3",
@@ -376,7 +376,7 @@ dependencies = [
  "mime",
  "percent-encoding",
  "rand",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "serde_urlencoded",
 ]
@@ -432,7 +432,7 @@ dependencies = [
  "num",
  "once_cell",
  "ring",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_derive",
  "serde_json",
  "url",
@@ -549,7 +549,7 @@ checksum = "80094f509cf8b5ae86a4966a39b3ff66cd7e2a3e594accec3743ff3fabeab5b2"
 dependencies = [
  "num-integer",
  "num-traits 0.2.11",
- "serde 1.0.105",
+ "serde 1.0.106",
  "time 0.1.42",
 ]
 
@@ -577,7 +577,7 @@ dependencies = [
  "log",
  "percent-encoding",
  "reqwest",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "shared-expiry-get",
 ]
@@ -601,7 +601,7 @@ dependencies = [
  "ring",
  "rusoto_core",
  "rusoto_ssm",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_derive",
  "serde_json",
 ]
@@ -624,7 +624,7 @@ dependencies = [
  "lazy_static",
  "nom",
  "rust-ini",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde-hjson",
  "serde_json",
  "toml",
@@ -775,7 +775,7 @@ dependencies = [
  "futures",
  "log",
  "reqwest",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_derive",
  "serde_json",
  "shared-expiry-get",
@@ -799,7 +799,7 @@ dependencies = [
  "diesel",
  "diesel-derive-enum",
  "diesel_migrations",
- "dino_park_gate",
+ "dino_park_gate 0.6.2",
  "dino_park_guard",
  "dino_park_trust",
  "env_logger",
@@ -808,7 +808,7 @@ dependencies = [
  "futures",
  "log",
  "r2d2",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "tokio",
  "url",
@@ -833,7 +833,32 @@ dependencies = [
  "futures",
  "log",
  "reqwest",
- "serde 1.0.105",
+ "serde 1.0.106",
+ "serde_derive",
+ "serde_json",
+ "shared-expiry-get",
+ "url",
+]
+
+[[package]]
+name = "dino_park_gate"
+version = "0.6.2"
+source = "git+https://github.com/mozilla-iam/dino-park-gate?tag=0.6.2#671f2ab7f566f68a3e6e2764d408f71131102472"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "biscuit",
+ "bitflags",
+ "chrono",
+ "dino-park-oidc",
+ "dino_park_trust",
+ "env_logger",
+ "failure",
+ "failure_derive",
+ "futures",
+ "log",
+ "reqwest",
+ "serde 1.0.106",
  "serde_derive",
  "serde_json",
  "shared-expiry-get",
@@ -845,7 +870,7 @@ name = "dino_park_guard"
 version = "0.1.1"
 source = "git+https://github.com/mozilla-iam/dino-park-guard?tag=0.1.1#ec330365d9caa679cb9965d48814c2a9a1282f5e"
 dependencies = [
- "dino_park_gate",
+ "dino_park_gate 0.6.1",
  "dino_park_trust",
  "failure",
  "quote 1.0.3",
@@ -858,7 +883,7 @@ version = "0.0.5"
 source = "git+https://github.com/mozilla-iam/dino-park-trust?tag=0.0.5#c812da7381533d8282d24f370471f809dd959673"
 dependencies = [
  "failure",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_derive",
 ]
 
@@ -1994,7 +2019,7 @@ dependencies = [
  "native-tls",
  "percent-encoding",
  "pin-project-lite",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "serde_urlencoded",
  "time 0.1.42",
@@ -2054,7 +2079,7 @@ dependencies = [
  "rusoto_credential",
  "rusoto_signature",
  "rustc_version",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "sha2",
  "tokio",
@@ -2074,7 +2099,7 @@ dependencies = [
  "hyper",
  "pin-project",
  "regex",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "shlex",
  "tokio",
@@ -2100,7 +2125,7 @@ dependencies = [
  "pin-project",
  "rusoto_credential",
  "rustc_version",
- "serde 1.0.105",
+ "serde 1.0.106",
  "sha2",
  "time 0.2.9",
  "tokio",
@@ -2116,7 +2141,7 @@ dependencies = [
  "bytes",
  "futures",
  "rusoto_core",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
 ]
 
@@ -2241,9 +2266,9 @@ checksum = "9dad3f759919b92c3068c696c15c3d17238234498bbdcc80f2c469606f948ac8"
 
 [[package]]
 name = "serde"
-version = "1.0.105"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e707fbbf255b8fc8c3b99abb91e7257a622caeb20a9818cbadbeeede4e0932ff"
+checksum = "36df6ac6412072f67cf767ebbde4133a5b2e88e76dc6187fa7104cd16f783399"
 dependencies = [
  "serde_derive",
 ]
@@ -2263,9 +2288,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.105"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac5d00fc561ba2724df6758a17de23df5914f20e41cb00f94d5b7ae42fffaff8"
+checksum = "9e549e3abf4fb8621bd1609f11dfc9f5e50320802273b12f3811a67e6716ea6c"
 dependencies = [
  "proc-macro2",
  "quote 1.0.3",
@@ -2274,14 +2299,14 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.50"
+version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78a7a12c167809363ec3bd7329fc0a3369056996de43c4b37ef3cd54a6ce4867"
+checksum = "da07b57ee2623368351e9a0488bb0b261322a15a6e0ae53e243cbdc0f4208da9"
 dependencies = [
  "indexmap",
  "itoa",
  "ryu",
- "serde 1.0.105",
+ "serde 1.0.106",
 ]
 
 [[package]]
@@ -2301,7 +2326,7 @@ checksum = "9ec5d77e2d4c73717816afac02670d5c4f534ea95ed430442cad02e7a6e32c97"
 dependencies = [
  "dtoa",
  "itoa",
- "serde 1.0.105",
+ "serde 1.0.106",
  "url",
 ]
 
@@ -2383,9 +2408,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "standback"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4edf667ea8f60afc06d6aeec079d20d5800351109addec1faea678a8663da4e1"
+checksum = "ee531c64ad0f80d289504bd32fb047f42a9e957cda584276ab96eb587e9abac3"
 
 [[package]]
 name = "static_assertions"
@@ -2415,7 +2440,7 @@ checksum = "c87a60a40fccc84bef0652345bbbbbe20a605bf5d0ce81719fc476f5c03b50ef"
 dependencies = [
  "proc-macro2",
  "quote 1.0.3",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_derive",
  "syn 1.0.17",
 ]
@@ -2429,7 +2454,7 @@ dependencies = [
  "base-x",
  "proc-macro2",
  "quote 1.0.3",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_derive",
  "serde_json",
  "sha1",
@@ -2582,9 +2607,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "0.2.14"
+version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2751672f9da075d045c67fdb0068be9850ab7b231fa77bb51d6fd35da9c0bb0d"
+checksum = "ee5a0dd887e37d37390c13ff8ac830f992307fe30a1fff0ab8427af67211ba28"
 dependencies = [
  "bytes",
  "fnv",
@@ -2659,7 +2684,7 @@ version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffc92d160b1eef40665be3a05630d003936a3bc7da7421277846c2613e92c71a"
 dependencies = [
- "serde 1.0.105",
+ "serde 1.0.106",
 ]
 
 [[package]]
@@ -2804,7 +2829,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fde2f6a4bea1d6e007c4ad38c6839fa71cbb63b6dbf5b595aa38dc9b1093c11"
 dependencies = [
  "rand",
- "serde 1.0.105",
+ "serde 1.0.106",
  "sha1",
 ]
 
@@ -2843,7 +2868,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2cc57ce05287f8376e998cbddfb4c8cb43b84a7ec55cf4551d7c00eef317a47f"
 dependencies = [
  "cfg-if",
- "serde 1.0.105",
+ "serde 1.0.106",
  "serde_json",
  "wasm-bindgen-macro",
 ]
@@ -2984,9 +3009,9 @@ dependencies = [
 
 [[package]]
 name = "xml-rs"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9afd061c1c7c8ef0a3d337fbf76fc8c098bd0dfefd4adaafef25a559352f2031"
+checksum = "2bb76e5c421bbbeb8924c60c030331b345555024d56261dae8f3e786ed817c23"
 
 [[package]]
 name = "yaml-rust"

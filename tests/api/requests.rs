@@ -53,6 +53,19 @@ async fn cancel_reviewed() -> Result<(), Error> {
     .await;
     assert!(res.status().is_success());
 
+    let res = get(&mut app, "/groups/api/v1/self/requests", &requester).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await[0]["group_name"], "reviewed-test");
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/self/requests/reviewed-test",
+        json!(null),
+        &requester,
+    )
+    .await;
+    assert!(!res.status().is_success());
+
     let res = delete(
         &mut app,
         "/groups/api/v1/self/requests/reviewed-test",
