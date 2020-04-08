@@ -12,7 +12,7 @@ use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
 use uuid::Uuid;
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn reject(
     _: HttpRequest,
     pool: web::Data<Pool>,

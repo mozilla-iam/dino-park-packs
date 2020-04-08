@@ -20,7 +20,7 @@ pub struct AddMember {
     group_expiration: Option<i32>,
 }
 
-#[guard(Staff, Admin)]
+#[guard(Staff, Admin, Medium)]
 async fn add_member<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -43,7 +43,7 @@ async fn add_member<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[guard(Staff, Admin)]
+#[guard(Staff, Admin, Medium)]
 async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
     match operations::logs::raw_logs(&pool, &scope_and_user, &user) {

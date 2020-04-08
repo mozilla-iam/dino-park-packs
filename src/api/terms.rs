@@ -23,7 +23,7 @@ async fn view_terms(pool: web::Data<Pool>, group_name: web::Path<String>) -> imp
     }
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn delete_terms(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -35,7 +35,7 @@ async fn delete_terms(
     }
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn update_terms(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,

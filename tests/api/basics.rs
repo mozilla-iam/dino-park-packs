@@ -1,13 +1,12 @@
 use crate::helpers::api::*;
 use crate::helpers::db::reset;
+use crate::helpers::misc::nobody_soa;
 use crate::helpers::misc::read_json;
 use crate::helpers::misc::test_app;
 use crate::helpers::misc::Soa;
 use crate::helpers::users::basic_user;
 use actix_web::test;
 use actix_web::App;
-use dino_park_trust::GroupsTrust;
-use dino_park_trust::Trust;
 use failure::Error;
 use serde_json::json;
 
@@ -27,13 +26,13 @@ async fn create() -> Result<(), Error> {
     reset()?;
     let app = App::new().service(test_app().await);
     let mut app = test::init_service(app).await;
-    let scope = Soa::from(&basic_user(1, true)).creator();
-    let res = get(&mut app, "/groups/api/v1/groups", &scope).await;
+    let creator = Soa::from(&basic_user(1, true)).creator().aal_medium();
+    let res = get(&mut app, "/groups/api/v1/groups", &creator).await;
     assert!(res.status().is_success());
     assert_eq!(read_json(res).await, json!({ "groups": [], "next": null }));
 
-    let scope = Soa::new("nobody", Trust::Public, GroupsTrust::None);
-    let res = get(&mut app, "/groups/api/v1/groups", &scope).await;
+    let nobody = nobody_soa();
+    let res = get(&mut app, "/groups/api/v1/groups", &nobody).await;
     assert_eq!(res.status().as_u16(), 403);
 
     let scope = Soa::from(&basic_user(1, true)).creator();
@@ -41,7 +40,7 @@ async fn create() -> Result<(), Error> {
         &mut app,
         "/groups/api/v1/groups",
         json!({ "name": "nda", "description": "the nda group" }),
-        &scope,
+        &creator,
     )
     .await;
     assert!(res.status().is_success());

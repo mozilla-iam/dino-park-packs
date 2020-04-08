@@ -81,7 +81,7 @@ async fn get_members(
     }
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn remove_member<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
@@ -103,7 +103,7 @@ async fn remove_member<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn renew_member(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,

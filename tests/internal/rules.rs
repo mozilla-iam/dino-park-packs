@@ -5,6 +5,7 @@ use dino_park_packs::rules::engine::*;
 use dino_park_packs::rules::error::RuleError;
 use dino_park_packs::rules::functions::*;
 use dino_park_packs::rules::*;
+use dino_park_trust::AALevel;
 use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
 use failure::Error;
@@ -18,6 +19,7 @@ fn simple_rule_stuct_creator_success() -> Result<(), Error> {
         user_id: String::from("some_id"),
         scope: Trust::Staff,
         groups_scope: GroupsTrust::Admin,
+        aa_level: AALevel::Medium,
     };
     let ctx = RuleContext {
         pool: &pool,
@@ -44,6 +46,7 @@ fn simple_rule_stuct_creator_fail() -> Result<(), Error> {
         user_id: String::from("some_id"),
         scope: Trust::Staff,
         groups_scope: GroupsTrust::None,
+        aa_level: AALevel::Medium,
     };
     let ctx = RuleContext {
         pool: &pool,

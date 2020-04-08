@@ -27,7 +27,7 @@ pub struct Invitation {
     group_expiration: Option<i32>,
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn delete_invitation(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -49,7 +49,7 @@ async fn delete_invitation(
     }
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn update_invitation(
     _: HttpRequest,
     pool: web::Data<Pool>,
@@ -77,7 +77,7 @@ async fn update_invitation(
     }
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn invite_member(
     _: HttpRequest,
     pool: web::Data<Pool>,

@@ -2,6 +2,7 @@ use crate::error::PacksError;
 use crate::rules::error::RuleError;
 use actix_web::error::ResponseError;
 use actix_web::HttpResponse;
+use dino_park_trust::AALevelError;
 use dino_park_trust::GroupsTrustError;
 use dino_park_trust::TrustError;
 use log::warn;
@@ -25,6 +26,8 @@ pub enum ApiError {
     ScopeError(TrustError),
     #[fail(display = "Groups scope Error: {}", _0)]
     GroupsScopeError(GroupsTrustError),
+    #[fail(display = "Authenticator Assurance Level Error: {}", _0)]
+    AALevelError(AALevelError),
     #[fail(display = "Invalid query parameters.")]
     InvalidQuery,
 }
@@ -42,6 +45,12 @@ impl From<TrustError> for ApiError {
 impl From<GroupsTrustError> for ApiError {
     fn from(e: GroupsTrustError) -> Self {
         ApiError::GroupsScopeError(e)
+    }
+}
+
+impl From<AALevelError> for ApiError {
+    fn from(e: AALevelError) -> Self {
+        ApiError::AALevelError(e)
     }
 }
 
@@ -70,6 +79,7 @@ impl ResponseError for ApiError {
             Self::RuleError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
             Self::ScopeError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
             Self::GroupsScopeError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
+            Self::AALevelError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
             Self::InvalidGroupName => HttpResponse::BadRequest().json(to_json_error(self)),
             _ => HttpResponse::InternalServerError().finish(),
         }

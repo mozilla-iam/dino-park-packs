@@ -565,8 +565,8 @@ dependencies = [
 
 [[package]]
 name = "cis_client"
-version = "0.6.1"
-source = "git+https://github.com/mozilla-iam/cis_client-rust?tag=0.6.1#f7d959d24ad57ed224f0fd158a0b205a5c82e8f1"
+version = "0.6.2"
+source = "git+https://github.com/mozilla-iam/cis_client-rust?tag=0.6.2#f0eabf734bdd2a416e530916f80c196ae7bd08ca"
 dependencies = [
  "biscuit",
  "chrono",
@@ -584,8 +584,8 @@ dependencies = [
 
 [[package]]
 name = "cis_profile"
-version = "0.4.0"
-source = "git+https://github.com/mozilla-iam/cis_profile-rust?tag=0.4.0#571445de10b8ab18c593787e59cc4ff4667fc367"
+version = "0.4.1"
+source = "git+https://github.com/mozilla-iam/cis_profile-rust?tag=0.4.1#fb84b933a2064a41d4b26fa7e1e45e6cc66aaf64"
 dependencies = [
  "biscuit",
  "chrono",
@@ -799,7 +799,7 @@ dependencies = [
  "diesel",
  "diesel-derive-enum",
  "diesel_migrations",
- "dino_park_gate 0.6.2",
+ "dino_park_gate",
  "dino_park_guard",
  "dino_park_trust",
  "env_logger",
@@ -817,33 +817,8 @@ dependencies = [
 
 [[package]]
 name = "dino_park_gate"
-version = "0.6.1"
-source = "git+https://github.com/mozilla-iam/dino-park-gate?tag=0.6.1#405330aeb7e7d1f71e1972303851be1372bddb9b"
-dependencies = [
- "actix-service",
- "actix-web",
- "biscuit",
- "bitflags",
- "chrono",
- "dino-park-oidc",
- "dino_park_trust",
- "env_logger",
- "failure",
- "failure_derive",
- "futures",
- "log",
- "reqwest",
- "serde 1.0.106",
- "serde_derive",
- "serde_json",
- "shared-expiry-get",
- "url",
-]
-
-[[package]]
-name = "dino_park_gate"
-version = "0.6.2"
-source = "git+https://github.com/mozilla-iam/dino-park-gate?tag=0.6.2#671f2ab7f566f68a3e6e2764d408f71131102472"
+version = "0.7.0"
+source = "git+https://github.com/mozilla-iam/dino-park-gate?tag=0.7.0#32c69a1752be311b705433cba3d4365385d2692d"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -867,10 +842,10 @@ dependencies = [
 
 [[package]]
 name = "dino_park_guard"
-version = "0.1.1"
-source = "git+https://github.com/mozilla-iam/dino-park-guard?tag=0.1.1#ec330365d9caa679cb9965d48814c2a9a1282f5e"
+version = "0.2.1"
+source = "git+https://github.com/mozilla-iam/dino-park-guard?tag=0.2.1#d2944350fe3d1fffae0b62042b331f03434b9666"
 dependencies = [
- "dino_park_gate 0.6.1",
+ "dino_park_gate",
  "dino_park_trust",
  "failure",
  "quote 1.0.3",
@@ -879,8 +854,8 @@ dependencies = [
 
 [[package]]
 name = "dino_park_trust"
-version = "0.0.5"
-source = "git+https://github.com/mozilla-iam/dino-park-trust?tag=0.0.5#c812da7381533d8282d24f370471f809dd959673"
+version = "0.0.6"
+source = "git+https://github.com/mozilla-iam/dino-park-trust?tag=0.0.6#5a1c18c9a80e365bb91b9ee862eb816bb348f8ea"
 dependencies = [
  "failure",
  "serde 1.0.106",

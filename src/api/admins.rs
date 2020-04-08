@@ -23,7 +23,7 @@ pub struct DowngradeAdmin {
     group_expiration: Option<i32>,
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn add_admin<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -48,7 +48,7 @@ async fn add_admin<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 pub async fn downgrade(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,

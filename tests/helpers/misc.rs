@@ -11,6 +11,7 @@ use base64::encode;
 use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
+use dino_park_trust::AALevel;
 use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
 use serde::Deserialize;
@@ -24,14 +25,16 @@ pub struct Soa {
     pub user_id: String,
     pub scope: Trust,
     pub groups_scope: GroupsTrust,
+    pub aa_level: AALevel,
 }
 
 impl Soa {
-    pub fn new(user_id: &str, scope: Trust, groups_scope: GroupsTrust) -> Self {
+    pub fn new(user_id: &str, scope: Trust, groups_scope: GroupsTrust, aa_level: AALevel) -> Self {
         Soa {
             user_id: user_id.to_owned(),
             scope,
             groups_scope,
+            aa_level,
         }
     }
 
@@ -42,6 +45,11 @@ impl Soa {
 
     pub fn admin(mut self) -> Self {
         self.groups_scope = GroupsTrust::Admin;
+        self
+    }
+
+    pub fn aal_medium(mut self) -> Self {
+        self.aa_level = AALevel::Medium;
         self
     }
 
@@ -70,6 +78,7 @@ impl From<&Profile> for Soa {
             user_id: p.user_id.value.clone().unwrap(),
             scope,
             groups_scope: GroupsTrust::None,
+            aa_level: AALevel::Low,
         }
     }
 }
@@ -80,8 +89,13 @@ impl From<Soa> for ScopeAndUser {
             user_id: soa.user_id,
             scope: soa.scope,
             groups_scope: soa.groups_scope,
+            aa_level: soa.aa_level,
         }
     }
+}
+
+pub fn nobody_soa() -> Soa {
+    Soa::new("nobody", Trust::Public, GroupsTrust::None, AALevel::Unknown)
 }
 
 fn scope_from_sau_str(sau: &str) -> ScopeAndUser {

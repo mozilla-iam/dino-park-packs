@@ -50,7 +50,7 @@ async fn list_groups(pool: web::Data<Pool>, query: web::Query<ListGroupsQuery>) 
         .map_err(ApiError::GenericBadRequest)
 }
 
-#[guard(Ndaed)]
+#[guard(Ndaed, None, Medium)]
 async fn update_group(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
@@ -67,7 +67,7 @@ async fn update_group(
     .map_err(ApiError::GenericBadRequest)
 }
 
-#[guard(Staff, Creator)]
+#[guard(Staff, Creator, Medium)]
 async fn add_group<T: AsyncCisClientTrait>(
     cis_client: web::Data<T>,
     pool: web::Data<Pool>,
@@ -84,6 +84,7 @@ async fn add_group<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Created().finish())
 }
 
+#[guard(Staff, Admin, Medium)]
 async fn delete_group<T: AsyncCisClientTrait>(
     cis_client: web::Data<T>,
     pool: web::Data<Pool>,
