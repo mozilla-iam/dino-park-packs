@@ -36,6 +36,7 @@ pub fn requests_for_user(
             g::name,
             t::text.nullable().is_not_null(),
         ))
+        .order(r::request_expiration.asc())
         .get_results::<DisplayRequestForUser>(connection)
         .map_err(Into::into)
 }
@@ -69,6 +70,7 @@ macro_rules! scoped_requests_for {
                     g::name,
                     t::text.is_not_null(),
                 ))
+                .order(r::request_expiration.asc())
                 .get_results::<DisplayRequest>(connection)
                 .map_err(Into::into)
         }

@@ -48,6 +48,7 @@ macro_rules! scoped_invitations_for_user {
                     h::username.nullable(),
                     h::email.nullable(),
                 ))
+                .order(i::invitation_expiration.asc())
                 .get_results::<InvitationAndHostForUser>(connection)
                 .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
                 .map_err(Into::into)
@@ -91,6 +92,7 @@ macro_rules! scoped_invitations_for {
                     h::username.nullable(),
                     h::email.nullable(),
                 ))
+                .order(i::invitation_expiration.asc())
                 .get_results::<InvitationAndHost>(connection)
                 .map(|invitations| invitations.into_iter().map(|m| m.into()).collect())
                 .map_err(Into::into)
