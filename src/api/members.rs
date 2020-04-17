@@ -5,9 +5,7 @@ use crate::db::operations::models::SortMembersBy;
 use crate::db::types::RoleType;
 use crate::db::Pool;
 use crate::user::User;
-use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
@@ -128,14 +126,6 @@ async fn renew_member(
 
 pub fn members_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/members")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
         .service(web::resource("/{group_name}").route(web::get().to(get_members)))
         .service(
             web::resource("/{group_name}/{user_uuid}").route(web::delete().to(remove_member::<T>)),

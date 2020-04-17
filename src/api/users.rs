@@ -2,9 +2,7 @@ use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::types::TrustType;
 use crate::db::Pool;
-use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
 use actix_web::Responder;
@@ -44,14 +42,5 @@ async fn search_users(
 }
 
 pub fn users_app() -> impl HttpServiceFactory {
-    web::scope("/users")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["GET"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
-        .service(web::resource("").route(web::get().to(search_users)))
+    web::scope("/users").service(web::resource("").route(web::get().to(search_users)))
 }

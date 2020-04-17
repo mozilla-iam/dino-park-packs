@@ -2,10 +2,8 @@ use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use crate::user::User;
-use actix_cors::Cors;
 use actix_multipart::Multipart;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::web::Bytes;
 use actix_web::HttpResponse;
@@ -70,14 +68,6 @@ async fn bulk_update_users(
 
 pub fn internal_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/internal")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
         .app_data(web::JsonConfig::default().limit(1_048_576))
         .service(web::resource("/update/bulk").route(web::post().to(bulk_update_users)))
         .service(web::resource("/update/user").route(web::post().to(update_user)))

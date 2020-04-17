@@ -8,9 +8,7 @@ use crate::db::operations::models::NewGroup;
 use crate::db::operations::models::SortGroupsBy;
 use crate::db::Pool;
 use crate::utils::valid_group_name;
-use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
 use actix_web::Responder;
@@ -165,14 +163,6 @@ async fn group_details(
 
 pub fn groups_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/groups")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
         .service(
             web::resource("")
                 .route(web::post().to(add_group::<T>))

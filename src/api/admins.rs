@@ -2,9 +2,7 @@ use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use crate::user::User;
-use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::HttpResponse;
 use cis_client::AsyncCisClientTrait;
@@ -73,14 +71,6 @@ pub async fn downgrade(
 
 pub fn admins_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/curators")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
         .service(web::resource("/{group_name}").route(web::post().to(add_admin::<T>)))
         .service(
             web::resource("/{group_name}/{user_uuid}/downgrade").route(web::post().to(downgrade)),

@@ -2,9 +2,7 @@ use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::Pool;
 use crate::user::User;
-use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
@@ -42,14 +40,6 @@ async fn pending(
 
 pub fn requests_app() -> impl HttpServiceFactory {
     web::scope("/requests")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["POST", "DELETE"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
         .service(web::resource("/{group_name}/{user_uuid}").route(web::delete().to(reject)))
         .service(web::resource("/{group_name}").route(web::get().to(pending)))
 }

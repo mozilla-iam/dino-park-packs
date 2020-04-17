@@ -3,9 +3,7 @@ use crate::db::operations;
 use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
-use actix_cors::Cors;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::http;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
@@ -122,14 +120,6 @@ async fn pending(
 
 pub fn invitations_app() -> impl HttpServiceFactory {
     web::scope("/invitations")
-        .wrap(
-            Cors::new()
-                .allowed_methods(vec!["GET", "PUT", "POST"])
-                .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                .allowed_header(http::header::CONTENT_TYPE)
-                .max_age(3600)
-                .finish(),
-        )
         .service(
             web::resource("/{group_name}/{user_uuid}")
                 .route(web::delete().to(delete_invitation))
