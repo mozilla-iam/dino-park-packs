@@ -1,6 +1,7 @@
 use crate::db::internal;
 use crate::db::types::TrustType;
 use crate::db::users::DisplayUser;
+use crate::db::users::UserForGroup;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
 use crate::rules::engine::SEARCH_USERS;
@@ -21,49 +22,56 @@ pub fn batch_update_user_cache(pool: &Pool, profiles: Vec<Profile>) -> Result<us
     Ok(l)
 }
 
+pub fn search_all_users(
+    pool: &Pool,
+    scope_and_user: ScopeAndUser,
+    trust: Option<TrustType>,
+    q: &str,
+    limit: i64,
+) -> Result<Vec<DisplayUser>, Error> {
+    let connection = pool.get()?;
+
+    internal::user::search_users(
+        &connection,
+        trust.unwrap_or_else(|| TrustType::Authenticated),
+        scope_and_user.scope.into(),
+        q,
+        limit,
+    )
+}
+
 pub fn search_users(
     pool: &Pool,
     scope_and_user: ScopeAndUser,
-    group_name: Option<String>,
+    group_name: String,
     trust: Option<TrustType>,
     q: &str,
-) -> Result<Vec<DisplayUser>, Error> {
+) -> Result<Vec<UserForGroup>, Error> {
     let connection = pool.get()?;
-    match group_name {
-        Some(group_name) => {
-            let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
-            SEARCH_USERS.run(&RuleContext::minimal(
-                pool,
-                &scope_and_user,
-                &group_name,
-                &host.user_uuid,
-            ))?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    SEARCH_USERS.run(&RuleContext::minimal(
+        pool,
+        &scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
 
-            let trust = if let Some(trust) = trust {
-                trust
-            } else if is_nda_group(&group_name) {
-                TrustType::Authenticated
-            } else {
-                TrustType::Ndaed
-            };
+    let trust = if let Some(trust) = trust {
+        trust
+    } else if is_nda_group(&group_name) {
+        TrustType::Authenticated
+    } else {
+        TrustType::Ndaed
+    };
 
-            internal::user::search_users_for_group(
-                &connection,
-                &group_name,
-                trust,
-                scope_and_user.scope.into(),
-                q,
-                5,
-            )
-        }
-        None => internal::user::search_users(
-            &connection,
-            trust.unwrap_or(TrustType::Ndaed),
-            scope_and_user.scope.into(),
-            q,
-            5,
-        ),
-    }
+    internal::user::search_users_for_group(
+        &connection,
+        &group_name,
+        trust,
+        scope_and_user.scope.into(),
+        q,
+        5,
+    )
 }
 
 pub fn search_admins(
@@ -71,7 +79,7 @@ pub fn search_admins(
     scope_and_user: ScopeAndUser,
     group_name: String,
     q: &str,
-) -> Result<Vec<DisplayUser>, Error> {
+) -> Result<Vec<UserForGroup>, Error> {
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     SEARCH_USERS.run(&RuleContext::minimal(

@@ -839,7 +839,7 @@ paths:
         - in: query
           name: g
           description: group name to filter out members / invitees
-          required: false
+          required: true
           schema:
             type: string
           example: some-group-name
@@ -857,6 +857,49 @@ paths:
           schema:
             type: string
           example: true
+        - in: query
+          name: a
+          description: do not filter based on membership status
+          required: false
+          schema:
+            type: string
+          example: true
+      responses:
+        "200":
+          description: the top matches of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  "/groups/api/v1/users/any":
+    get:
+      summary: search for any users
+      description: |
+        get top matches of any users
+      parameters:
+        - in: query
+          name: q
+          description: search query to filter results
+          required: true
+          schema:
+            type: string
+          example: Han
+        - in: query
+          name: t
+          description: trust filter for results
+          required: true
+          schema:
+            $ref: "#/components/schemas/TrustType"
+          example: Ndaed
+        - in: query
+          name: l
+          description: limit result set
+          required: true
+          schema:
+            type: number
+          example: 5
       responses:
         "200":
           description: the top matches of users
@@ -1199,6 +1242,35 @@ components:
     TrustType:
       type: string
       enum: ["Public", "Authenticated", "Vouched", "Ndaed", "Staff"]
+    AnyUser:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        picture:
+          type: string
+          nullable: true
+          example: https://picture.api.dev.sso.allizom.org/avatar/get/id/MzI0ZjAwMzA5Yzc1ZGYxYmIzYjdjMGE1NWZmMDc3OGY3NGJjYjAzMjc0NDVhZmI2YWViODBmMzIzOGNhYzM3NyNzdGFmZiMxNTcyODYyNzM3.png
+        first_name:
+          type: string
+          nullable: true
+          example: Hans
+        last_name:
+          type: string
+          nullable: true
+          example: Knall
+        username:
+          type: string
+          example: hans
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: hans@knall.org
+        trust:
+          $ref:  "#/components/schemas/TrustType"
     User:
       type: object
       properties:
@@ -1228,6 +1300,17 @@ components:
           example: hans@knall.org
         trust:
           $ref:  "#/components/schemas/TrustType"
+        role:
+          type: string
+          enum:
+            - Admin
+            - Curator
+            - Member
+          nullable: true
+          example: Member
+        invited:
+          type: boolean
+          example: false
     DisplayMember:
       type: object
       properties:

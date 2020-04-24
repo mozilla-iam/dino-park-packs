@@ -1,5 +1,6 @@
 use crate::db::error::DBError;
 use crate::db::schema::*;
+use crate::db::types::RoleType;
 use crate::db::types::TrustType;
 use cis_profile::schema::Display;
 use cis_profile::schema::Profile;
@@ -123,6 +124,7 @@ macro_rules! user_t {
             pub email: Option<String>,
             pub trust: TrustType,
         }
+
         impl From<$user_typ> for DisplayUser {
             fn from(user: $user_typ) -> DisplayUser {
                 DisplayUser {
@@ -164,6 +166,19 @@ pub struct DisplayUser {
     pub username: String,
     pub email: Option<String>,
     pub trust: TrustType,
+}
+
+#[derive(Serialize, Queryable, PartialEq, Debug)]
+pub struct UserForGroup {
+    pub user_uuid: Uuid,
+    pub picture: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub username: String,
+    pub email: Option<String>,
+    pub trust: TrustType,
+    pub role: Option<RoleType>,
+    pub invited: bool,
 }
 
 user_t!(UsersStaff, "users_staff", Display::Staff);

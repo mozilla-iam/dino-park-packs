@@ -3,6 +3,7 @@ use cis_profile::schema::Display;
 use dino_park_trust::Trust;
 use serde::Deserialize;
 use serde::Serialize;
+use std::cmp::Ordering;
 use std::convert::TryFrom;
 
 #[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
@@ -97,6 +98,21 @@ pub enum RoleType {
     Member,
 }
 
+/// Custom order to skip database migration.
+impl PartialOrd for RoleType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Self::Admin, Self::Curator)
+            | (Self::Admin, Self::Member)
+            | (Self::Curator, Self::Member) => Some(Ordering::Greater),
+            (Self::Member, Self::Curator)
+            | (Self::Member, Self::Admin)
+            | (Self::Curator, Self::Admin) => Some(Ordering::Less),
+            _ => Some(Ordering::Equal),
+        }
+    }
+}
+
 impl RoleType {
     pub fn is_curator(&self) -> bool {
         match *self {
@@ -146,5 +162,10 @@ mod test {
     #[test]
     fn test_trust_type_order() {
         assert!(TrustType::Staff > TrustType::Public);
+    }
+
+    #[test]
+    fn test_role_type_order() {
+        assert!(RoleType::Admin > RoleType::Member);
     }
 }

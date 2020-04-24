@@ -75,7 +75,7 @@ pub async fn add_group_to_profile(
     update_profile.active = profile.active;
     match insert_kv_and_sign_values_field(
         &mut update_profile.access_information.mozilliansorg,
-        (group_name, None),
+        (group_name, Some(String::default())),
         cis_client.get_secret_store(),
         &now,
     ) {
