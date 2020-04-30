@@ -12,23 +12,23 @@ use std::fmt::Display;
 
 #[derive(Fail, Debug)]
 pub enum ApiError {
-    #[fail(display = "A multipart error occurred.")]
+    #[fail(display = "multipart_error")]
     MultipartError,
-    #[fail(display = "Bad API request.")]
+    #[fail(display = "bad_api_request")]
     GenericBadRequest(failure::Error),
-    #[fail(display = "Group names must ony contain lowercase alphanumeric characters, -, and _")]
+    #[fail(display = "invalid_group_name")]
     InvalidGroupName,
-    #[fail(display = "Operation Error: {}", _0)]
+    #[fail(display = "{}", _0)]
     PacksError(PacksError),
-    #[fail(display = "Rule Error: {}", _0)]
+    #[fail(display = "{}", _0)]
     RuleError(RuleError),
-    #[fail(display = "Scope Error: {}", _0)]
+    #[fail(display = "scope_{}", _0)]
     ScopeError(TrustError),
-    #[fail(display = "Groups scope Error: {}", _0)]
+    #[fail(display = "groups_scope_{}", _0)]
     GroupsScopeError(GroupsTrustError),
-    #[fail(display = "Authenticator Assurance Level Error: {}", _0)]
+    #[fail(display = "aal_{}", _0)]
     AALevelError(AALevelError),
-    #[fail(display = "Invalid query parameters.")]
+    #[fail(display = "invalid_query_parameters.")]
     InvalidQuery,
 }
 

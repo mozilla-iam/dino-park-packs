@@ -1,11 +1,11 @@
 #[derive(Fail, Debug, PartialEq)]
 pub enum PacksError {
-    #[fail(display = "Last admin of the group")]
+    #[fail(display = "last_admin_of_group")]
     LastAdmin,
-    #[fail(display = "Error deleting members")]
+    #[fail(display = "error_deleting_members")]
     ErrorDeletingMembers,
-    #[fail(display = "Profile not found")]
+    #[fail(display = "profile_not_found")]
     ProfileNotFound,
-    #[fail(display = "Group name exists")]
+    #[fail(display = "group_name_exists")]
     GroupNameExists,
 }

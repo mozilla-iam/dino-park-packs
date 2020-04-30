@@ -1,9 +1,9 @@
 #[derive(Fail, Debug, PartialEq)]
 pub enum DBError {
-    #[fail(display = "User profile v2 is invalid")]
+    #[fail(display = "db_invalid_profile_v2")]
     InvalidProfile,
-    #[fail(display = "Trust level not supported is invalid")]
+    #[fail(display = "db_invalid_trust_level")]
     InvalidTrustLevel,
-    #[fail(display = "N/A")]
+    #[fail(display = "not_applicable")]
     NotApplicable,
 }

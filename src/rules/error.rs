@@ -1,33 +1,33 @@
 #[derive(Fail, Debug, PartialEq)]
 pub enum RuleError {
-    #[fail(display = "Unknown DB error")]
+    #[fail(display = "rule_unknown_db_error")]
     DBError,
-    #[fail(display = "No DB connection available")]
+    #[fail(display = "rule_no_db_connection_available")]
     PoolError,
-    #[fail(display = "Not a reviewed group")]
+    #[fail(display = "rule_not_reviewed")]
     NotReviewedGroup,
-    #[fail(display = "Not allowed to join groups")]
+    #[fail(display = "rule_not_allowed_to_join_groups")]
     NotAllowedToJoinGroup,
-    #[fail(display = "Not allowed to create groups")]
+    #[fail(display = "rule_not_allowed_to_create_groups")]
     NotAllowedToCreateGroups,
-    #[fail(display = "Not allowed to invite member")]
+    #[fail(display = "rule_not_allowed_to_invite_member")]
     NotAllowedToInviteMember,
-    #[fail(display = "Not allowed to remove member")]
+    #[fail(display = "rule_not_allowed_to_remove_member")]
     NotAllowedToRemoveMember,
-    #[fail(display = "Not an admin")]
+    #[fail(display = "rule_not_an_admin")]
     NotAnAdmin,
-    #[fail(display = "Not a curator")]
+    #[fail(display = "rule_not_a_curator")]
     NotACurator,
-    #[fail(display = "Not allowed to edit terms")]
+    #[fail(display = "rule_not_allowed_to_edit_terms")]
     NotAllowedToEditTerms,
-    #[fail(display = "Never allowed (only admins)")]
+    #[fail(display = "rule_never_allowed")]
     NeverAllowed,
-    #[fail(display = "Invalid rule context")]
+    #[fail(display = "rule_invalid_context")]
     InvalidRuleContext,
-    #[fail(display = "User not found")]
+    #[fail(display = "rule_user_not_found")]
     UserNotFound,
-    #[fail(display = "Already a member")]
+    #[fail(display = "rule_already_a_member")]
     AlreadyMember,
-    #[fail(display = "Invalid group name")]
+    #[fail(display = "rule_invalid_group_name")]
     InvalidGroupName,
 }
