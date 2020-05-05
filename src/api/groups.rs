@@ -102,8 +102,8 @@ async fn group_details(
 ) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let role = operations::members::role_for_current(&pool, &scope_and_user, &group_name)?;
-    let curator = role.as_ref().map(|r| r.is_curator()).unwrap_or_default()
-        || scope_and_user.groups_scope == GroupsTrust::Admin;
+    let super_user = scope_and_user.groups_scope == GroupsTrust::Admin;
+    let curator = role.as_ref().map(|r| r.is_curator()).unwrap_or_default() || super_user;
     let is_member = role.is_some();
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
@@ -139,6 +139,7 @@ async fn group_details(
         None
     };
     let result = DisplayGroupDetails {
+        super_user,
         curator,
         member: is_member,
         group: GroupInfo {

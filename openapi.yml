@@ -1525,6 +1525,9 @@ components:
     GroupDetails:
       type: object
       properties:
+        super_user:
+          type: boolean
+          example: false
         curator:
           type: boolean
           example: true

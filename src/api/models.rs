@@ -39,6 +39,7 @@ pub struct GroupInfo {
 
 #[derive(Serialize)]
 pub struct DisplayGroupDetails {
+    pub super_user: bool,
     pub curator: bool,
     pub member: bool,
     pub group: GroupInfo,
