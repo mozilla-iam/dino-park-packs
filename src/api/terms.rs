@@ -8,9 +8,21 @@ use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 
+const TERMS_MAX_LEN: usize = 5000;
+
 #[derive(Deserialize)]
 pub struct TermsUpdate {
     text: String,
+}
+
+impl TermsUpdate {
+    pub fn checked(self) -> Result<String, ApiError> {
+        if self.text.len() <= TERMS_MAX_LEN {
+            Ok(self.text)
+        } else {
+            Err(ApiError::InputToLong)
+        }
+    }
 }
 
 #[guard(Authenticated)]
@@ -44,7 +56,7 @@ async fn update_terms(
         &pool,
         &scope_and_user,
         &group_name,
-        terms_update.into_inner().text,
+        terms_update.into_inner().checked()?,
     ) {
         Ok(_) => Ok(HttpResponse::Created().finish()),
         Err(e) => Err(ApiError::GenericBadRequest(e)),

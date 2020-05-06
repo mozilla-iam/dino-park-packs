@@ -16,8 +16,8 @@ pub enum ApiError {
     MultipartError,
     #[fail(display = "bad_api_request")]
     GenericBadRequest(failure::Error),
-    #[fail(display = "invalid_group_name")]
-    InvalidGroupName,
+    #[fail(display = "input_to_long")]
+    InputToLong,
     #[fail(display = "{}", _0)]
     PacksError(PacksError),
     #[fail(display = "{}", _0)]
@@ -34,6 +34,12 @@ pub enum ApiError {
 
 fn to_json_error(e: &impl Display) -> Value {
     json!({ "error": e.to_string() })
+}
+
+impl From<PacksError> for ApiError {
+    fn from(e: PacksError) -> Self {
+        ApiError::PacksError(e)
+    }
 }
 
 impl From<TrustError> for ApiError {
@@ -80,7 +86,7 @@ impl ResponseError for ApiError {
             Self::ScopeError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
             Self::GroupsScopeError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
             Self::AALevelError(ref e) => HttpResponse::Forbidden().json(to_json_error(e)),
-            Self::InvalidGroupName => HttpResponse::BadRequest().json(to_json_error(self)),
+            Self::InputToLong => HttpResponse::BadRequest().json(to_json_error(self)),
             _ => HttpResponse::InternalServerError().finish(),
         }
     }

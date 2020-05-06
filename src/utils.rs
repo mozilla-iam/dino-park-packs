@@ -9,7 +9,9 @@ pub fn to_expiration_ts(days: i32) -> NaiveDateTime {
 }
 
 pub fn valid_group_name(group_name: &str) -> bool {
-    group_name.len() > 2
+    let l = group_name.len();
+    l > 2
+        && l <= 60
         && group_name
             .chars()
             .all(|c| (c.is_ascii_lowercase() || c.is_ascii_digit()) || c == '-' || c == '_')

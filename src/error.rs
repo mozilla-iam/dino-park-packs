@@ -8,4 +8,8 @@ pub enum PacksError {
     ProfileNotFound,
     #[fail(display = "group_name_exists")]
     GroupNameExists,
+    #[fail(display = "invalid_group_data")]
+    InvalidGroupData,
+    #[fail(display = "invalid_group_name")]
+    InvalidGroupName,
 }

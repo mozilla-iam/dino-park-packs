@@ -1,13 +1,17 @@
 use crate::db::model::Group;
 use crate::db::model::GroupsList;
 use crate::db::types::*;
+use crate::error::PacksError;
 use crate::utils::maybe_to_utc;
 use crate::utils::to_utc;
+use crate::utils::valid_group_name;
 use chrono::NaiveDateTime;
 use dino_park_trust::Trust;
 use serde::Deserialize;
 use serde::Serialize;
 use uuid::Uuid;
+
+const DESCRIPTION_MAX_LEN: usize = 450;
 
 #[derive(Deserialize)]
 pub enum SortGroupsBy {
@@ -83,6 +87,18 @@ impl GroupUpdate {
         .collect::<Vec<String>>()
         .join(", ")
     }
+
+    pub fn checked(self) -> Result<Self, PacksError> {
+        if self
+            .description
+            .as_ref()
+            .map(|d| d.len() > DESCRIPTION_MAX_LEN)
+            .unwrap_or_default()
+        {
+            return Err(PacksError::InvalidGroupData);
+        }
+        Ok(self)
+    }
 }
 
 #[derive(Deserialize)]
@@ -97,6 +113,18 @@ pub struct NewGroup {
     pub trust: TrustType,
     #[serde(default)]
     pub group_expiration: Option<i32>,
+}
+
+impl NewGroup {
+    pub fn checked(self) -> Result<Self, PacksError> {
+        if self.description.len() > DESCRIPTION_MAX_LEN {
+            return Err(PacksError::InvalidGroupData);
+        }
+        if !valid_group_name(&self.name) {
+            return Err(PacksError::InvalidGroupName);
+        }
+        Ok(self)
+    }
 }
 
 pub struct GroupWithTermsFlag {

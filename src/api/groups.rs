@@ -7,7 +7,6 @@ use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::NewGroup;
 use crate::db::operations::models::SortGroupsBy;
 use crate::db::Pool;
-use crate::utils::valid_group_name;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpResponse;
@@ -55,11 +54,12 @@ async fn update_group(
     group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
 ) -> impl Responder {
+    let group_update = group_update.into_inner().checked()?;
     operations::groups::update_group(
         &pool,
         &scope_and_user,
         group_name.into_inner(),
-        group_update.into_inner(),
+        group_update,
     )
     .map(|_| HttpResponse::Created().finish())
     .map_err(ApiError::GenericBadRequest)
@@ -72,10 +72,7 @@ async fn add_group<T: AsyncCisClientTrait>(
     scope_and_user: ScopeAndUser,
     new_group: web::Json<NewGroup>,
 ) -> Result<HttpResponse, ApiError> {
-    let new_group = new_group.into_inner();
-    if !valid_group_name(&new_group.name) {
-        return Err(ApiError::InvalidGroupName);
-    }
+    let new_group = new_group.into_inner().checked()?;
     info!("trying to create new group: {}", new_group.name);
     operations::groups::add_new_group(&pool, &scope_and_user, new_group, Arc::clone(&*cis_client))
         .await?;
