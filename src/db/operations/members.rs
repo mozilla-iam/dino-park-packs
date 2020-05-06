@@ -22,6 +22,7 @@ use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
 use failure::Error;
+use log::error;
 use serde_json::Value;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -138,7 +139,7 @@ pub async fn revoke_membership(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let is_staff = internal::user::user_trust(&connection, &user.user_uuid)? == TrustType::Staff;
-    // are we droping nda membership -> remove all groups and invitations
+    // are we dropping nda membership -> remove all groups and invitations
     if group_names
         .iter()
         .any(|group_name| is_nda_group(*group_name))
@@ -189,14 +190,19 @@ async fn _revoke_membership(
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     remove_group_from_profile(cis_client, group_names, user_profile.profile).await?;
     for group_name in group_names {
-        db_leave(
+        if let Err(e) = db_leave(
             &host.user_uuid,
             &connection,
             &group_name,
             &user,
             force,
             comment.clone(),
-        )?;
+        ) {
+            error!(
+                "({}) failed to revoke group membership of group {} for {}",
+                e, &group_name, user.user_uuid
+            );
+        }
     }
     Ok(())
 }

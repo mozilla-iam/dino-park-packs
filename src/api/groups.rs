@@ -79,7 +79,7 @@ async fn add_group<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Created().finish())
 }
 
-#[guard(Staff, Admin, Medium)]
+#[guard(Staff, Creator, Medium)]
 async fn delete_group<T: AsyncCisClientTrait>(
     cis_client: web::Data<T>,
     pool: web::Data<Pool>,
