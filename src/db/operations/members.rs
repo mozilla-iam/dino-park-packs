@@ -90,16 +90,16 @@ fn db_leave(
     force: bool,
     comment: Option<Value>,
 ) -> Result<(), Error> {
-    if force || !internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
-        return internal::member::remove_from_group(
-            host_uuid,
-            &connection,
-            &user.user_uuid,
-            group_name,
-            comment,
-        );
+    if !force || internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
+        return Err(error::PacksError::LastAdmin.into());
     }
-    Err(error::PacksError::LastAdmin.into())
+    internal::member::remove_from_group(
+        host_uuid,
+        &connection,
+        &user.user_uuid,
+        group_name,
+        comment,
+    )
 }
 
 pub async fn add(
@@ -187,6 +187,7 @@ async fn _revoke_membership(
     cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
 ) -> Result<(), Error> {
+    let exit_on_error = group_names.len() == 1;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     remove_group_from_profile(cis_client, group_names, user_profile.profile).await?;
     for group_name in group_names {
@@ -198,10 +199,14 @@ async fn _revoke_membership(
             force,
             comment.clone(),
         ) {
-            error!(
-                "({}) failed to revoke group membership of group {} for {}",
-                e, &group_name, user.user_uuid
-            );
+            if exit_on_error {
+                return Err(e);
+            } else {
+                error!(
+                    "({}) failed to revoke group membership of group {} for {}",
+                    e, &group_name, user.user_uuid
+                );
+            }
         }
     }
     Ok(())
