@@ -90,7 +90,7 @@ fn db_leave(
     force: bool,
     comment: Option<Value>,
 ) -> Result<(), Error> {
-    if !force || internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
+    if !force && internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
         return Err(error::PacksError::LastAdmin.into());
     }
     internal::member::remove_from_group(

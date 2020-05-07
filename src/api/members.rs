@@ -98,7 +98,7 @@ async fn remove_member<T: AsyncCisClientTrait>(
         Arc::clone(&*cis_client),
     )
     .await?;
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(""))
 }
 
 #[guard(Ndaed, None, Medium)]
@@ -119,7 +119,7 @@ async fn renew_member(
         &user,
         renew_member.group_expiration,
     ) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }

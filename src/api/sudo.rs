@@ -38,7 +38,7 @@ async fn add_member<T: AsyncCisClientTrait>(
         Arc::clone(&*cis_client),
     )
     .await?;
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(""))
 }
 
 #[guard(Staff, Admin, Medium)]

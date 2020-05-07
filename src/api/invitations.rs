@@ -42,7 +42,7 @@ async fn delete_invitation(
         host,
         member,
     ) {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Ok(_) => Ok(HttpResponse::Ok().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
@@ -70,7 +70,7 @@ async fn update_invitation(
         invitation_expiration,
         group_expiration,
     ) {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Ok(_) => Ok(HttpResponse::Ok().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
@@ -99,7 +99,7 @@ async fn invite_member(
         invitation_expiration,
         group_expiration,
     ) {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
+        Ok(_) => Ok(HttpResponse::Ok().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }

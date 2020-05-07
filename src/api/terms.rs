@@ -40,7 +40,7 @@ async fn delete_terms(
     scope_and_user: ScopeAndUser,
 ) -> impl Responder {
     match operations::terms::delete_terms(&pool, &scope_and_user, &group_name) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
@@ -58,7 +58,7 @@ async fn update_terms(
         &group_name,
         terms_update.into_inner().checked()?,
     ) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }

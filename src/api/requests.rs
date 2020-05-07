@@ -20,7 +20,7 @@ async fn reject(
     let (group_name, user_uuid) = path.into_inner();
     let member = User { user_uuid };
     match operations::requests::reject_request(&pool, &scope_and_user, &group_name, &member) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }

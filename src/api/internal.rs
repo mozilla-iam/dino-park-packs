@@ -23,14 +23,14 @@ pub struct UpdatedProfiles {
 }
 
 async fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Responder {
-    operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().finish())
+    operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().json(""))
 }
 
 async fn delete_user(pool: web::Data<Pool>, user_uuid: web::Path<Uuid>) -> impl Responder {
     let user = User {
         user_uuid: user_uuid.into_inner(),
     };
-    operations::users::delete_user(&pool, &user).map(|_| HttpResponse::Ok().finish())
+    operations::users::delete_user(&pool, &user).map(|_| HttpResponse::Ok().json(""))
 }
 
 async fn expire_all<T: AsyncCisClientTrait>(
@@ -39,7 +39,7 @@ async fn expire_all<T: AsyncCisClientTrait>(
 ) -> Result<HttpResponse, ApiError> {
     operations::expirations::expire_invitations(&pool)?;
     operations::expirations::expire_memberships(&pool, Arc::clone(&*cis_client)).await?;
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(""))
 }
 
 async fn bulk_update_users(

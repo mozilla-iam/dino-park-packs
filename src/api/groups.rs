@@ -61,7 +61,7 @@ async fn update_group(
         group_name.into_inner(),
         group_update,
     )
-    .map(|_| HttpResponse::Created().finish())
+    .map(|_| HttpResponse::Created().json(""))
     .map_err(ApiError::GenericBadRequest)
 }
 
@@ -76,7 +76,7 @@ async fn add_group<T: AsyncCisClientTrait>(
     info!("trying to create new group: {}", new_group.name);
     operations::groups::add_new_group(&pool, &scope_and_user, new_group, Arc::clone(&*cis_client))
         .await?;
-    Ok(HttpResponse::Created().finish())
+    Ok(HttpResponse::Created().json(""))
 }
 
 #[guard(Staff, Creator, Medium)]
@@ -88,7 +88,7 @@ async fn delete_group<T: AsyncCisClientTrait>(
 ) -> Result<HttpResponse, ApiError> {
     operations::groups::delete_group(&pool, &scope_and_user, &group_name, Arc::clone(&cis_client))
         .await?;
-    Ok(HttpResponse::Created().finish())
+    Ok(HttpResponse::Created().json(""))
 }
 
 #[guard(Authenticated)]

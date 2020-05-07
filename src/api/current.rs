@@ -33,7 +33,7 @@ async fn join<T: AsyncCisClientTrait>(
         Arc::clone(&*cis_client),
     )
     .await?;
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(""))
 }
 
 #[guard(Authenticated)]
@@ -53,7 +53,7 @@ async fn leave<T: AsyncCisClientTrait>(
         Arc::clone(&*cis_client),
     )
     .await?;
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(""))
 }
 
 #[guard(Ndaed)]
@@ -64,7 +64,7 @@ async fn request(
     scope_and_user: ScopeAndUser,
 ) -> impl Responder {
     match operations::requests::request_membership(&pool, &scope_and_user, &group_name, None) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
@@ -77,7 +77,7 @@ async fn cancel_request(
     scope_and_user: ScopeAndUser,
 ) -> impl Responder {
     match operations::requests::cancel_request(&pool, &scope_and_user, &group_name) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }
@@ -90,7 +90,7 @@ async fn reject_invitation(
     scope_and_user: ScopeAndUser,
 ) -> impl Responder {
     match operations::invitations::reject_invitation(&pool, &scope_and_user, &group_name) {
-        Ok(_) => Ok(HttpResponse::Created().finish()),
+        Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
     }
 }

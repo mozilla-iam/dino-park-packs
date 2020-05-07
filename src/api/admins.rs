@@ -43,7 +43,7 @@ async fn add_admin<T: AsyncCisClientTrait>(
         user_profile.profile,
     )
     .await?;
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(""))
 }
 
 #[guard(Ndaed, None, Medium)]
@@ -65,7 +65,7 @@ pub async fn downgrade(
         &user,
         downgrade_admin.group_expiration,
     )
-    .map(|_| HttpResponse::Created().finish())
+    .map(|_| HttpResponse::Created().json(""))
     .map_err(ApiError::GenericBadRequest)
 }
 
