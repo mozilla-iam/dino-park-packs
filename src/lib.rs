@@ -13,6 +13,7 @@ pub mod cis;
 pub mod db;
 pub mod error;
 pub mod healthz;
+pub mod mail;
 pub mod rules;
 pub mod settings;
 pub mod user;

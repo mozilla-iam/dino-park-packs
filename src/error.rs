@@ -12,4 +12,6 @@ pub enum PacksError {
     InvalidGroupData,
     #[fail(display = "invalid_group_name")]
     InvalidGroupName,
+    #[fail(display = "no_primary_email")]
+    NoPrimaryEmail,
 }

@@ -1,3 +1,4 @@
 env: dev
 namespace: dinopark-dev
 assume_role: arn:aws:iam::320464205386:role/dino-park-packs-role-dev-us-west-2
+env_packs__domain: dinopark.k8s.dev.sso.allizom.org

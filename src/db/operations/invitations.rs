@@ -4,6 +4,8 @@ use crate::db::internal::invitation::*;
 use crate::db::logs::log_comment_body;
 use crate::db::operations::models::*;
 use crate::db::Pool;
+use crate::mail::manager::send_email;
+use crate::mail::templates::Template;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
@@ -106,7 +108,10 @@ pub fn invite_member(
         member,
         invitation_expiration,
         group_expiration,
-    )
+    )?;
+    let p = internal::user::user_profile_by_uuid(&connection, &member.user_uuid)?;
+    send_email(&p.profile, &Template::Invitation(group_name.to_owned()))?;
+    Ok(())
 }
 
 pub fn pending_invitations_count(

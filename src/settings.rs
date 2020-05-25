@@ -6,6 +6,7 @@ use std::env;
 #[derive(Debug, Deserialize)]
 pub struct Packs {
     pub postgres_url: String,
+    pub domain: String,
 }
 
 #[derive(Debug, Deserialize)]

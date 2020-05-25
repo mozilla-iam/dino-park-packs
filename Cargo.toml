@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [features]
 default = []
-localuserscope = ["dino_park_gate/localuserscope"]
+local = ["dino_park_gate/localuserscope"]
 
 [dependencies]
 cis_client = { git = "https://github.com/mozilla-iam/cis_client-rust", tag = "0.6.3", version = "0.6.3" }
@@ -38,6 +38,9 @@ futures = "0.3"
 r2d2 = "0.8"
 config = "0.10"
 chrono = "0.4"
+rusoto_core = "0.43"
+rusoto_ses = "0.43"
+lazy_static = "1.4"
 
 [dev-dependencies]
 tokio = "0.2"
