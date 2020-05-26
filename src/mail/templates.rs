@@ -8,14 +8,13 @@ fn invitation(group_name: &str, domain: &str) -> Message {
             domain = domain
         ),
         body: format!(
-            "
-        Dear Mozillian,
-        you've been invited to join the access group '{group_name}'.
-        Please visit https://{domain}/a/ to accept the invitation.
+            "\
+Dear Mozillian,
+you've been invited to join the access group '{group_name}'.
+Please visit https://{domain}/a/ to accept the invitation.
 
-        Cheers,
-        The Mozilla IAM Team
-        ",
+Cheers,
+The Mozilla IAM Team",
             group_name = group_name,
             domain = domain
         ),

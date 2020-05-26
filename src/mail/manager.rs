@@ -17,7 +17,7 @@ use log::error;
 lazy_static! {
     static ref MAIL_MAN: MailMan<SesSender> = {
         let s = Settings::new().expect("invalid settings");
-        MailMan::<SesSender>::new(s.packs.domain)
+        MailMan::<SesSender>::new(s.packs.domain, s.packs.catcher)
     };
 }
 
@@ -37,20 +37,26 @@ pub struct MailMan<T: EmailSender> {
     pub arbiter: Arbiter,
     pub sender: T,
     pub template_man: TemplateManager,
+    pub catcher: Option<String>,
 }
 
 impl<T: EmailSender> MailMan<T> {
-    pub fn new(domain: String) -> Self {
+    pub fn new(domain: String, catcher: Option<String>) -> Self {
         MailMan {
             arbiter: Arbiter::default(),
             sender: T::default(),
             template_man: TemplateManager::new(domain),
+            catcher,
         }
     }
 }
 
 impl<T: EmailSender> MailMan<T> {
-    pub fn send(&self, e: Email) {
+    pub fn send(&self, mut e: Email) {
+        if let Some(ref catcher) = self.catcher {
+            e.message.body = format!("[caught for {}]\n\n{}", e.to, e.message.body);
+            e.to = catcher.to_owned();
+        }
         let s = self.sender.clone();
         let f = Box::pin(async move {
             if let Err(e) = s.send_email(e).await {
