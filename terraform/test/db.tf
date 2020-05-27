@@ -1,5 +1,4 @@
 resource "aws_db_instance" "dino_park_packs_db" {
-  name                        = "dino-park-packs-db-${var.environment}-${var.region}"
   identifier                  = "dino-park-packs-db-${var.environment}-${var.region}"
   allocated_storage           = 10
   max_allocated_storage       = 100
