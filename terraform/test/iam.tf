@@ -15,14 +15,32 @@ resource "aws_iam_role" "dino_park_packs_role" {
      {
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/kubernetes-prod-us-west-220181206181410238800000005"
+        "AWS": "${data.terraform_remote_state.kubernetes.outputs.worker_iam_role_arn}"
        },
        "Action": "sts:AssumeRole"
       }
    ]
 }
 EOF
+}
 
+resource "aws_iam_role_policy" "dino_park_packs" {
+  name   = "dino-park-packs-${var.environment}-${var.region}"
+  role   = aws_iam_role.dino_park_packs_role.name
+  policy = data.aws_iam_policy_document.dino_park_packs.json
+}
+
+data "aws_iam_policy_document" "dino_park_packs" {
+  statement {
+    actions = [
+      "ses:SendRawEmail",
+      "ses:SendEmail"
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "dino_park_packs_ssm_access" {
