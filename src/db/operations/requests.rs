@@ -2,6 +2,8 @@ use crate::db::internal;
 use crate::db::internal::request::*;
 use crate::db::operations::models::*;
 use crate::db::Pool;
+use crate::mail::manager::send_email;
+use crate::mail::templates::Template;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
@@ -41,7 +43,10 @@ pub fn reject_request(
         &group_name,
         &host.user_uuid,
     ))?;
-    reject(&connection, group_name, &host, user)
+    reject(&connection, group_name, &host, user)?;
+    let p = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    send_email(&p.profile, &Template::RejectRequest(group_name.to_owned()))?;
+    Ok(())
 }
 
 pub fn cancel_request(
