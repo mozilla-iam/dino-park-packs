@@ -35,7 +35,10 @@ pub fn delete_invitation(
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
-    delete(&connection, group_name, host, member, None)
+    delete(&connection, group_name, host, member, None)?;
+    let p = internal::user::user_profile_by_uuid(&connection, &member.user_uuid)?;
+    send_email(&p.profile, &Template::DeleteInvitation(group_name.to_owned()))?;
+    Ok(())
 }
 
 pub fn reject_invitation(
