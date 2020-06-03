@@ -12,6 +12,7 @@ pub struct Packs {
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
+    pub auth: String,
     pub cis: CisSettings,
     pub packs: Packs,
 }
@@ -21,7 +22,7 @@ impl Settings {
         let file = env::var("DPP_SETTINGS").unwrap_or_else(|_| String::from(".settings"));
         let mut s = Config::new();
         s.merge(File::with_name(&file))?;
-        s.merge(Environment::new().separator("__"))?;
+        s.merge(Environment::new().separator("__").prefix("dpp"))?;
         s.try_into()
     }
 }

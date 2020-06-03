@@ -1,2 +1,4 @@
 name: dino-park-packs
 rev: latest
+settings:
+  auth: https://auth.mozilla.auth0.com/

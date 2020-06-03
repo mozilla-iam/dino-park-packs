@@ -1,5 +1,6 @@
 env: test
 namespace: dinopark-test
 assume_role: arn:aws:iam::320464205386:role/dino-park-packs-role-test-us-west-2
-env_packs__domain: dinopark.k8s.test.sso.allizom.org
-env_packs__catcher: dinopark-test@mozilla.com
+settings:
+  packs__domain: dinopark.k8s.test.sso.allizom.org
+  packs__catcher: dinopark-test@mozilla.com

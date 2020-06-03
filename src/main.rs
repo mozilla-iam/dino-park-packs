@@ -33,9 +33,7 @@ async fn main() -> std::io::Result<()> {
     let pool = db::establish_connection(&s.packs.postgres_url);
     embedded_migrations::run_with_output(&pool.get().map_err(map_io_err)?, &mut std::io::stdout())
         .map_err(map_io_err)?;
-    let provider = Provider::from_issuer("https://auth.mozilla.auth0.com/")
-        .await
-        .map_err(map_io_err)?;
+    let provider = Provider::from_issuer(&s.auth).await.map_err(map_io_err)?;
     HttpServer::new(move || {
         let scope_middleware = ScopeAndUserAuth::new(provider.clone());
         App::new()
