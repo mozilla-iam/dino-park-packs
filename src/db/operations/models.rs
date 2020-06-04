@@ -292,6 +292,17 @@ pub struct DisplayMemberAndHost {
     pub added_by: Option<DisplayHost>,
 }
 
+#[derive(Serialize)]
+pub struct DisplayMembershipAndHost {
+    pub user_uuid: Uuid,
+    #[serde(serialize_with = "maybe_to_utc")]
+    pub since: Option<NaiveDateTime>,
+    #[serde(serialize_with = "maybe_to_utc")]
+    pub expiration: Option<NaiveDateTime>,
+    pub role: RoleType,
+    pub added_by: Option<DisplayHost>,
+}
+
 #[derive(Queryable)]
 pub struct Member {
     pub user_uuid: Uuid,
@@ -324,8 +335,21 @@ pub struct MemberAndHost {
     pub host_email: Option<String>,
 }
 
+#[derive(Queryable)]
+pub struct MembershipAndHost {
+    pub user_uuid: Uuid,
+    pub since: NaiveDateTime,
+    pub expiration: Option<NaiveDateTime>,
+    pub role: RoleType,
+    pub host_uuid: Uuid,
+    pub host_first_name: Option<String>,
+    pub host_last_name: Option<String>,
+    pub host_username: Option<String>,
+    pub host_email: Option<String>,
+}
+
 impl DisplayMemberAndHost {
-    pub fn from_with_socpe(m: Member, scope: &Trust) -> Self {
+    pub fn from_with_scope(m: Member, scope: &Trust) -> Self {
         let since = if scope >= &Trust::Authenticated {
             Some(m.since)
         } else {
@@ -371,6 +395,24 @@ impl From<MemberAndHost> for DisplayMemberAndHost {
     }
 }
 
+impl From<MembershipAndHost> for DisplayMembershipAndHost {
+    fn from(m: MembershipAndHost) -> Self {
+        DisplayMembershipAndHost {
+            user_uuid: m.user_uuid,
+            since: Some(m.since),
+            expiration: m.expiration,
+            role: m.role,
+            added_by: Some(DisplayHost {
+                user_uuid: m.host_uuid,
+                first_name: m.host_first_name,
+                last_name: m.host_last_name,
+                username: m.host_username,
+                email: m.host_email,
+            }),
+        }
+    }
+}
+
 #[derive(Serialize)]
 pub struct PaginatedDisplayMembersAndHost {
     pub members: Vec<DisplayMemberAndHost>,
@@ -390,7 +432,7 @@ mod test {
     #[test]
     fn test_group_update_log_comment() {
         let group_update = GroupUpdate {
-            description: Some("someting".into()),
+            description: Some("something".into()),
             typ: None,
             capabilities: Some(vec![]),
             trust: Some(TrustType::Public),

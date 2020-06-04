@@ -44,8 +44,8 @@ pub fn reject_request(
         &host.user_uuid,
     ))?;
     reject(&connection, group_name, &host, user)?;
-    let p = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
-    send_email(&p.profile, &Template::RejectRequest(group_name.to_owned()))?;
+    let p = internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
+    send_email(p.email, &Template::RejectRequest(group_name.to_owned()))?;
     Ok(())
 }
 

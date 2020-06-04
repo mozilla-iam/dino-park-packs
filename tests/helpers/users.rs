@@ -18,7 +18,7 @@ pub fn basic_user(n: u64, staff: bool) -> Profile {
     p.last_name.value = Some(format!("Knall{}", n));
     p.last_name.metadata.display = Some(Display::Public);
     p.primary_email.value = Some(format!("hans{}@knall.org", n));
-    p.last_name.metadata.display = Some(Display::Public);
+    p.primary_email.metadata.display = Some(Display::Public);
     if staff {
         p.staff_information.staff.value = Some(true);
         p.staff_information.staff.metadata.display = Some(Display::Public);
@@ -28,4 +28,8 @@ pub fn basic_user(n: u64, staff: bool) -> Profile {
 
 pub fn user_uuid(p: &Profile) -> String {
     p.uuid.value.clone().unwrap()
+}
+
+pub fn user_email(p: &Profile) -> String {
+    p.primary_email.value.clone().unwrap()
 }

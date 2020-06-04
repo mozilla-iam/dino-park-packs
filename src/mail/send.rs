@@ -24,21 +24,43 @@ impl Default for SesSender {
     }
 }
 
-impl EmailSender for SesSender {
-    fn send_email(&self, email: Email) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send>> {
+impl Into<SendEmailRequest> for Email {
+    fn into(self) -> SendEmailRequest {
         let destination = Destination {
-            to_addresses: Some(vec![email.to]),
+            to_addresses: Some(self.to),
             ..Default::default()
         };
-        let message = email.message.into();
-        let req = SendEmailRequest {
+        let message = self.message.into();
+        SendEmailRequest {
             destination,
             message,
-            source: email.from,
+            source: self.from,
             ..Default::default()
-        };
+        }
+    }
+}
 
+const SES_TO_CHUNK_SIZE: usize = 50;
+
+impl EmailSender for SesSender {
+    fn send_email(
+        &self,
+        mut email: Email,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send>> {
         let client = self.client.clone();
-        Box::pin(async move { client.send_email(req).await.map(|_| ()).map_err(Into::into) })
+        Box::pin(async move {
+            while email.to.len() > SES_TO_CHUNK_SIZE {
+                let to = email.to.split_off(SES_TO_CHUNK_SIZE);
+                let part_email = Email {
+                    to,
+                    from: email.from.clone(),
+                    message: email.message.clone(),
+                };
+
+                client.send_email(part_email.into()).await.map(|_| ())?;
+            }
+            client.send_email(email.into()).await.map(|_| ())?;
+            Ok(())
+        })
     }
 }

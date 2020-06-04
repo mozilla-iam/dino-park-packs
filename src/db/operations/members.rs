@@ -29,6 +29,24 @@ use uuid::Uuid;
 
 const DEFAULT_RENEWAL_DAYS: i64 = 14;
 
+pub fn membership_and_scoped_host(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<Option<DisplayMembershipAndHost>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    match scope_and_user.scope {
+        Trust::Staff => {
+            internal::member::membership_and_staff_host(&connection, group_name, user.user_uuid)
+        }
+        Trust::Ndaed => {
+            internal::member::membership_and_ndaed_host(&connection, group_name, user.user_uuid)
+        }
+        _ => Ok(None),
+    }
+}
+
 pub fn scoped_members_and_host(
     pool: &Pool,
     group_name: &str,
@@ -270,4 +288,22 @@ pub fn role_for_current(
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     internal::member::role_for(&connection, &user.user_uuid, group_name)
         .map(|role| role.map(|role| role.typ))
+}
+
+pub fn get_curator_emails(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<Vec<String>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        &group_name,
+        &user.user_uuid,
+    ))?;
+
+    let group = internal::group::get_group(&connection, group_name)?;
+    internal::member::get_curator_emails(&connection, group.id)
 }

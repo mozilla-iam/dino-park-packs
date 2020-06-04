@@ -1,4 +1,5 @@
 use crate::db::model::Group;
+use crate::db::operations::models::DisplayMembershipAndHost;
 use crate::db::types::GroupType;
 use crate::utils::to_utc;
 use chrono::NaiveDateTime;
@@ -39,6 +40,7 @@ pub struct GroupInfo {
 
 #[derive(Serialize)]
 pub struct DisplayGroupDetails {
+    pub membership: Option<DisplayMembershipAndHost>,
     pub super_user: bool,
     pub curator: bool,
     pub member: bool,

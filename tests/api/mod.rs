@@ -3,3 +3,4 @@ mod delete;
 mod errors;
 mod invitations;
 mod requests;
+mod sudo;

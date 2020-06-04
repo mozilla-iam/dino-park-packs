@@ -366,7 +366,7 @@ paths:
             type: string
       responses:
         "200":
-          description: list of initation requests
+          description: list of invitation requests
           content:
             application/json:
               schema:
@@ -1522,9 +1522,36 @@ components:
           format: email
           nullable: true
           example: hans@knall.org
+    Membership:
+      type: object
+      properties:
+        user_uuid:
+          type: string
+          format: uuid
+          example: 34a33a8e-d035-4051-acac-497a79235e73
+        since:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        expiration:
+          type: string
+          format: datetime
+          nullable: true
+          example: 2014-11-28T12:45:59Z
+        role:
+          type: string
+          enum:
+            - Admin
+            - Curator
+            - Member
+        added_by:
+          $ref: "#/components/schemas/AddedBy"
     GroupDetails:
       type: object
       properties:
+        membership:
+          $ref: "#/components/schemas/Membership"
         super_user:
           type: boolean
           example: false

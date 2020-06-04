@@ -15,8 +15,12 @@ pub fn is_nda_group(group_name: &str) -> bool {
 pub type Rule = dyn Fn(&RuleContext) -> Result<(), RuleError>;
 
 /// Always fails, caught by admin override.
-pub fn rule_only_admins(_: &RuleContext) -> Result<(), RuleError> {
-    Err(RuleError::NeverAllowed)
+pub fn rule_only_admins(ctx: &RuleContext) -> Result<(), RuleError> {
+    if ctx.scope_and_user.groups_scope == GroupsTrust::Admin {
+        Ok(())
+    } else {
+        Err(RuleError::NeverAllowed)
+    }
 }
 
 /// Check if curent user is allowed to create groups.

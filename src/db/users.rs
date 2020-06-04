@@ -13,6 +13,16 @@ use uuid::Uuid;
 #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_uuid)]
 #[table_name = "profiles"]
+pub struct UserProfileSlim {
+    pub user_uuid: Uuid,
+    pub user_id: String,
+    pub email: String,
+    pub username: String,
+}
+
+#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[primary_key(user_uuid)]
+#[table_name = "profiles"]
 pub struct UserProfileValue {
     pub user_uuid: Uuid,
     pub user_id: String,

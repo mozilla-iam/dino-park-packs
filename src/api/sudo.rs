@@ -50,8 +50,21 @@ async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> im
     }
 }
 
+#[guard(Staff, Admin, Medium)]
+async fn curator_emails(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+    group_name: web::Path<String>,
+) -> impl Responder {
+    match operations::members::get_curator_emails(&pool, &scope_and_user, &group_name) {
+        Ok(emails) => Ok(HttpResponse::Ok().json(emails)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
         .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
+        .service(web::resource("/curators/{group_name}").route(web::get().to(curator_emails)))
         .service(web::resource("/logs/all/raw").route(web::get().to(all_raw_logs)))
 }
