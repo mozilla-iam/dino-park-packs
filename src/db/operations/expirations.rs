@@ -59,7 +59,7 @@ pub async fn expire_memberships(
             if let Some(v) = h.get_mut(&m.user_uuid) {
                 v.push(m);
             } else {
-                h.insert(m.user_uuid.clone(), vec![m]);
+                h.insert(m.user_uuid, vec![m]);
             }
             h
         },
@@ -76,7 +76,7 @@ pub async fn expire_memberships(
     .await
 }
 
-pub async fn expiration_notification(pool: &Pool, first: bool) -> Result<(), Error> {
+pub fn expiration_notification(pool: &Pool, first: bool) -> Result<(), Error> {
     let lower = Utc::now()
         .checked_sub_signed(Duration::days(14))
         .unwrap()

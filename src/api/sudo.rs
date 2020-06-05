@@ -43,7 +43,7 @@ async fn add_member<T: AsyncCisClientTrait>(
 
 #[guard(Staff, Admin, Medium)]
 async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
-    let user = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
+    let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::logs::raw_logs(&pool, &scope_and_user, &user) {
         Ok(logs) => Ok(HttpResponse::Ok().json(logs)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
