@@ -22,6 +22,12 @@ pub struct UpdatedProfiles {
     updated: usize,
 }
 
+#[derive(Serialize)]
+pub struct NotificationStatus {
+    expire_first: usize,
+    expire_second: usize,
+}
+
 async fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Responder {
     operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().json(""))
 }
@@ -43,9 +49,12 @@ async fn expire_all<T: AsyncCisClientTrait>(
 }
 
 async fn expiration_notifications(pool: web::Data<Pool>) -> Result<HttpResponse, ApiError> {
-    operations::expirations::expiration_notification(&pool, true)?;
-    operations::expirations::expiration_notification(&pool, false)?;
-    Ok(HttpResponse::Ok().json(""))
+    let expire_first = operations::expirations::expiration_notification(&pool, true)?;
+    let expire_second = operations::expirations::expiration_notification(&pool, false)?;
+    Ok(HttpResponse::Ok().json(NotificationStatus {
+        expire_first,
+        expire_second,
+    }))
 }
 
 async fn bulk_update_users(

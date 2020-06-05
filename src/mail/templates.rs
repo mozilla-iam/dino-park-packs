@@ -126,7 +126,7 @@ fn member_expiration(group_name: &str, domain: &str) -> Message {
         ),
         body: format!(
             "\
-Dear Curator,
+Dear Mozillian,
 As per the terms of your membership to group '{group_name} your membership will expire in 7 days \
 unless you are renewed by your group’s curators.
 

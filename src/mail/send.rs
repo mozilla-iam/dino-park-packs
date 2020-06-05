@@ -27,7 +27,8 @@ impl Default for SesSender {
 impl Into<SendEmailRequest> for Email {
     fn into(self) -> SendEmailRequest {
         let destination = Destination {
-            to_addresses: Some(self.to),
+            to_addresses: self.to.map(|s| vec![s]),
+            bcc_addresses: self.bcc,
             ..Default::default()
         };
         let message = self.message.into();
@@ -49,16 +50,19 @@ impl EmailSender for SesSender {
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send>> {
         let client = self.client.clone();
         Box::pin(async move {
-            while email.to.len() > SES_TO_CHUNK_SIZE {
-                let to = email.to.split_off(SES_TO_CHUNK_SIZE);
+            let mut bcc = email.bcc.unwrap_or_default();
+            while bcc.len() > SES_TO_CHUNK_SIZE {
+                let bcc = bcc.split_off(SES_TO_CHUNK_SIZE);
                 let part_email = Email {
-                    to,
+                    to: None,
+                    bcc: Some(bcc),
                     from: email.from.clone(),
                     message: email.message.clone(),
                 };
 
                 client.send_email(part_email.into()).await.map(|_| ())?;
             }
+            email.bcc = if bcc.is_empty() { None } else { Some(bcc) };
             client.send_email(email.into()).await.map(|_| ())?;
             Ok(())
         })

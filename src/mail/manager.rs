@@ -63,8 +63,16 @@ impl<T: EmailSender> MailMan<T> {
 impl<T: EmailSender> MailMan<T> {
     pub fn send(&self, mut e: Email) {
         if let Some(ref catcher) = self.catcher {
-            e.message.body = format!("[caught for {}]\n\n{}", e.to.join(", "), e.message.body);
-            e.to = vec![catcher.to_owned()];
+            if let Some(to) = e.to {
+                e.message.body = format!("[to: caught for {}]\n\n{}", to, e.message.body);
+                e.to = Some(catcher.to_owned());
+            };
+            if let Some(bcc) = e.bcc {
+                e.message.body =
+                    format!("[bcc: caught for {}]\n\n{}", bcc.join(", "), e.message.body);
+                e.to = Some(catcher.to_owned());
+                e.bcc = None;
+            };
         }
         let s = self.sender.clone();
         let f = Box::pin(async move {

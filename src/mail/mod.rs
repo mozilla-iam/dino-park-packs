@@ -31,18 +31,25 @@ impl Into<rusoto_ses::Message> for Message {
 
 #[derive(Clone)]
 pub struct Email {
-    pub to: Vec<String>,
+    pub to: Option<String>,
+    pub bcc: Option<Vec<String>>,
     pub from: String,
     pub message: Message,
 }
 
 impl Email {
     pub fn with(to: String, message: Message) -> Self {
-        Email::with_many(vec![to], message)
-    }
-    pub fn with_many(to: Vec<String>, message: Message) -> Self {
         Email {
-            to,
+            to: Some(to),
+            bcc: None,
+            from: "no-reply@dinopark.k8s.dev.sso.allizom.org".to_owned(),
+            message,
+        }
+    }
+    pub fn with_many(bcc: Vec<String>, message: Message) -> Self {
+        Email {
+            to: None,
+            bcc: Some(bcc),
             from: "no-reply@dinopark.k8s.dev.sso.allizom.org".to_owned(),
             message,
         }

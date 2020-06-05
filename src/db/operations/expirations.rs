@@ -16,6 +16,7 @@ use failure::Error;
 use futures::future::try_join_all;
 use futures::TryFutureExt;
 use log::error;
+use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -76,21 +77,30 @@ pub async fn expire_memberships(
     .await
 }
 
-pub fn expiration_notification(pool: &Pool, first: bool) -> Result<(), Error> {
+pub fn expiration_notification(pool: &Pool, first: bool) -> Result<usize, Error> {
+    let days = if first { 14 } else { 7 };
     let lower = Utc::now()
-        .checked_sub_signed(Duration::days(14))
+        .checked_add_signed(Duration::days(days))
         .unwrap()
         .date()
         .and_hms(0, 0, 0)
         .naive_utc();
     let upper = Utc::now()
-        .checked_sub_signed(Duration::days(14))
+        .checked_add_signed(Duration::days(days))
         .unwrap()
         .date()
         .and_hms_nano(23, 59, 59, 999_999_999)
         .naive_utc();
     let connection = pool.get()?;
     let memberships = internal::member::get_memberships_expire_between(&connection, lower, upper)?;
+    info!(
+        "{} memberships expiring in {} days ({}-{})",
+        memberships.len(),
+        days,
+        lower,
+        upper
+    );
+    let mut count = 0;
     for membership in memberships {
         let group = internal::group::get_group_by_id(&connection, membership.group_id)?
             .ok_or(PacksError::InvalidGroupData)?;
@@ -123,8 +133,9 @@ pub fn expiration_notification(pool: &Pool, first: bool) -> Result<(), Error> {
                 );
             }
         }
+        count += 1;
     }
-    Ok(())
+    Ok(count)
 }
 
 pub fn expire_invitations(pool: &Pool) -> Result<(), Error> {
