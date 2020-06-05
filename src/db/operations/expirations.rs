@@ -2,13 +2,20 @@ use crate::db::internal;
 use crate::db::logs::log_comment_body;
 use crate::db::model::Membership;
 use crate::db::operations::members::revoke_membership;
+use crate::db::types::RoleType;
 use crate::db::Pool;
+use crate::error::PacksError;
+use crate::mail::manager::send_email;
+use crate::mail::manager::send_emails;
+use crate::mail::templates::Template;
 use crate::user::User;
+use chrono::Duration;
 use chrono::Utc;
 use cis_client::AsyncCisClientTrait;
 use failure::Error;
 use futures::future::try_join_all;
 use futures::TryFutureExt;
+use log::error;
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -67,6 +74,57 @@ pub async fn expire_memberships(
     }))
     .map_ok(|_| ())
     .await
+}
+
+pub async fn expiration_notification(pool: &Pool, first: bool) -> Result<(), Error> {
+    let lower = Utc::now()
+        .checked_sub_signed(Duration::days(14))
+        .unwrap()
+        .date()
+        .and_hms(0, 0, 0)
+        .naive_utc();
+    let upper = Utc::now()
+        .checked_sub_signed(Duration::days(14))
+        .unwrap()
+        .date()
+        .and_hms_nano(23, 59, 59, 999_999_999)
+        .naive_utc();
+    let connection = pool.get()?;
+    let memberships = internal::member::get_memberships_expire_between(&connection, lower, upper)?;
+    for membership in memberships {
+        let group = internal::group::get_group_by_id(&connection, membership.group_id)?
+            .ok_or(PacksError::InvalidGroupData)?;
+        let host = internal::user::slim_user_profile_by_uuid(&connection, &membership.added_by)?;
+        let host_valid =
+            match internal::member::role_for(&connection, &host.user_uuid, &group.name)? {
+                Some(r) => r.typ != RoleType::Member,
+                None => false,
+            };
+        let user = internal::user::slim_user_profile_by_uuid(&connection, &membership.added_by)?;
+        let to = if host_valid {
+            vec![host.email]
+        } else {
+            internal::member::get_curator_emails(&connection, group.id)?
+        };
+        if first {
+            send_emails(
+                to,
+                &Template::FirstHostExpiration(group.name, user.username),
+            );
+        } else {
+            send_emails(
+                to,
+                &Template::SecondHostExpiration(group.name.clone(), user.username),
+            );
+            if let Err(e) = send_email(user.email, &Template::MemberExpiration(group.name)) {
+                error!(
+                    "unable to send expiration email to {}: {}",
+                    user.user_uuid, e
+                );
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn expire_invitations(pool: &Pool) -> Result<(), Error> {

@@ -41,6 +41,15 @@ pub fn get_group(connection: &PgConnection, group_name: &str) -> Result<Group, E
         .map_err(Into::into)
 }
 
+pub fn get_group_by_id(connection: &PgConnection, group_id: i32) -> Result<Option<Group>, Error> {
+    schema::groups::table
+        .filter(schema::groups::group_id.eq(group_id))
+        .filter(schema::groups::active.eq(true))
+        .first::<Group>(connection)
+        .optional()
+        .map_err(Into::into)
+}
+
 pub fn get_groups_by_ids(
     connection: &PgConnection,
     group_ids: &[i32],

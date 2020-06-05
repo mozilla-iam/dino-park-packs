@@ -98,10 +98,12 @@ async fn group_details(
     scope_and_user: ScopeAndUser,
 ) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
-    let role = operations::members::role_for_current(&pool, &scope_and_user, &group_name)?;
+    let membership =
+        operations::members::membership_and_scoped_host(&pool, &scope_and_user, &group_name)?;
+    let role = membership.as_ref().map(|m| m.role.clone());
     let super_user = scope_and_user.groups_scope == GroupsTrust::Admin;
     let curator = role.as_ref().map(|r| r.is_curator()).unwrap_or_default() || super_user;
-    let is_member = role.is_some();
+    let is_member = membership.is_some();
     let member_count = match operations::members::member_count(&pool, &group_name) {
         Ok(member_count) => member_count,
         Err(e) => return Err(ApiError::GenericBadRequest(e)),
@@ -136,6 +138,7 @@ async fn group_details(
         None
     };
     let result = DisplayGroupDetails {
+        membership,
         super_user,
         curator,
         member: is_member,

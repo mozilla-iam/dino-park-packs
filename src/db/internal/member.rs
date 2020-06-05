@@ -73,7 +73,7 @@ macro_rules! scoped_members_for {
                     let members: Vec<DisplayMemberAndHost> = members
                         .into_iter()
                         .take(limit as usize)
-                        .map(|m| DisplayMemberAndHost::from_with_socpe(m, scope))
+                        .map(|m| DisplayMemberAndHost::from_with_scope(m, scope))
                         .collect();
                     (members, next)
                 })?;
@@ -164,6 +164,42 @@ macro_rules! scoped_members_and_host_for {
     };
 }
 
+macro_rules! membership_and_scoped_host_for {
+    ($h:ident, $f:ident) => {
+        pub fn $f(
+            connection: &PgConnection,
+            group_name: &str,
+            user_uuid: Uuid,
+        ) -> Result<Option<DisplayMembershipAndHost>, Error> {
+            use schema::groups as g;
+            use schema::memberships as m;
+            use schema::roles as r;
+            use views::$h as h;
+            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
+            m::table
+                .filter(m::group_id.eq(group.id))
+                .filter(m::user_uuid.eq(user_uuid))
+                .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
+                .inner_join(r::table)
+                .select((
+                    m::user_uuid,
+                    m::added_ts,
+                    m::expiration,
+                    r::typ,
+                    m::added_by,
+                    h::first_name.nullable(),
+                    h::last_name.nullable(),
+                    h::username.nullable(),
+                    h::email.nullable(),
+                ))
+                .first::<MembershipAndHost>(connection)
+                .optional()
+                .map(|r| r.map(Into::into))
+                .map_err(Error::from)
+        }
+    };
+}
+
 // scoped_members_for!(users_staff, staff_scoped_members);
 // scoped_members_for!(users_ndaed, ndaed_scoped_members);
 scoped_members_for!(users_vouched, vouched_scoped_members);
@@ -185,6 +221,9 @@ scoped_members_and_host_for!(
 );
 scoped_members_and_host_for!(users_public, hosts_public, public_scoped_members_and_host);
 */
+
+membership_and_scoped_host_for!(hosts_staff, membership_and_staff_host);
+membership_and_scoped_host_for!(hosts_ndaed, membership_and_ndaed_host);
 
 pub fn add_member_role(
     host_uuid: &Uuid,
@@ -356,5 +395,30 @@ pub fn get_memberships_expired_before(
     schema::memberships::table
         .filter(schema::memberships::expiration.le(before))
         .get_results(connection)
+        .map_err(Into::into)
+}
+
+pub fn get_memberships_expire_between(
+    connection: &PgConnection,
+    lower: NaiveDateTime,
+    upper: NaiveDateTime,
+) -> Result<Vec<Membership>, Error> {
+    schema::memberships::table
+        .filter(schema::memberships::expiration.between(lower, upper))
+        .get_results(connection)
+        .map_err(Into::into)
+}
+
+pub fn get_curator_emails(connection: &PgConnection, group_id: i32) -> Result<Vec<String>, Error> {
+    use schema::memberships as m;
+    use schema::profiles as p;
+    use schema::roles as r;
+    m::table
+        .filter(m::group_id.eq(group_id))
+        .inner_join(r::table)
+        .filter(r::typ.eq_any(&[RoleType::Admin, RoleType::Curator]))
+        .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
+        .select(p::email)
+        .get_results::<String>(connection)
         .map_err(Into::into)
 }

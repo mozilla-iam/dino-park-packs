@@ -8,7 +8,6 @@ use crate::mail::Email;
 #[cfg(all(not(test), not(feature = "local")))]
 use crate::settings::Settings;
 use actix_rt::Arbiter;
-use cis_profile::schema::Profile;
 #[cfg(all(not(test), not(feature = "local")))]
 use lazy_static::lazy_static;
 use log::error;
@@ -22,15 +21,25 @@ lazy_static! {
 }
 
 #[cfg(all(not(test), not(feature = "local")))]
-pub fn send_email(p: &Profile, t: &Template) -> Result<(), PacksError> {
+pub fn send_email(to: String, t: &Template) -> Result<(), PacksError> {
     let message = MAIL_MAN.template_man.render(t);
-    MAIL_MAN.send(Email::from_with(p, message)?);
+    MAIL_MAN.send(Email::with(to, message));
     Ok(())
 }
+
+#[cfg(all(not(test), not(feature = "local")))]
+pub fn send_emails(to: Vec<String>, t: &Template) {
+    let message = MAIL_MAN.template_man.render(t);
+    MAIL_MAN.send(Email::with_many(to, message));
+}
+
 #[cfg(any(test, feature = "local"))]
-pub fn send_email(_: &Profile, _: &Template) -> Result<(), PacksError> {
+pub fn send_email(_: String, _: &Template) -> Result<(), PacksError> {
     Ok(())
 }
+
+#[cfg(any(test, feature = "local"))]
+pub fn send_emails(_: Vec<String>, _: &Template) {}
 
 #[derive(Clone)]
 pub struct MailMan<T: EmailSender> {
@@ -54,8 +63,8 @@ impl<T: EmailSender> MailMan<T> {
 impl<T: EmailSender> MailMan<T> {
     pub fn send(&self, mut e: Email) {
         if let Some(ref catcher) = self.catcher {
-            e.message.body = format!("[caught for {}]\n\n{}", e.to, e.message.body);
-            e.to = catcher.to_owned();
+            e.message.body = format!("[caught for {}]\n\n{}", e.to.join(", "), e.message.body);
+            e.to = vec![catcher.to_owned()];
         }
         let s = self.sender.clone();
         let f = Box::pin(async move {
