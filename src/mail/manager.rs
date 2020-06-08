@@ -1,4 +1,3 @@
-use crate::error::PacksError;
 use crate::mail::send::EmailSender;
 #[cfg(all(not(test), not(feature = "local")))]
 use crate::mail::send::SesSender;
@@ -21,10 +20,9 @@ lazy_static! {
 }
 
 #[cfg(all(not(test), not(feature = "local")))]
-pub fn send_email(to: String, t: &Template) -> Result<(), PacksError> {
+pub fn send_email(to: String, t: &Template) {
     let message = MAIL_MAN.template_man.render(t);
     MAIL_MAN.send(Email::with(to, message));
-    Ok(())
 }
 
 #[cfg(all(not(test), not(feature = "local")))]
@@ -34,9 +32,7 @@ pub fn send_emails(to: Vec<String>, t: &Template) {
 }
 
 #[cfg(any(test, feature = "local"))]
-pub fn send_email(_: String, _: &Template) -> Result<(), PacksError> {
-    Ok(())
-}
+pub fn send_email(_: String, _: &Template) {}
 
 #[cfg(any(test, feature = "local"))]
 pub fn send_emails(_: Vec<String>, _: &Template) {}

@@ -22,7 +22,7 @@ impl Settings {
         let file = env::var("DPP_SETTINGS").unwrap_or_else(|_| String::from(".settings"));
         let mut s = Config::new();
         s.merge(File::with_name(&file))?;
-        s.merge(Environment::new().separator("__").prefix("dpp"))?;
+        s.merge(Environment::new().separator("__").prefix("dp"))?;
         s.try_into()
     }
 }

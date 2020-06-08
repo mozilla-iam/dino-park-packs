@@ -37,7 +37,7 @@ pub fn delete_invitation(
     let connection = pool.get()?;
     delete(&connection, group_name, host, member, None)?;
     let p = internal::user::slim_user_profile_by_uuid(&connection, &member.user_uuid)?;
-    send_email(p.email, &Template::DeleteInvitation(group_name.to_owned()))?;
+    send_email(p.email, &Template::DeleteInvitation(group_name.to_owned()));
     Ok(())
 }
 
@@ -113,7 +113,7 @@ pub fn invite_member(
         group_expiration,
     )?;
     let p = internal::user::slim_user_profile_by_uuid(&connection, &member.user_uuid)?;
-    send_email(p.email, &Template::Invitation(group_name.to_owned()))?;
+    send_email(p.email, &Template::Invitation(group_name.to_owned()));
     Ok(())
 }
 

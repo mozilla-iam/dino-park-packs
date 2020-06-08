@@ -15,7 +15,6 @@ use cis_client::AsyncCisClientTrait;
 use failure::Error;
 use futures::future::try_join_all;
 use futures::TryFutureExt;
-use log::error;
 use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -111,27 +110,33 @@ pub fn expiration_notification(pool: &Pool, first: bool) -> Result<usize, Error>
                 None => false,
             };
         let user = internal::user::slim_user_profile_by_uuid(&connection, &membership.added_by)?;
-        let to = if host_valid {
-            vec![host.email]
-        } else {
-            internal::member::get_curator_emails(&connection, group.id)?
-        };
         if first {
-            send_emails(
-                to,
-                &Template::FirstHostExpiration(group.name, user.username),
-            );
+            if host_valid {
+                send_email(
+                    host.email,
+                    &Template::FirstHostExpiration(group.name, user.username),
+                );
+            } else {
+                let bcc = internal::member::get_curator_emails(&connection, group.id)?;
+                send_emails(
+                    bcc,
+                    &Template::FirstHostExpiration(group.name, user.username),
+                );
+            };
         } else {
-            send_emails(
-                to,
-                &Template::SecondHostExpiration(group.name.clone(), user.username),
-            );
-            if let Err(e) = send_email(user.email, &Template::MemberExpiration(group.name)) {
-                error!(
-                    "unable to send expiration email to {}: {}",
-                    user.user_uuid, e
+            if host_valid {
+                send_email(
+                    host.email,
+                    &Template::SecondHostExpiration(group.name.clone(), user.username),
+                );
+            } else {
+                let bcc = internal::member::get_curator_emails(&connection, group.id)?;
+                send_emails(
+                    bcc,
+                    &Template::SecondHostExpiration(group.name.clone(), user.username),
                 );
             }
+            send_email(user.email, &Template::MemberExpiration(group.name));
         }
         count += 1;
     }

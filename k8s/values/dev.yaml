@@ -2,5 +2,6 @@ env: dev
 namespace: dinopark-dev
 assume_role: arn:aws:iam::320464205386:role/dino-park-packs-role-dev-us-west-2
 settings:
+  auth: https://auth-dev.mozilla.auth0.com/
   packs__domain: dinopark.k8s.dev.sso.allizom.org
   packs__catcher: dinopark-dev@mozilla.com
