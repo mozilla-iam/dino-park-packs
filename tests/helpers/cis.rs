@@ -43,6 +43,9 @@ impl AsyncCisClientTrait for CisFakeClient {
     fn get_user_by(&self, id: &str, by: &GetBy, filter: Option<&str>) -> CisFut<Profile> {
         unimplemented!()
     }
+    fn get_any_user_by(&self, id: &str, by: &GetBy, filter: Option<&str>) -> CisFut<Profile> {
+        unimplemented!()
+    }
     fn get_inactive_user_by(&self, id: &str, by: &GetBy, filter: Option<&str>) -> CisFut<Profile> {
         unimplemented!()
     }

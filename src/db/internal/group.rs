@@ -207,10 +207,22 @@ pub fn list_groups(
         query = query.filter(views::groups_list::name.ilike(format!("%{}%", filter)))
     };
     query = match sort_by {
-        SortGroupsBy::MemberCountAsc => query.order(views::groups_list::members_count.asc()),
-        SortGroupsBy::MemberCountDesc => query.order(views::groups_list::members_count.desc()),
-        SortGroupsBy::NameAsc => query.order(views::groups_list::name.asc()),
-        SortGroupsBy::NameDesc => query.order(views::groups_list::name.desc()),
+        SortGroupsBy::MemberCountAsc => query.order((
+            views::groups_list::members_count.asc(),
+            views::groups_list::name.asc(),
+        )),
+        SortGroupsBy::MemberCountDesc => query.order((
+            views::groups_list::members_count.desc(),
+            views::groups_list::name.asc(),
+        )),
+        SortGroupsBy::NameAsc => query.order((
+            views::groups_list::name.asc(),
+            views::groups_list::members_count.desc(),
+        )),
+        SortGroupsBy::NameDesc => query.order((
+            views::groups_list::name.desc(),
+            views::groups_list::members_count.desc(),
+        )),
     };
     let groups: Vec<GroupsList> = query.offset(offset).limit(limit).get_results(connection)?;
     let next = match i64::try_from(groups.len()) {
