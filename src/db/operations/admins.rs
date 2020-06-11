@@ -2,6 +2,8 @@ use crate::cis::operations::add_group_to_profile;
 use crate::db::internal;
 use crate::db::Pool;
 use crate::error::PacksError;
+use crate::mail::manager::send_email;
+use crate::mail::templates::Template;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
@@ -56,7 +58,10 @@ pub fn demote(
             user,
             expiration,
         )
-        .map(|_| ())
+        .map(|_| ())?;
+        let user = internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
+        send_email(user.email, &Template::DemoteCurator(group_name.to_owned()));
+        Ok(())
     } else {
         Err(PacksError::LastAdmin.into())
     }

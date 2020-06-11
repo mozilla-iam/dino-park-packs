@@ -8,6 +8,8 @@ use crate::db::schema::groups::dsl as groups;
 use crate::db::types::*;
 use crate::db::Pool;
 use crate::error;
+use crate::mail::manager::send_email;
+use crate::mail::templates::Template;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::engine::RENEW_MEMBER;
@@ -226,6 +228,10 @@ async fn _revoke_membership(
                 );
             }
         }
+        send_email(
+            user_profile.email.clone(),
+            &Template::DeleteMember(group_name.to_string()),
+        );
     }
     Ok(())
 }

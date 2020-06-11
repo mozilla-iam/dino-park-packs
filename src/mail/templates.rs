@@ -63,6 +63,48 @@ The Mozilla IAM Team",
     }
 }
 
+fn demote_curator(group_name: &str, domain: &str) -> Message {
+    Message {
+        subject: format!(
+            "[{domain}] Your membership for the '{group_name}' group has been revoked",
+            group_name = group_name,
+            domain = domain
+        ),
+        body: format!(
+            "\
+Dear Mozillian,
+your curator status for the '{group_name}' access group has been revoked.
+You are still a member and can see your status here: https://{domain}/a/{group_name}
+
+Cheers,
+The Mozilla IAM Team",
+            group_name = group_name,
+            domain = domain
+        ),
+    }
+}
+
+fn delete_member(group_name: &str, domain: &str) -> Message {
+    Message {
+        subject: format!(
+            "[{domain}] Your membership for the '{group_name}' group has been revoked",
+            group_name = group_name,
+            domain = domain
+        ),
+        body: format!(
+            "\
+Dear Mozillian,
+your membership to the '{group_name}' access group has been revoked.
+If you have any questions make sure to read the group description at https://{domain}/a/{group_name}
+
+Cheers,
+The Mozilla IAM Team",
+            group_name = group_name,
+            domain = domain
+        ),
+    }
+}
+
 fn first_host_expiration(group_name: &str, user: &str, domain: &str) -> Message {
     Message {
         subject: format!(
@@ -160,6 +202,8 @@ impl TemplateManager {
             Template::DeleteInvitation(ref group_name) => {
                 delete_invitation(group_name, &self.domain)
             }
+            Template::DemoteCurator(ref group_name) => demote_curator(group_name, &self.domain),
+            Template::DeleteMember(ref group_name) => delete_member(group_name, &self.domain),
             Template::MemberExpiration(ref group_name) => {
                 member_expiration(group_name, &self.domain)
             }
@@ -177,6 +221,8 @@ pub enum Template {
     Invitation(String),
     RejectRequest(String),
     DeleteInvitation(String),
+    DemoteCurator(String),
+    DeleteMember(String),
     MemberExpiration(String),
     FirstHostExpiration(String, String),
     SecondHostExpiration(String, String),
