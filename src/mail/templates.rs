@@ -185,6 +185,33 @@ The Mozilla IAM Team",
     }
 }
 
+fn pending_request(group_name: &str, count: usize, domain: &str) -> Message {
+    let pending = match count {
+        1 => String::from("is 1 pending request"),
+        c => format!("are {} pending requests", c),
+    };
+    Message {
+        subject: format!(
+            "[{domain}] There {pending} in the '{group_name}' group",
+            group_name = group_name,
+            pending = pending,
+            domain = domain
+        ),
+        body: format!(
+            "\
+Dear Curator,
+there {pending} for invitation in the access group '{group_name}.
+For further action please visit: https://{domain}/a/{group_name}/edit?section=invitations
+
+Cheers,
+The Mozilla IAM Team",
+            group_name = group_name,
+            pending = pending,
+            domain = domain
+        ),
+    }
+}
+
 #[derive(Clone)]
 pub struct TemplateManager {
     domain: String,
@@ -213,6 +240,9 @@ impl TemplateManager {
             Template::SecondHostExpiration(ref group_name, ref user) => {
                 second_host_expiration(group_name, user, &self.domain)
             }
+            Template::PendingRequest(ref group_name, count) => {
+                pending_request(group_name, *count, &self.domain)
+            }
         }
     }
 }
@@ -226,4 +256,5 @@ pub enum Template {
     MemberExpiration(String),
     FirstHostExpiration(String, String),
     SecondHostExpiration(String, String),
+    PendingRequest(String, usize),
 }

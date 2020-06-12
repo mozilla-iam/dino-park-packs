@@ -5,6 +5,7 @@ use crate::db::logs::LogContext;
 use crate::db::model::*;
 use crate::db::operations::models::DisplayRequest;
 use crate::db::operations::models::DisplayRequestForUser;
+use crate::db::operations::models::NewPendingRequest;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::LogOperationType;
@@ -16,6 +17,7 @@ use diesel::dsl;
 use diesel::prelude::*;
 use failure::Error;
 use serde_json::Value;
+use std::collections::HashMap;
 
 pub fn requests_for_user(
     connection: &PgConnection,
@@ -179,4 +181,38 @@ pub fn count(connection: &PgConnection, group_name: &str) -> Result<i64, Error> 
         .select(dsl::count(schema::requests::user_uuid))
         .first(connection)?;
     Ok(count)
+}
+
+pub fn new_pending(
+    connection: &PgConnection,
+    lower: NaiveDateTime,
+    upper: NaiveDateTime,
+) -> Result<HashMap<i32, NewPendingRequest>, Error> {
+    use schema::groups as g;
+    use schema::requests as r;
+    let pending = r::table
+        .filter(r::created.between(lower, upper))
+        .inner_join(g::table)
+        .order(r::group_id)
+        .select((g::group_id, g::name))
+        .get_results::<(i32, String)>(connection)?;
+    let pending = pending.into_iter().fold(
+        HashMap::<i32, NewPendingRequest>::new(),
+        |mut m, (group_id, group_name)| {
+            if let Some(mut npr) = m.get_mut(&group_id) {
+                npr.count += 1;
+            } else {
+                m.insert(
+                    group_id,
+                    NewPendingRequest {
+                        group_id,
+                        group_name,
+                        count: 1,
+                    },
+                );
+            };
+            m
+        },
+    );
+    Ok(pending)
 }

@@ -13,6 +13,13 @@ use uuid::Uuid;
 
 const DESCRIPTION_MAX_LEN: usize = 450;
 
+#[derive(Clone, Debug)]
+pub struct NewPendingRequest {
+    pub group_id: i32,
+    pub group_name: String,
+    pub count: usize,
+}
+
 #[derive(Deserialize)]
 pub enum SortGroupsBy {
     MemberCountAsc,

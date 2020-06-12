@@ -3,11 +3,14 @@ use crate::db::internal::request::*;
 use crate::db::operations::models::*;
 use crate::db::Pool;
 use crate::mail::manager::send_email;
+use crate::mail::manager::send_emails;
 use crate::mail::templates::Template;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
+use chrono::Duration;
 use chrono::NaiveDateTime;
+use chrono::Utc;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
 use failure::Error;
@@ -104,4 +107,26 @@ pub fn pending_requests(
         Trust::Authenticated => authenticated_scoped_requests(&connection, group_name),
         Trust::Public => public_scoped_requests(&connection, group_name),
     }
+}
+
+pub fn pending_requests_notification(pool: &Pool) -> Result<(), Error> {
+    let lower = Utc::now()
+        .checked_sub_signed(Duration::days(1))
+        .unwrap()
+        .date()
+        .and_hms(0, 0, 0)
+        .naive_utc();
+    let upper = Utc::now()
+        .checked_sub_signed(Duration::days(1))
+        .unwrap()
+        .date()
+        .and_hms_nano(23, 59, 59, 999_999_999)
+        .naive_utc();
+    let connection = pool.get()?;
+    let pending = internal::request::new_pending(&connection, lower, upper)?;
+    for (group_id, npr) in pending {
+        let bcc = internal::member::get_curator_emails(&connection, group_id)?;
+        send_emails(bcc, &Template::PendingRequest(npr.group_name, npr.count));
+    }
+    Ok(())
 }
