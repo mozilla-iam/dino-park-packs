@@ -60,7 +60,7 @@ pub struct Invitation {
     pub added_by: Uuid,
 }
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, AsChangeset)]
+#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
 pub struct Request {

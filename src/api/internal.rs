@@ -43,6 +43,7 @@ async fn expire_all<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
+    operations::expirations::expire_requests(&pool)?;
     operations::expirations::expire_invitations(&pool)?;
     operations::expirations::expire_memberships(&pool, Arc::clone(&*cis_client)).await?;
     Ok(HttpResponse::Ok().json(""))

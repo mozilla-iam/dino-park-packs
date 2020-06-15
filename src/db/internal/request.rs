@@ -18,6 +18,7 @@ use diesel::prelude::*;
 use failure::Error;
 use serde_json::Value;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 pub fn requests_for_user(
     connection: &PgConnection,
@@ -215,4 +216,23 @@ pub fn new_pending(
         },
     );
     Ok(pending)
+}
+
+pub fn expire_before(connection: &PgConnection, before: NaiveDateTime) -> Result<(), Error> {
+    let deleted = diesel::delete(schema::requests::table)
+        .filter(schema::requests::request_expiration.le(before))
+        .get_results::<Request>(connection)?;
+
+    for request in deleted {
+        let log_ctx =
+            LogContext::with(request.group_id, Uuid::default()).with_user(request.user_uuid);
+        internal::log::db_log(
+            connection,
+            &log_ctx,
+            LogTargetType::Request,
+            LogOperationType::Deleted,
+            log_comment_body("expired"),
+        );
+    }
+    Ok(())
 }

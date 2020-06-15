@@ -149,3 +149,10 @@ pub fn expire_invitations(pool: &Pool) -> Result<(), Error> {
     internal::invitation::expire_before(&connection, expires_before)?;
     Ok(())
 }
+
+pub fn expire_requests(pool: &Pool) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let expires_before = Utc::now().naive_utc();
+    internal::request::expire_before(&connection, expires_before)?;
+    Ok(())
+}
