@@ -62,6 +62,13 @@ async fn requests_notifications(pool: web::Data<Pool>) -> Result<HttpResponse, A
     Ok(HttpResponse::Ok().json(""))
 }
 
+async fn all_notifications(pool: web::Data<Pool>) -> Result<HttpResponse, ApiError> {
+    operations::requests::pending_requests_notification(&pool)?;
+    operations::expirations::expiration_notification(&pool, true)?;
+    operations::expirations::expiration_notification(&pool, false)?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
 async fn bulk_update_users(
     pool: web::Data<Pool>,
     mut multipart: Multipart,
@@ -93,6 +100,9 @@ pub fn internal_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFacto
         .service(web::resource("/update/user").route(web::post().to(update_user)))
         .service(web::resource("/delete/{user_uuid}").route(web::delete().to(delete_user)))
         .service(web::resource("/expire/all").route(web::post().to(expire_all::<T>)))
-        .service(web::resource("/expire/notify").route(web::post().to(expiration_notifications)))
-        .service(web::resource("/requests/notify").route(web::post().to(requests_notifications)))
+        .service(
+            web::resource("/notify/expiration").route(web::post().to(expiration_notifications)),
+        )
+        .service(web::resource("/notify/requests").route(web::post().to(requests_notifications)))
+        .service(web::resource("/notify/all").route(web::post().to(all_notifications)))
 }

@@ -1,7 +1,8 @@
+---
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ .Values.name }}-cron
+  name: {{ .Values.name }}-expirations-cron
   namespace: {{ .Values.namespace }}
 spec:
   schedule: "0 * * * * "
@@ -10,10 +11,30 @@ spec:
       template:
         spec:
           containers:
-          - name: {{ .Values.name }}-cron
+          - name: {{ .Values.name }}-notify-cron
             image: curlimages/curl
             args:
             - /bin/sh
             - -c
             - curl -X POST dino-park-packs-service/internal/expire/all
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ .Values.name }}-notify-cron
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: "0 12 * * * "
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: {{ .Values.name }}-notify-cron
+            image: curlimages/curl
+            args:
+            - /bin/sh
+            - -c
+            - curl -X POST dino-park-packs-service/internal/notify/all
           restartPolicy: OnFailure
