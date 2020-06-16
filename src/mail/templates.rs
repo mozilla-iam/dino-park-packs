@@ -222,7 +222,7 @@ fn group_deleted(group_name: &str, user: &str, domain: &str) -> Message {
         body: format!(
             "\
 Dear Curator,
-the '{group_name}' has been deleted by https://{domain}/p/{user}
+the '{group_name}' group has been deleted by https://{domain}/p/{user}
 
 Cheers,
 The Mozilla IAM Team",
