@@ -10,6 +10,8 @@ use crate::db::operations::models::PaginatedGroupsLists;
 use crate::db::operations::models::SortGroupsBy;
 use crate::db::Pool;
 use crate::error::PacksError;
+use crate::mail::manager::send_emails;
+use crate::mail::templates::Template;
 use crate::rules::engine::CREATE_GROUP;
 use crate::rules::engine::HOST_IS_GROUP_ADMIN;
 use crate::rules::RuleContext;
@@ -60,7 +62,7 @@ pub async fn add_new_group(
 pub async fn delete_group(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
-    name: &str,
+    group_name: &str,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     // TODO: clean up and reserve group name
@@ -69,17 +71,18 @@ pub async fn delete_group(
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &name,
+        &group_name,
         &host.user_uuid,
     ))?;
-    let members = internal::member::get_members_not_current(&connection, name, &host)?;
+    let bcc = internal::member::get_curator_emails_by_group_name(&connection, group_name)?;
+    let members = internal::member::get_members_not_current(&connection, group_name, &host)?;
     let v = members
         .iter()
         .map(|user| {
             operations::members::remove(
                 &pool,
                 &scope_and_user,
-                &name,
+                &group_name,
                 &host,
                 &user,
                 Arc::clone(&cis_client),
@@ -90,8 +93,22 @@ pub async fn delete_group(
     try_join_all(v)
         .map_err(|_| PacksError::ErrorDeletingMembers)
         .await?;
-    operations::members::remove(&pool, &scope_and_user, &name, &host, &host, cis_client).await?;
-    internal::group::delete_group(&host.user_uuid, &connection, &name)
+    operations::members::remove(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &host,
+        cis_client,
+    )
+    .await?;
+    internal::group::delete_group(&host.user_uuid, &connection, &group_name)?;
+    let host_profile = internal::user::slim_user_profile_by_uuid(&connection, &host.user_uuid)?;
+    send_emails(
+        bcc,
+        &Template::GroupDeleted(group_name.to_string(), host_profile.username),
+    );
+    Ok(())
 }
 
 pub fn update_group(

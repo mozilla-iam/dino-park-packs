@@ -212,6 +212,27 @@ The Mozilla IAM Team",
     }
 }
 
+fn group_deleted(group_name: &str, user: &str, domain: &str) -> Message {
+    Message {
+        subject: format!(
+            "[{domain}] The '{group_name}' group has been deleted",
+            group_name = group_name,
+            domain = domain
+        ),
+        body: format!(
+            "\
+Dear Curator,
+the '{group_name}' has been deleted by https://{domain}/p/{user}
+
+Cheers,
+The Mozilla IAM Team",
+            group_name = group_name,
+            user = user,
+            domain = domain
+        ),
+    }
+}
+
 #[derive(Clone)]
 pub struct TemplateManager {
     domain: String,
@@ -243,6 +264,9 @@ impl TemplateManager {
             Template::PendingRequest(ref group_name, count) => {
                 pending_request(group_name, *count, &self.domain)
             }
+            Template::GroupDeleted(ref group_name, ref user) => {
+                group_deleted(group_name, user, &self.domain)
+            }
         }
     }
 }
@@ -257,4 +281,5 @@ pub enum Template {
     FirstHostExpiration(String, String),
     SecondHostExpiration(String, String),
     PendingRequest(String, usize),
+    GroupDeleted(String, String),
 }

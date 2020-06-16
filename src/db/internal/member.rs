@@ -422,3 +422,22 @@ pub fn get_curator_emails(connection: &PgConnection, group_id: i32) -> Result<Ve
         .get_results::<String>(connection)
         .map_err(Into::into)
 }
+
+pub fn get_curator_emails_by_group_name(
+    connection: &PgConnection,
+    group_name: &str,
+) -> Result<Vec<String>, Error> {
+    use schema::groups as g;
+    use schema::memberships as m;
+    use schema::profiles as p;
+    use schema::roles as r;
+    g::table
+        .filter(g::name.eq(group_name))
+        .inner_join(m::table)
+        .inner_join(r::table)
+        .filter(r::typ.eq_any(&[RoleType::Admin, RoleType::Curator]))
+        .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
+        .select(p::email)
+        .get_results::<String>(connection)
+        .map_err(Into::into)
+}
