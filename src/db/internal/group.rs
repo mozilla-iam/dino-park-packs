@@ -231,3 +231,35 @@ pub fn list_groups(
     };
     Ok(PaginatedGroupsLists { groups, next })
 }
+
+pub fn inactive_groups(
+    connection: &PgConnection,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<Group>, Error> {
+    schema::groups::table
+        .filter(schema::groups::active.eq(false))
+        .offset(offset)
+        .limit(limit)
+        .get_results(connection)
+        .map_err(Into::into)
+}
+
+pub fn delete_inactive_group(connection: &PgConnection, group_name: &str) -> Result<(), Error> {
+    use schema::groups as g;
+    use schema::logs as l;
+    let id = g::table
+        .filter(g::name.eq(group_name))
+        .filter(g::active.eq(false))
+        .select(g::group_id)
+        .first::<i32>(connection)?;
+    diesel::delete(l::table)
+        .filter(l::group_id.eq(id))
+        .execute(connection)?;
+    diesel::delete(g::table)
+        .filter(g::name.eq(group_name))
+        .filter(g::active.eq(false))
+        .execute(connection)
+        .map(|_| ())
+        .map_err(Into::into)
+}

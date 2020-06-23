@@ -77,3 +77,40 @@ async fn curator_emails() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[actix_rt::test]
+async fn inactive_group() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+    let admin = Soa::from(&basic_user(1, true)).admin().aal_medium();
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "some", "description": "some group" }),
+        &admin,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/groups", &admin).await;
+    assert_eq!(read_json(res).await["groups"][0]["name"], "some");
+
+    let res = delete(&mut app, "/groups/api/v1/groups/some", &admin).await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/groups", &admin).await;
+    assert_eq!(read_json(res).await, json!({ "groups": [], "next": null }));
+
+    let res = get(&mut app, "/groups/api/v1/sudo/groups/inactive", &admin).await;
+    assert_eq!(read_json(res).await[0]["name"], "some");
+
+    let res = delete(&mut app, "/groups/api/v1/sudo/groups/inactive/some", &admin).await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/sudo/groups/inactive", &admin).await;
+    assert_eq!(read_json(res).await, json!([]));
+
+    Ok(())
+}

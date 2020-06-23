@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, AsChangeset)]
+#[derive(Identifiable, Queryable, PartialEq, Debug, AsChangeset, Serialize)]
 #[table_name = "groups"]
 pub struct Group {
     pub id: i32,
@@ -68,6 +68,7 @@ pub struct Request {
     pub user_uuid: Uuid,
     pub created: NaiveDateTime,
     pub request_expiration: Option<NaiveDateTime>,
+    pub msg: Option<String>,
 }
 
 #[derive(Queryable, Serialize)]

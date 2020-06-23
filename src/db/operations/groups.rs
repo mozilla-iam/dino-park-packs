@@ -14,6 +14,7 @@ use crate::mail::manager::send_emails;
 use crate::mail::templates::Template;
 use crate::rules::engine::CREATE_GROUP;
 use crate::rules::engine::HOST_IS_GROUP_ADMIN;
+use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::RuleContext;
 use crate::user::User;
 use cis_client::AsyncCisClientTrait;
@@ -152,4 +153,39 @@ pub fn list_groups(
 ) -> Result<PaginatedGroupsLists, Error> {
     let connection = pool.get()?;
     internal::group::list_groups(&connection, filter, sort_by, limit, offset)
+}
+
+pub fn list_inactive_groups(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<Group>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        "",
+        &user.user_uuid,
+    ))?;
+
+    internal::group::inactive_groups(&connection, limit, offset)
+}
+
+pub fn delete_inactive_group(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        group_name,
+        &user.user_uuid,
+    ))?;
+
+    internal::group::delete_inactive_group(&connection, group_name)
 }

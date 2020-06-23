@@ -18,6 +18,18 @@ pub struct AddMember {
     group_expiration: Option<i32>,
 }
 
+#[derive(Deserialize)]
+struct LimitOffsetQuery {
+    #[serde(default)]
+    n: i64,
+    #[serde(default = "default_groups_list_size")]
+    s: i64,
+}
+
+fn default_groups_list_size() -> i64 {
+    20
+}
+
 #[guard(Staff, Admin, Medium)]
 async fn add_member<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
@@ -62,8 +74,39 @@ async fn curator_emails(
     }
 }
 
+#[guard(Staff, Admin, Medium)]
+async fn list_inactive_groups(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+    query: web::Query<LimitOffsetQuery>,
+) -> impl Responder {
+    let query = query.into_inner();
+    operations::groups::list_inactive_groups(&pool, &scope_and_user, query.s, query.n)
+        .map(|groups| HttpResponse::Ok().json(groups))
+        .map_err(ApiError::GenericBadRequest)
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn delete_inactive_group(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+    group_name: web::Path<String>,
+) -> impl Responder {
+    operations::groups::delete_inactive_group(&pool, &scope_and_user, &group_name)
+        .map(|_| HttpResponse::Ok().json(""))
+        .map_err(|e| {
+            println!("{:?}", e);
+            ApiError::GenericBadRequest(e)
+        })
+}
+
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
+        .service(web::resource("/groups/inactive").route(web::get().to(list_inactive_groups)))
+        .service(
+            web::resource("/groups/inactive/{group_name}")
+                .route(web::delete().to(delete_inactive_group)),
+        )
         .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
         .service(web::resource("/curators/{group_name}").route(web::get().to(curator_emails)))
         .service(web::resource("/logs/all/raw").route(web::get().to(all_raw_logs)))
