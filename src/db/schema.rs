@@ -92,7 +92,6 @@ table! {
         user_uuid -> Uuid,
         created -> Timestamp,
         request_expiration -> Nullable<Timestamp>,
-        msg -> Nullable<Text>,
     }
 }
 

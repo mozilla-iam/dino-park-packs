@@ -68,7 +68,6 @@ pub struct Request {
     pub user_uuid: Uuid,
     pub created: NaiveDateTime,
     pub request_expiration: Option<NaiveDateTime>,
-    pub msg: Option<String>,
 }
 
 #[derive(Queryable, Serialize)]
