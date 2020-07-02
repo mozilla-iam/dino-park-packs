@@ -11,7 +11,7 @@ fn invitation(group_name: &str, domain: &str) -> Message {
             "\
 Dear Mozillian,
 you've been invited to join the access group '{group_name}'.
-Please visit https://{domain}/a/ to accept the invitation.
+Please visit https://{domain}/a/{group_name} to accept the invitation.
 
 Cheers,
 The Mozilla IAM Team",
@@ -235,7 +235,7 @@ The Mozilla IAM Team",
 
 #[derive(Clone)]
 pub struct TemplateManager {
-    domain: String,
+    pub domain: String,
 }
 
 impl TemplateManager {

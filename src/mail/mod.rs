@@ -38,19 +38,19 @@ pub struct Email {
 }
 
 impl Email {
-    pub fn with(to: String, message: Message) -> Self {
+    pub fn with(to: String, domain: &str, message: Message) -> Self {
         Email {
             to: Some(to),
             bcc: None,
-            from: "no-reply@dinopark.k8s.dev.sso.allizom.org".to_owned(),
+            from: format!("no-reply@{}", domain),
             message,
         }
     }
-    pub fn with_many(bcc: Vec<String>, message: Message) -> Self {
+    pub fn with_many(bcc: Vec<String>, domain: &str, message: Message) -> Self {
         Email {
             to: None,
             bcc: Some(bcc),
-            from: "no-reply@dinopark.k8s.dev.sso.allizom.org".to_owned(),
+            from: format!("no-reply@{}", domain),
             message,
         }
     }

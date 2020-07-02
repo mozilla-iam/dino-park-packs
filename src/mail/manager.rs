@@ -22,13 +22,13 @@ lazy_static! {
 #[cfg(all(not(test), not(feature = "local")))]
 pub fn send_email(to: String, t: &Template) {
     let message = MAIL_MAN.template_man.render(t);
-    MAIL_MAN.send(Email::with(to, message));
+    MAIL_MAN.send(Email::with(to, &MAIL_MAN.template_man.domain, message));
 }
 
 #[cfg(all(not(test), not(feature = "local")))]
 pub fn send_emails(to: Vec<String>, t: &Template) {
     let message = MAIL_MAN.template_man.render(t);
-    MAIL_MAN.send(Email::with_many(to, message));
+    MAIL_MAN.send(Email::with_many(to, &MAIL_MAN.template_man.domain, message));
 }
 
 #[cfg(any(test, feature = "local"))]
