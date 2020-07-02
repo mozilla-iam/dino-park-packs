@@ -6,6 +6,7 @@ use crate::db::operations;
 use crate::db::operations::models::GroupUpdate;
 use crate::db::operations::models::NewGroup;
 use crate::db::operations::models::SortGroupsBy;
+use crate::db::types::GroupType;
 use crate::db::Pool;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
@@ -120,15 +121,16 @@ async fn group_details(
         None
     };
     let renewal_count = if curator {
-        Some(operations::members::renewal_count(
-            &pool,
-            &group_name,
-            None,
-        )?)
+        let renewals = operations::members::renewal_count(&pool, &group_name, None)?;
+        if group.group.group_expiration.unwrap_or_default() == 0 && renewals == 0 {
+            None
+        } else {
+            Some(renewals)
+        }
     } else {
         None
     };
-    let request_count = if curator {
+    let request_count = if curator && group.group.typ == GroupType::Reviewed {
         Some(operations::requests::request_count(
             &pool,
             &scope_and_user,
