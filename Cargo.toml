@@ -33,7 +33,7 @@ log = "0.4"
 env_logger = "0.7"
 failure = "0.1"
 failure_derive = "0.1"
-diesel-derive-enum = { version = "0.4", features = ["postgres"] }
+diesel-derive-enum = { version = "1", features = ["postgres"] }
 futures = "0.3"
 r2d2 = "0.8"
 config = "0.10"
