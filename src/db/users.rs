@@ -2,6 +2,7 @@ use crate::db::error::DBError;
 use crate::db::schema::*;
 use crate::db::types::RoleType;
 use crate::db::types::TrustType;
+use crate::rules::functions::is_nda_group;
 use cis_profile::schema::Display;
 use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
@@ -111,7 +112,7 @@ fn trust_for_profile(profile: &Profile) -> TrustType {
         .mozilliansorg
         .values
         .as_ref()
-        .map(|groups| groups.0.contains_key("nda"))
+        .map(|groups| groups.0.keys().any(|k| is_nda_group(k)))
         .unwrap_or_default()
     {
         return TrustType::Ndaed;

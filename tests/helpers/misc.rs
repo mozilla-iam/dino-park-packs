@@ -67,7 +67,7 @@ impl From<&Profile> for Soa {
             .mozilliansorg
             .values
             .as_ref()
-            .map(|v| v.0.contains_key("nda"))
+            .map(|groups| groups.0.keys().any(|k| rules::functions::is_nda_group(k)))
             .unwrap_or_default()
         {
             Trust::Ndaed
