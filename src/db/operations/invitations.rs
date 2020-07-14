@@ -190,3 +190,46 @@ pub async fn accept_invitation(
     accept(&connection, group_name, user)?;
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
+
+pub fn set_invitation_email(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+    inivitation_email: InvitationEmail,
+) -> Result<InvitationEmail, Error> {
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let connection = pool.get()?;
+    update_invitation_text(
+        &connection,
+        group_name,
+        host,
+        inivitation_email.body.unwrap_or_default(),
+    )
+    .map(|invitation_text| InvitationEmail {
+        body: invitation_text.map(|t| t.body),
+    })
+}
+
+pub fn get_invitation_email(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+) -> Result<InvitationEmail, Error> {
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let connection = pool.get()?;
+    get_invitation_text(&connection, group_name).map(|invitation_text| InvitationEmail {
+        body: invitation_text.map(|t| t.body),
+    })
+}

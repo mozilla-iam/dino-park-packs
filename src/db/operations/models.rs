@@ -432,6 +432,11 @@ pub struct PaginatedGroupsLists {
     pub next: Option<i64>,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct InvitationEmail {
+    pub body: Option<String>,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

@@ -59,3 +59,66 @@ async fn invite_order() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[actix_rt::test]
+async fn invitation_text() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+
+    let host_user = basic_user(1, true);
+    let host = Soa::from(&host_user).creator().aal_medium();
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "invitation-text-test", "description": "a group" }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/groups", &host).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await["groups"][0]["typ"], "Closed");
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/invitations/invitation-text-test/email",
+        json!({ "body": "some copy" }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/invitations/invitation-text-test/email",
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let invitations = read_json(res).await;
+    assert_eq!(invitations["body"], "some copy");
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/invitations/invitation-text-test/email",
+        json!({ "body": null }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/invitations/invitation-text-test/email",
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let invitations = read_json(res).await;
+    assert_eq!(invitations["body"], serde_json::Value::Null);
+
+    Ok(())
+}

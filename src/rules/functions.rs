@@ -138,13 +138,13 @@ pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` for the given group
+/// Check if the member is either `RoleTpye::Member` for the given group
 pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, member_uuid, ctx.group) {
         Ok(Some(role)) if role.typ == RoleType::Member => Ok(()),
-        _ => Err(RuleError::NotAnAdmin),
+        _ => Err(RuleError::NotAMember),
     }
 }
 

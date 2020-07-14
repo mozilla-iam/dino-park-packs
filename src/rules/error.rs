@@ -18,6 +18,8 @@ pub enum RuleError {
     NotAnAdmin,
     #[fail(display = "rule_not_a_curator")]
     NotACurator,
+    #[fail(display = "rule_not_a_member")]
+    NotAMember,
     #[fail(display = "rule_not_allowed_to_edit_terms")]
     NotAllowedToEditTerms,
     #[fail(display = "rule_never_allowed")]
