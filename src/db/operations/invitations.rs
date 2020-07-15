@@ -113,7 +113,16 @@ pub fn invite_member(
         group_expiration,
     )?;
     let p = internal::user::slim_user_profile_by_uuid(&connection, &member.user_uuid)?;
-    send_email(p.email, &Template::Invitation(group_name.to_owned()));
+    if let Ok(Some(invitation_text)) =
+        internal::invitation::get_invitation_text(&connection, group_name)
+    {
+        send_email(
+            p.email,
+            &Template::CustomInvitation(group_name.to_owned(), invitation_text.body),
+        );
+    } else {
+        send_email(p.email, &Template::Invitation(group_name.to_owned()));
+    }
     Ok(())
 }
 
@@ -196,7 +205,7 @@ pub fn set_invitation_email(
     scope_and_user: &ScopeAndUser,
     group_name: &str,
     host: &User,
-    inivitation_email: InvitationEmail,
+    invitation_email: InvitationEmail,
 ) -> Result<InvitationEmail, Error> {
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
@@ -209,7 +218,7 @@ pub fn set_invitation_email(
         &connection,
         group_name,
         host,
-        inivitation_email.body.unwrap_or_default(),
+        invitation_email.body.unwrap_or_default(),
     )
     .map(|invitation_text| InvitationEmail {
         body: invitation_text.map(|t| t.body),

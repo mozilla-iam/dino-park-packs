@@ -129,29 +129,37 @@ pub async fn read_json<B: MessageBody>(res: ServiceResponse<B>) -> Value {
 }
 
 pub async fn test_app() -> impl HttpServiceFactory {
+    test_app_and_cis().await.0
+}
+
+pub async fn test_app_and_cis() -> (impl HttpServiceFactory, CisFakeClient) {
     let pool = get_pool();
     let cis_client = CisFakeClient::new(pool.clone());
     populate(&cis_client).await;
-    web::scope("")
-        .data(cis_client)
-        .data(pool.clone())
-        .service(healthz::healthz_app())
-        .service(api::internal::internal_app::<CisFakeClient>())
-        .service(
-            web::scope("/groups/api/v1/")
-                .wrap_fn(|req, srv| {
-                    req.extensions_mut()
-                        .insert(scope_from_headers(req.headers()));
-                    srv.call(req)
-                })
-                .service(api::groups::groups_app::<CisFakeClient>())
-                .service(api::members::members_app::<CisFakeClient>())
-                .service(api::current::current_app::<CisFakeClient>())
-                .service(api::invitations::invitations_app())
-                .service(api::terms::terms_app())
-                .service(api::users::users_app())
-                .service(api::admins::admins_app::<CisFakeClient>())
-                .service(api::requests::requests_app())
-                .service(api::sudo::sudo_app::<CisFakeClient>()),
-        )
+    (
+        web::scope("")
+            .data(cis_client.clone())
+            .data(pool.clone())
+            .service(healthz::healthz_app())
+            .service(api::internal::internal_app::<CisFakeClient>())
+            .service(import::api::import_app::<CisFakeClient>())
+            .service(
+                web::scope("/groups/api/v1/")
+                    .wrap_fn(|req, srv| {
+                        req.extensions_mut()
+                            .insert(scope_from_headers(req.headers()));
+                        srv.call(req)
+                    })
+                    .service(api::groups::groups_app::<CisFakeClient>())
+                    .service(api::members::members_app::<CisFakeClient>())
+                    .service(api::current::current_app::<CisFakeClient>())
+                    .service(api::invitations::invitations_app())
+                    .service(api::terms::terms_app())
+                    .service(api::users::users_app())
+                    .service(api::admins::admins_app::<CisFakeClient>())
+                    .service(api::requests::requests_app())
+                    .service(api::sudo::sudo_app::<CisFakeClient>()),
+            ),
+        cis_client,
+    )
 }

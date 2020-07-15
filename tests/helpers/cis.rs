@@ -1,3 +1,4 @@
+use cis_client::error::ProfileError;
 use cis_client::getby::GetBy;
 use cis_client::AsyncCisClientTrait;
 use cis_client::CisFut;
@@ -41,7 +42,11 @@ impl CisFakeClient {
 #[allow(unused_variables)]
 impl AsyncCisClientTrait for CisFakeClient {
     fn get_user_by(&self, id: &str, by: &GetBy, filter: Option<&str>) -> CisFut<Profile> {
-        unimplemented!()
+        if let Some(p) = self.store.read().unwrap().get(id) {
+            Box::pin(ok(p.clone()))
+        } else {
+            Box::pin(err(ProfileError::ProfileDoesNotExist.into()))
+        }
     }
     fn get_any_user_by(&self, id: &str, by: &GetBy, filter: Option<&str>) -> CisFut<Profile> {
         unimplemented!()
