@@ -2,6 +2,7 @@ use crate::cis::operations::add_group_to_profile;
 use crate::db::internal;
 use crate::db::logs::LogContext;
 use crate::db::operations::models::NewGroup;
+use crate::db::schema;
 use crate::db::types::*;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
@@ -9,13 +10,30 @@ use crate::import::tsv::MozilliansGroup;
 use crate::import::tsv::MozilliansGroupCurator;
 use crate::import::tsv::MozilliansGroupMembership;
 use crate::user::User;
+use chrono::DateTime;
+use chrono::Utc;
 use cis_client::getby::GetBy;
 use cis_client::AsyncCisClientTrait;
 use diesel::pg::PgConnection;
+use diesel::prelude::*;
 use failure::Error;
 use log::warn;
 use std::convert::TryInto;
 use std::sync::Arc;
+
+fn calc_expiration(member_expiration: i32, updated: DateTime<Utc>) -> Option<i32> {
+    if member_expiration > 0 {
+        let expiration =
+            member_expiration - (Utc::now().signed_duration_since(updated).num_days() as i32);
+        if expiration > 0 {
+            Some(expiration)
+        } else {
+            Some(1)
+        }
+    } else {
+        None
+    }
+}
 
 pub struct GroupImport {
     pub group: MozilliansGroup,
@@ -27,7 +45,7 @@ pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Re
     let group_name = moz_group.name.clone();
     let new_group = NewGroup {
         name: moz_group.name,
-        typ: if moz_group.typ == "Reviewed" {
+        typ: if moz_group.typ == "by_request" {
             GroupType::Reviewed
         } else {
             GroupType::Closed
@@ -113,6 +131,9 @@ pub async fn import_member(
     member: MozilliansGroupMembership,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
+    use schema::memberships as m;
+    let group = internal::group::get_group(connection, group_name)?;
+    let expiration = calc_expiration(member.expiration, member.updated_on);
     let user_profile =
         get_user_profile(connection, &member.auth0_user_id, cis_client.clone()).await?;
     let user = User {
@@ -120,6 +141,12 @@ pub async fn import_member(
     };
     let role = internal::member::role_for(connection, &user.user_uuid, group_name)?;
     if role.is_some() {
+        diesel::update(m::table)
+            .filter(m::user_uuid.eq(user.user_uuid))
+            .filter(m::group_id.eq(group.id))
+            .set(m::added_ts.eq(member.date_joined.naive_utc()))
+            .execute(connection)
+            .map(|_| ())?;
         return Ok(());
     }
     let host = if member.host.is_empty() {
@@ -130,13 +157,15 @@ pub async fn import_member(
             user_uuid: host_profile.user_uuid,
         }
     };
-    internal::member::add_to_group(
-        connection,
-        group_name,
-        &host,
-        &user,
-        Some(member.expiration),
-    )?;
+    internal::member::add_to_group(connection, group_name, &host, &user, expiration)?;
+
+    diesel::update(m::table)
+        .filter(m::user_uuid.eq(user.user_uuid))
+        .filter(m::group_id.eq(group.id))
+        .set(m::added_ts.eq(member.date_joined.naive_utc()))
+        .execute(connection)
+        .map(|_| ())?;
+
     add_group_to_profile(
         cis_client.clone(),
         group_name.to_owned(),
@@ -188,4 +217,25 @@ pub async fn import(
     )
     .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chrono::Duration;
+
+    #[test]
+    fn test_calc_expiration() {
+        let updated = Utc::now() - Duration::days(20);
+        let expiration = calc_expiration(365, updated);
+        assert_eq!(expiration, Some(345));
+
+        let updated = Utc::now() - Duration::days(400);
+        let expiration = calc_expiration(365, updated);
+        assert_eq!(expiration, Some(1));
+
+        let updated = Utc::now() - Duration::days(400);
+        let expiration = calc_expiration(0, updated);
+        assert_eq!(expiration, None);
+    }
 }
