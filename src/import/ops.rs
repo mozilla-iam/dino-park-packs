@@ -24,6 +24,7 @@ pub struct GroupImport {
 }
 
 pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Result<(), Error> {
+    let group_name = moz_group.name.clone();
     let new_group = NewGroup {
         name: moz_group.name,
         typ: if moz_group.typ == "Reviewed" {
@@ -41,6 +42,17 @@ pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Re
     let log_ctx = LogContext::with(new_group.id, creator.user_uuid);
     internal::admin::add_admin_role(&log_ctx, &connection, new_group.id)?;
     internal::member::add_member_role(&creator.user_uuid, &connection, new_group.id)?;
+    if !moz_group.terms.is_empty() {
+        internal::terms::set_terms(&creator.user_uuid, connection, &group_name, moz_group.terms)?;
+    }
+    if !moz_group.invitation_email.is_empty() {
+        internal::invitation::update_invitation_text(
+            connection,
+            &group_name,
+            &creator,
+            moz_group.invitation_email,
+        )?;
+    }
     Ok(())
 }
 

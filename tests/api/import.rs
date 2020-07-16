@@ -68,6 +68,25 @@ async fn create() -> Result<(), Error> {
 
     let res = get(
         &mut app,
+        "/groups/api/v1/groups/import-test/details",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let j = read_json(res).await;
+    assert_eq!(j["group"]["terms"], true);
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/invitations/import-test/email",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await["body"], "some invitation email");
+
+    let res = get(
+        &mut app,
         "/groups/api/v1/members/import-test?r=Curator",
         &creator,
     )
