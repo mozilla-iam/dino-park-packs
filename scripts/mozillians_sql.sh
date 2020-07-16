@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 mkdir /tmp/$1
 
 GROUP=`mysql -u mozilliansprodu -p$SQL_PW -h $SQL_HOST mozilliansproddb -e "select id from groups_group where name = \"$1\";" | tail -1`
