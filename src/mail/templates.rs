@@ -28,7 +28,22 @@ fn custom_invitation(group_name: &str, domain: &str, copy: &str) -> Message {
             group_name = group_name,
             domain = domain
         ),
-        body: copy.to_string(),
+        body: format!(
+            "\
+Dear Mozillian,
+you've been invited to join the access group '{group_name}'.
+The message from the curator is:
+
+{copy}
+
+Please visit https://{domain}/a/{group_name} to accept the invitation.
+
+Cheers,
+The Mozilla IAM Team",
+            group_name = group_name,
+            domain = domain,
+            copy = copy
+        ),
     }
 }
 

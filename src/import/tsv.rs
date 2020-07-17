@@ -1,6 +1,15 @@
 use chrono::DateTime;
 use chrono::Utc;
 use serde::Deserialize;
+use serde::Deserializer;
+
+fn unescape<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(s.replace("\\n", "\n"))
+}
 
 mod sql_date {
     use chrono::{DateTime, TimeZone, Utc};
@@ -33,8 +42,11 @@ pub struct MozilliansGroupMembership {
 pub struct MozilliansGroup {
     pub name: String,
     pub expiration: i32,
+    #[serde(deserialize_with = "unescape")]
     pub terms: String,
+    #[serde(deserialize_with = "unescape")]
     pub description: String,
+    #[serde(deserialize_with = "unescape")]
     pub invitation_email: String,
     pub typ: String,
     pub website: String,
@@ -68,8 +80,10 @@ mod test {
             .delimiter(b'\t')
             .from_path("tests/data/import-test/g.tsv")?;
 
-        rdr.deserialize()
+        let group = rdr
+            .deserialize()
             .collect::<Result<Vec<MozilliansGroup>, csv::Error>>()?;
+        assert_eq!(group[0].invitation_email, "some \ninvitation email");
         Ok(())
     }
 
