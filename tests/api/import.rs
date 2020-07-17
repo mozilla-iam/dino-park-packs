@@ -83,7 +83,7 @@ async fn create() -> Result<(), Error> {
     )
     .await;
     assert!(res.status().is_success());
-    assert_eq!(read_json(res).await["body"], "some invitation email");
+    assert_eq!(read_json(res).await["body"], "some \ninvitation email");
 
     let res = get(
         &mut app,
