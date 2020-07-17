@@ -169,6 +169,18 @@ pub fn delete_group(host_uuid: &Uuid, connection: &PgConnection, name: &str) -> 
                 log_comment_body("all roles"),
             )
         })?;
+    diesel::delete(schema::invitationtexts::table)
+        .filter(schema::invitationtexts::group_id.eq(group.id))
+        .execute(connection)
+        .optional()
+        .map(|_| {
+            log_delete(
+                connection,
+                &log_ctx,
+                LogTargetType::Invitation,
+                log_comment_body("invitation text"),
+            )
+        })?;
     diesel::delete(schema::terms::table)
         .filter(schema::terms::group_id.eq(group.id))
         .execute(connection)

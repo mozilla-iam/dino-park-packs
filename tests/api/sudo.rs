@@ -94,6 +94,15 @@ async fn inactive_group() -> Result<(), Error> {
     .await;
     assert!(res.status().is_success());
 
+    let res = post(
+        &mut app,
+        "/groups/api/v1/invitations/some/email",
+        json!({ "body": "some copy" }),
+        &admin,
+    )
+    .await;
+    assert!(res.status().is_success());
+
     let res = get(&mut app, "/groups/api/v1/groups", &admin).await;
     assert_eq!(read_json(res).await["groups"][0]["name"], "some");
 

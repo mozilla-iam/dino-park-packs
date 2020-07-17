@@ -49,6 +49,15 @@ async fn delete_group() -> Result<(), Error> {
     let res = get(&mut app, "/groups/api/v1/groups", &creator).await;
     assert_eq!(read_json(res).await["groups"][0]["name"], "some");
 
+    let res = post(
+        &mut app,
+        "/groups/api/v1/invitations/some/email",
+        json!({ "body": "some copy" }),
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+
     let res = delete(&mut app, "/groups/api/v1/groups/some", &creator).await;
     assert!(res.status().is_success());
 
