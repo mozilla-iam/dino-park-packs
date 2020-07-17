@@ -113,7 +113,16 @@ pub fn invite_member(
         group_expiration,
     )?;
     let p = internal::user::slim_user_profile_by_uuid(&connection, &member.user_uuid)?;
-    send_email(p.email, &Template::Invitation(group_name.to_owned()));
+    if let Ok(Some(invitation_text)) =
+        internal::invitation::get_invitation_text(&connection, group_name)
+    {
+        send_email(
+            p.email,
+            &Template::CustomInvitation(group_name.to_owned(), invitation_text.body),
+        );
+    } else {
+        send_email(p.email, &Template::Invitation(group_name.to_owned()));
+    }
     Ok(())
 }
 
@@ -189,4 +198,47 @@ pub async fn accept_invitation(
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     accept(&connection, group_name, user)?;
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
+}
+
+pub fn set_invitation_email(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+    invitation_email: InvitationEmail,
+) -> Result<InvitationEmail, Error> {
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let connection = pool.get()?;
+    update_invitation_text(
+        &connection,
+        group_name,
+        host,
+        invitation_email.body.unwrap_or_default(),
+    )
+    .map(|invitation_text| InvitationEmail {
+        body: invitation_text.map(|t| t.body),
+    })
+}
+
+pub fn get_invitation_email(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+) -> Result<InvitationEmail, Error> {
+    HOST_IS_CURATOR.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let connection = pool.get()?;
+    get_invitation_text(&connection, group_name).map(|invitation_text| InvitationEmail {
+        body: invitation_text.map(|t| t.body),
+    })
 }

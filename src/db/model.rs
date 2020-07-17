@@ -62,6 +62,14 @@ pub struct Invitation {
 
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
+#[primary_key(group_id)]
+pub struct Invitationtext {
+    pub group_id: i32,
+    pub body: String,
+}
+
+#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
 pub struct Request {
     pub group_id: i32,

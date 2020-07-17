@@ -501,6 +501,86 @@ paths:
                 $ref: "#/components/schemas/GenericError"
         "406":
           description: not acceptable
+  "/groups/api/v1/invitations/{groupName}/email":
+    get:
+      summary: group invitation email copy
+      description: get invitation email copy
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: email copy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    description: email body as set
+                    example: Welcome to group X
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "406":
+          description: not acceptable
+    post:
+      summary: set group invitation email copy
+      description: set invitation email copy
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  example: You are invited to group X
+                invitation_expiration:
+                  description: expiration period in days
+                  type: integer
+                  example: 5
+                group_expiration:
+                  description: expiration period in days
+                  type: integer
+                  example: 180
+      responses:
+        "201":
+          description: member invited
+        "400":
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
+        "406":
+          description: not acceptable
   "/groups/api/v1/invitations/{groupName}/{userUuid}":
     put:
       summary: update an invitation

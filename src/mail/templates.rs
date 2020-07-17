@@ -21,6 +21,17 @@ The Mozilla IAM Team",
     }
 }
 
+fn custom_invitation(group_name: &str, domain: &str, copy: &str) -> Message {
+    Message {
+        subject: format!(
+            "[{domain}] You have been invited to join the '{group_name}' group",
+            group_name = group_name,
+            domain = domain
+        ),
+        body: copy.to_string(),
+    }
+}
+
 fn reject_request(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
@@ -246,6 +257,9 @@ impl TemplateManager {
     pub fn render(&self, t: &Template) -> Message {
         match t {
             Template::Invitation(ref group_name) => invitation(group_name, &self.domain),
+            Template::CustomInvitation(ref group_name, copy) => {
+                custom_invitation(group_name, &self.domain, copy)
+            }
             Template::RejectRequest(ref group_name) => reject_request(group_name, &self.domain),
             Template::DeleteInvitation(ref group_name) => {
                 delete_invitation(group_name, &self.domain)
@@ -273,6 +287,7 @@ impl TemplateManager {
 
 pub enum Template {
     Invitation(String),
+    CustomInvitation(String, String),
     RejectRequest(String),
     DeleteInvitation(String),
     DemoteCurator(String),

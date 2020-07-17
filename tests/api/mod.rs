@@ -3,6 +3,7 @@ mod delete;
 mod details;
 mod errors;
 mod groups;
+mod import;
 mod invitations;
 mod requests;
 mod sudo;

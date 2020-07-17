@@ -1,5 +1,6 @@
 use crate::api::error::ApiError;
 use crate::db::operations;
+use crate::db::operations::models::InvitationEmail;
 use crate::db::Pool;
 use crate::user::User;
 use crate::utils::to_expiration_ts;
@@ -118,8 +119,49 @@ async fn pending(
     }
 }
 
+#[guard(Ndaed)]
+async fn invitation_email(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+) -> impl Responder {
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    match operations::invitations::get_invitation_email(&pool, &scope_and_user, &group_name, &host)
+    {
+        Ok(invitation_email) => Ok(HttpResponse::Ok().json(invitation_email)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
+#[guard(Staff, None, Medium)]
+async fn update_invitation_email(
+    _: HttpRequest,
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+    invitation_email: web::Json<InvitationEmail>,
+) -> impl Responder {
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    match operations::invitations::set_invitation_email(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        invitation_email.into_inner(),
+    ) {
+        Ok(invitation_email) => Ok(HttpResponse::Ok().json(invitation_email)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
 pub fn invitations_app() -> impl HttpServiceFactory {
     web::scope("/invitations")
+        .service(
+            web::resource("/{group_name}/email")
+                .route(web::get().to(invitation_email))
+                .route(web::post().to(update_invitation_email)),
+        )
         .service(
             web::resource("/{group_name}/{user_uuid}")
                 .route(web::delete().to(delete_invitation))

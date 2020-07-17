@@ -43,6 +43,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default().exclude("/healthz"))
             .service(healthz::healthz_app())
             .service(api::internal::internal_app::<CisClient>())
+            .service(import::api::import_app::<CisClient>())
             .service(
                 web::scope("/groups/api/v1/")
                     .wrap(scope_middleware)

@@ -302,3 +302,63 @@ pub fn invited_groups_for_user(
         .get_results::<Group>(connection)
         .map_err(Into::into)
 }
+
+pub fn get_invitation_text(
+    connection: &PgConnection,
+    group_name: &str,
+) -> Result<Option<Invitationtext>, Error> {
+    let group = internal::group::get_group(connection, group_name)?;
+    schema::invitationtexts::table
+        .filter(schema::invitationtexts::group_id.eq(&group.id))
+        .first(&*connection)
+        .optional()
+        .map_err(Error::from)
+}
+
+pub fn update_invitation_text(
+    connection: &PgConnection,
+    group_name: &str,
+    host: &User,
+    body: String,
+) -> Result<Option<Invitationtext>, Error> {
+    let group = internal::group::get_group(connection, group_name)?;
+    let log_ctx = LogContext::with(group.id, host.user_uuid);
+    if body.trim().is_empty() {
+        diesel::delete(schema::invitationtexts::table)
+            .filter(schema::invitationtexts::group_id.eq(&group.id))
+            .execute(&*connection)
+            .map(|_| {
+                internal::log::db_log(
+                    connection,
+                    &log_ctx,
+                    LogTargetType::Invitation,
+                    LogOperationType::Deleted,
+                    log_comment_body("email copy"),
+                );
+                None
+            })
+            .map_err(Error::from)
+    } else {
+        let invitation_text = Invitationtext {
+            group_id: group.id,
+            body,
+        };
+        diesel::insert_into(schema::invitationtexts::table)
+            .values(&invitation_text)
+            .on_conflict(schema::invitationtexts::group_id)
+            .do_update()
+            .set(schema::invitationtexts::body.eq(&invitation_text.body))
+            .get_result(&*connection)
+            .map(|r| {
+                internal::log::db_log(
+                    connection,
+                    &log_ctx,
+                    LogTargetType::Invitation,
+                    LogOperationType::Updated,
+                    log_comment_body("email copy"),
+                );
+                Some(r)
+            })
+            .map_err(Error::from)
+    }
+}

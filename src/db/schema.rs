@@ -43,6 +43,16 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
+    invitationtexts (group_id) {
+        group_id -> Int4,
+        body -> Text,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
     logs (id) {
         id -> Int4,
         ts -> Timestamp,
@@ -218,6 +228,7 @@ table! {
 joinable!(group_rules -> groups (group_id));
 joinable!(group_rules -> rules (rule_id));
 joinable!(invitations -> groups (group_id));
+joinable!(invitationtexts -> groups (group_id));
 joinable!(logs -> groups (group_id));
 joinable!(memberships -> groups (group_id));
 joinable!(memberships -> roles (role_id));
@@ -230,6 +241,7 @@ allow_tables_to_appear_in_same_query!(
     group_rules,
     groups,
     invitations,
+    invitationtexts,
     logs,
     memberships,
     profiles,

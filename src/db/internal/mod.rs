@@ -1,5 +1,5 @@
 pub mod admin;
-mod expiration;
+pub mod expiration;
 pub mod group;
 pub mod invitation;
 pub mod log;

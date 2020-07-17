@@ -41,6 +41,8 @@ chrono = "0.4"
 rusoto_core = "0.44"
 rusoto_ses = "0.44"
 lazy_static = "1.4"
+actix-http = "1.0"
+csv = "1.1"
 
 [dev-dependencies]
 tokio = "0.2"
