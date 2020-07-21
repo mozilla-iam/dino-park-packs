@@ -226,7 +226,7 @@ fn pending_request(group_name: &str, count: usize, domain: &str) -> Message {
         body: format!(
             "\
 Dear Curator,
-there {pending} for invitation in the access group '{group_name}.
+there are {pending} mozillians asking for invitation in the access group '{group_name}.
 For further action please visit: https://{domain}/a/{group_name}/edit?section=invitations
 
 Cheers,

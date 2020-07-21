@@ -75,6 +75,10 @@ async fn create() -> Result<(), Error> {
     assert!(res.status().is_success());
     let j = read_json(res).await;
     assert_eq!(j["group"]["terms"], true);
+    assert_eq!(
+        j["group"]["description"],
+        "import test group\n\n**Website:** [https://example.com/](https://example.com/)"
+    );
 
     let res = get(
         &mut app,
@@ -134,6 +138,16 @@ async fn create() -> Result<(), Error> {
         read_json(res).await["members"].as_array().map(|a| a.len()),
         Some(5)
     );
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/import-test/details",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let j = read_json(res).await;
+    assert_eq!(j["group"]["created"], "2019-10-24T17:56:21Z");
 
     Ok(())
 }

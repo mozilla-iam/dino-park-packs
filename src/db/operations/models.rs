@@ -11,7 +11,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use uuid::Uuid;
 
-const DESCRIPTION_MAX_LEN: usize = 450;
+const DESCRIPTION_MAX_LEN: usize = 1024;
 
 #[derive(Clone, Debug)]
 pub struct NewPendingRequest {

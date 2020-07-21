@@ -1,2 +1,2 @@
 name	expiration	terms	description	invitation_email	typ	website	wiki
-import-test	0	some terms	import test group	some \ninvitation email	no	https://example.com/	
+import-test	0	some terms	import test group	some \ninvitation email	no	https://example.com/	https://example.com/

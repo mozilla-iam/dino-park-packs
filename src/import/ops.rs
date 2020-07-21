@@ -43,6 +43,25 @@ pub struct GroupImport {
 
 pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Result<(), Error> {
     let group_name = moz_group.name.clone();
+    let description = match (moz_group.website.as_str(), moz_group.wiki.as_str()) {
+        ("", "") => moz_group.description,
+        (website, "") => format!(
+            "{}\n\n**Website:** [{}]({})",
+            moz_group.description, website, website
+        ),
+        ("", wiki) => format!(
+            "{}\n\n**Wiki:** [{}]({})",
+            moz_group.description, wiki, wiki
+        ),
+        (website, wiki) if website == wiki => format!(
+            "{}\n\n**Website:** [{}]({})",
+            moz_group.description, website, website
+        ),
+        (website, wiki) => format!(
+            "{}\n\n**Website:** [{}]({})\n**Wiki:** [{}]({})",
+            moz_group.description, website, website, wiki, wiki
+        ),
+    };
     let new_group = NewGroup {
         name: moz_group.name,
         typ: if moz_group.typ == "by_request" {
@@ -50,7 +69,7 @@ pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Re
         } else {
             GroupType::Closed
         },
-        description: moz_group.description,
+        description,
         trust: TrustType::Ndaed,
         capabilities: Default::default(),
         group_expiration: Some(moz_group.expiration),
@@ -181,7 +200,14 @@ pub async fn import_members(
     moz_members: Vec<MozilliansGroupMembership>,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
+    use schema::groups as g;
+    let group = internal::group::get_group(connection, group_name)?;
+    let mut created = group.created;
     for member in moz_members {
+        let joined = member.date_joined.naive_utc();
+        if joined < created {
+            created = joined;
+        }
         let user_id = member.auth0_user_id.clone();
         match import_member(connection, group_name, member, cis_client.clone()).await {
             Ok(()) => {}
@@ -191,6 +217,11 @@ pub async fn import_members(
             ),
         }
     }
+    diesel::update(g::table)
+        .filter(g::group_id.eq(group.id))
+        .set(g::created.eq(created))
+        .execute(connection)
+        .map(|_| ())?;
     Ok(())
 }
 
