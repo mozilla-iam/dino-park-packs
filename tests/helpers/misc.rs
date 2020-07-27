@@ -20,7 +20,7 @@ use serde_json::Value;
 
 use dino_park_packs::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Soa {
     pub user_id: String,
     pub scope: Trust,
