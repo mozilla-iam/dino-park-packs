@@ -11,8 +11,8 @@ use actix_web::HttpServer;
 use cis_client::CisClient;
 use dino_park_gate::provider::Provider;
 use dino_park_gate::scope::ScopeAndUserAuth;
-use log::info;
 use log::debug;
+use log::info;
 use std::io::Error;
 use std::io::ErrorKind;
 
