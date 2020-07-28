@@ -60,7 +60,7 @@ pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Re
             moz_group.description, website, website
         ),
         (website, wiki) => format!(
-            "{}\n\n**Website:** [{}]({})\n**Wiki:** [{}]({})",
+            "{}\n\n**Website:** [{}]({})\n\n**Wiki:** [{}]({})",
             moz_group.description, website, website, wiki, wiki
         ),
     };

@@ -29,7 +29,7 @@ async fn invalid_groups() -> Result<(), Error> {
     let res = post(
         &mut app,
         "/groups/api/v1/groups",
-        json!({ "name": "nda", "description": "foobar".repeat(100) }),
+        json!({ "name": "nda", "description": "foobar".repeat(200) }),
         &creator,
     )
     .await;
