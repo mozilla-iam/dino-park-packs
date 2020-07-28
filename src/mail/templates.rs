@@ -259,6 +259,61 @@ The Mozilla IAM Team",
     }
 }
 
+fn anonymous_member(domain: &str) -> Message {
+    Message {
+        subject: format!(
+            "[{domain}] ATTENTION: Your profile needs attention",
+            domain = domain
+        ),
+        body: format!(
+            "\
+Dear Mozillian,
+
+You are receiving this email because you are part of an access group and
+your profile needs attention.
+
+As we prepare to decommission mozillians.org in a couple of weeks, we
+have finalized moving access groups data from mozillians.org to
+{domain}.
+
+How does this impact you?
+
+If you want to keep the access provided by the groups you're a member of,
+you will need to create an account on {domain}. To do this,
+please follow these steps:
+
+1. Go to {domain}
+2. Create and account by clicking the Log in/Sign up button
+3. When logging in, use the login method that you generally use to single
+sign on*
+4. Change your username to something to your liking
+5. Change your *email address* field level visibility settings
+from 'private' to 'NDA'd' so that group curators can see who you are in
+case they need to renew your membership**
+6. (Optional) To further ensure curators can verify your identity consider
+changing the *first_name*/*last_name* field level visibility settings or
+take other adjustments like sharing a profile picture.
+
+
+
+*It is important to note that in mozillians.org
+you were able to have multiple identities linked to your account. This will
+not be possible in {domain} anymore.
+If you currently use multiple identities within the mozilla ecosystem and
+you're experiencing problems, please reach out to us on the #iam channel so
+that we can manually check your account.
+
+**By failing to do so, you take the risk of showing as 'Anonymous user'
+to curators of the access groups you're part of, who will not extend your
+membership when it's due to expire.
+
+Thank you,
+The Mozilla IAM Team",
+            domain = domain
+        ),
+    }
+}
+
 #[derive(Clone)]
 pub struct TemplateManager {
     pub domain: String,
@@ -296,6 +351,7 @@ impl TemplateManager {
             Template::GroupDeleted(ref group_name, ref user) => {
                 group_deleted(group_name, user, &self.domain)
             }
+            Template::AnonymousMember => anonymous_member(&self.domain),
         }
     }
 }
@@ -312,4 +368,5 @@ pub enum Template {
     SecondHostExpiration(String, String),
     PendingRequest(String, usize),
     GroupDeleted(String, String),
+    AnonymousMember,
 }
