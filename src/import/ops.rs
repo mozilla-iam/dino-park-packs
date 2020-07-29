@@ -21,14 +21,16 @@ use log::warn;
 use std::convert::TryInto;
 use std::sync::Arc;
 
+const EXPIRATION_BUFFER: i32 = 60;
+
 fn calc_expiration(member_expiration: i32, updated: DateTime<Utc>) -> Option<i32> {
     if member_expiration > 0 {
         let expiration =
             member_expiration - (Utc::now().signed_duration_since(updated).num_days() as i32);
-        if expiration > 0 {
+        if expiration > 60 {
             Some(expiration)
         } else {
-            Some(1)
+            Some(EXPIRATION_BUFFER)
         }
     } else {
         None
@@ -58,7 +60,7 @@ pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Re
             moz_group.description, website, website
         ),
         (website, wiki) => format!(
-            "{}\n\n**Website:** [{}]({})\n**Wiki:** [{}]({})",
+            "{}\n\n**Website:** [{}]({})\n\n**Wiki:** [{}]({})",
             moz_group.description, website, website, wiki, wiki
         ),
     };
@@ -263,7 +265,7 @@ mod test {
 
         let updated = Utc::now() - Duration::days(400);
         let expiration = calc_expiration(365, updated);
-        assert_eq!(expiration, Some(1));
+        assert_eq!(expiration, Some(EXPIRATION_BUFFER));
 
         let updated = Utc::now() - Duration::days(400);
         let expiration = calc_expiration(0, updated);

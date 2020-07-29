@@ -21,7 +21,6 @@ use cis_client::AsyncCisClientTrait;
 use diesel::pg::PgConnection;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
-use futures::future::try_join_all;
 use futures::TryFutureExt;
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -77,23 +76,27 @@ pub async fn delete_group(
     ))?;
     let bcc = internal::member::get_curator_emails_by_group_name(&connection, group_name)?;
     let members = internal::member::get_members_not_current(&connection, group_name, &host)?;
-    let v = members
-        .iter()
-        .map(|user| {
-            operations::members::remove(
-                &pool,
-                &scope_and_user,
-                &group_name,
-                &host,
-                &user,
-                Arc::clone(&cis_client),
-            )
+    for user in members {
+        let user_uuid = user.user_uuid;
+        log::info!("removing {}", user_uuid);
+        operations::members::remove(
+            &pool,
+            &scope_and_user,
+            &group_name,
+            &host,
+            &user,
+            Arc::clone(&cis_client),
+        )
+        .map_ok(move |k| {
+            log::info!("removed {}", user_uuid);
+            k
         })
-        .collect::<Vec<_>>();
-    log::info!("deleting {} members", v.len());
-    try_join_all(v)
-        .map_err(|_| PacksError::ErrorDeletingMembers)
+        .map_err(move |e| {
+            log::warn!("failed to remove {}: {}", user_uuid, e);
+            PacksError::ErrorDeletingMembers
+        })
         .await?;
+    }
     operations::members::remove(
         &pool,
         &scope_and_user,

@@ -9,6 +9,7 @@ use crate::db::types::*;
 use crate::db::Pool;
 use crate::error;
 use crate::mail::manager::send_email;
+use crate::mail::manager::send_emails;
 use crate::mail::templates::Template;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
@@ -312,4 +313,29 @@ pub fn get_curator_emails(
 
     let group = internal::group::get_group(&connection, group_name)?;
     internal::member::get_curator_emails(&connection, group.id)
+}
+
+pub fn get_anonymous_member_emails(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+) -> Result<Vec<String>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        "",
+        &user.user_uuid,
+    ))?;
+
+    internal::member::get_anonymous_member_emails(&connection)
+}
+
+pub fn notify_anonymous_members(pool: &Pool) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let emails = internal::member::get_anonymous_member_emails(&connection)?;
+
+    send_emails(emails, &Template::AnonymousMember);
+
+    Ok(())
 }

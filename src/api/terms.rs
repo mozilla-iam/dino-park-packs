@@ -8,7 +8,7 @@ use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 
-const TERMS_MAX_LEN: usize = 5000;
+const TERMS_MAX_LEN: usize = 7000;
 
 #[derive(Deserialize)]
 pub struct TermsUpdate {

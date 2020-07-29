@@ -441,3 +441,21 @@ pub fn get_curator_emails_by_group_name(
         .get_results::<String>(connection)
         .map_err(Into::into)
 }
+
+pub fn get_anonymous_member_emails(connection: &PgConnection) -> Result<Vec<String>, Error> {
+    use schema::memberships as m;
+    use schema::profiles as p;
+    use schema::users_ndaed as u;
+    m::table
+        .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
+        .filter(
+            u::email
+                .is_null()
+                .or(u::first_name.is_null().and(u::last_name.is_null())),
+        )
+        .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
+        .select(p::email)
+        .distinct()
+        .get_results::<String>(connection)
+        .map_err(Into::into)
+}

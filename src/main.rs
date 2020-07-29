@@ -11,6 +11,7 @@ use actix_web::HttpServer;
 use cis_client::CisClient;
 use dino_park_gate::provider::Provider;
 use dino_park_gate::scope::ScopeAndUserAuth;
+use log::debug;
 use log::info;
 use std::io::Error;
 use std::io::ErrorKind;
@@ -26,6 +27,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
     info!("starting dino-park-packs");
+    debug!("DEBUG logging enabled");
 
     let s = settings::Settings::new().map_err(map_io_err)?;
     let cis_client = CisClient::from_settings(&s.cis).await.map_err(map_io_err)?;

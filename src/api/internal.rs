@@ -70,6 +70,11 @@ async fn all_notifications(pool: web::Data<Pool>) -> Result<HttpResponse, ApiErr
     Ok(HttpResponse::Ok().json(""))
 }
 
+async fn anonymous_notifications(pool: web::Data<Pool>) -> Result<HttpResponse, ApiError> {
+    operations::members::notify_anonymous_members(&pool)?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
 async fn bulk_update_users(
     pool: web::Data<Pool>,
     mut multipart: Multipart,
@@ -106,4 +111,5 @@ pub fn internal_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFacto
         )
         .service(web::resource("/notify/requests").route(web::post().to(requests_notifications)))
         .service(web::resource("/notify/all").route(web::post().to(all_notifications)))
+        .service(web::resource("/notify/anonymous").route(web::post().to(anonymous_notifications)))
 }
