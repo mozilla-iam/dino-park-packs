@@ -21,6 +21,7 @@ use cis_client::AsyncCisClientTrait;
 use diesel::pg::PgConnection;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
+use futures::future::try_join_all;
 use futures::TryFutureExt;
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -76,27 +77,34 @@ pub async fn delete_group(
     ))?;
     let bcc = internal::member::get_curator_emails_by_group_name(&connection, group_name)?;
     let members = internal::member::get_members_not_current(&connection, group_name, &host)?;
-    for user in members {
-        let user_uuid = user.user_uuid;
-        log::info!("removing {}", user_uuid);
-        operations::members::remove(
-            &pool,
-            &scope_and_user,
-            &group_name,
-            &host,
-            &user,
-            Arc::clone(&cis_client),
-        )
-        .map_ok(move |k| {
-            log::info!("removed {}", user_uuid);
-            k
+    drop(connection);
+    let v = members
+        .iter()
+        .map(|user| {
+            let user_uuid = user.user_uuid;
+            log::debug!("removing {} for {}", &group_name, user_uuid);
+            operations::members::remove(
+                &pool,
+                &scope_and_user,
+                &group_name,
+                &host,
+                &user,
+                Arc::clone(&cis_client),
+            )
+            .map_ok(move |k| {
+                log::debug!("removed {} for {}", &group_name, user_uuid);
+                k
+            })
+            .map_err(move |e| {
+                log::warn!("failed to remove {} for {}: {}", &group_name, user_uuid, e);
+                e
+            })
         })
-        .map_err(move |e| {
-            log::warn!("failed to remove {}: {}", user_uuid, e);
-            PacksError::ErrorDeletingMembers
-        })
+        .collect::<Vec<_>>();
+    log::info!("deleting {} members", v.len());
+    try_join_all(v)
+        .map_err(|_| PacksError::ErrorDeletingMembers)
         .await?;
-    }
     operations::members::remove(
         &pool,
         &scope_and_user,
@@ -106,6 +114,7 @@ pub async fn delete_group(
         cis_client,
     )
     .await?;
+    let connection = pool.get()?;
     internal::group::delete_group(&host.user_uuid, &connection, &group_name)?;
     let host_profile = internal::user::slim_user_profile_by_uuid(&connection, &host.user_uuid)?;
     send_emails(

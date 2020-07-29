@@ -176,31 +176,15 @@ pub async fn revoke_membership(
         for group in invited {
             internal::invitation::delete(&connection, &group.name, *host, *user, comment.clone())?;
         }
-        _revoke_membership(
-            &connection,
-            &all_groups,
-            host,
-            user,
-            force,
-            cis_client,
-            comment,
-        )
-        .await
+        drop(connection);
+        _revoke_membership(pool, &all_groups, host, user, force, cis_client, comment).await
     } else {
-        _revoke_membership(
-            &connection,
-            group_names,
-            host,
-            user,
-            force,
-            cis_client,
-            comment,
-        )
-        .await
+        drop(connection);
+        _revoke_membership(pool, group_names, host, user, force, cis_client, comment).await
     }
 }
 async fn _revoke_membership(
-    connection: &PgConnection,
+    pool: &Pool,
     group_names: &[&str],
     host: &User,
     user: &User,
@@ -209,8 +193,13 @@ async fn _revoke_membership(
     comment: Option<Value>,
 ) -> Result<(), Error> {
     let exit_on_error = group_names.len() == 1;
+    let connection = pool.get()?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    drop(connection);
+    log::debug!("removing group from profile");
     remove_group_from_profile(cis_client, group_names, user_profile.profile).await?;
+    log::debug!("removed group from profile");
+    let connection = pool.get()?;
     for group_name in group_names {
         if let Err(e) = db_leave(
             &host.user_uuid,

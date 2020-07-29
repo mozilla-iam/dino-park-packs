@@ -110,6 +110,7 @@ pub async fn remove_group_from_profile(
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {
+                log::debug!("updating profile");
                 cis_client
                     .update_user(&user_id, update_profile)
                     .map_ok(|_| ())
