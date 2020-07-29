@@ -197,6 +197,7 @@ pub async fn accept_invitation(
     let connection = pool.get()?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     accept(&connection, group_name, user)?;
+    drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
 

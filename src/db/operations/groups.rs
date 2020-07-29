@@ -57,6 +57,7 @@ pub async fn add_new_group(
     ))?;
     let new_group_name = new_group.name.clone();
     add_new_group_db(&connection, new_group, user).map_err(|_| PacksError::GroupNameExists)?;
+    drop(connection);
     add_group_to_profile(cis_client, new_group_name, user_profile.profile).await
 }
 

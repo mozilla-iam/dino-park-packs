@@ -53,6 +53,7 @@ pub async fn expire_memberships(
     let connection = pool.get()?;
     let memberships =
         internal::member::get_memberships_expired_before(&connection, expires_before)?;
+    drop(connection);
     let memberships = memberships.into_iter().fold(
         HashMap::new(),
         |mut h: HashMap<Uuid, Vec<Membership>>, m| {

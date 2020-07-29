@@ -146,6 +146,7 @@ pub async fn add(
     };
     internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
 

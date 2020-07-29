@@ -32,6 +32,7 @@ pub async fn add_admin(
     ))?;
     let connection = pool.get()?;
     internal::admin::add_admin(&connection, &group_name, host, user)?;
+    drop(connection);
     add_group_to_profile(cis_client, group_name_f, profile).await
 }
 
