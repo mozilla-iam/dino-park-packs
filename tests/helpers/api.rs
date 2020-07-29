@@ -45,3 +45,21 @@ where
         .to_request();
     test::call_service(&mut app, req).await
 }
+
+pub async fn put<S, B, E>(
+    mut app: &mut S,
+    endpoint: &str,
+    json: impl Serialize,
+    scope: &Soa,
+) -> S::Response
+where
+    S: Service<Request = Request, Response = ServiceResponse<B>, Error = E>,
+    E: std::fmt::Debug,
+{
+    let req = test::TestRequest::put()
+        .header("sau", scope.encode())
+        .uri(endpoint)
+        .set_json(&json)
+        .to_request();
+    test::call_service(&mut app, req).await
+}

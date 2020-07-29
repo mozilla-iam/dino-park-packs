@@ -51,3 +51,53 @@ async fn create() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[actix_rt::test]
+async fn update() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+    let creator = Soa::from(&basic_user(1, true)).creator().aal_medium();
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "nda", "description": "the nda group" }),
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/groups", &creator).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await["groups"][0]["name"], "nda");
+
+    let res = put(
+        &mut app,
+        "/groups/api/v1/groups/nda",
+        json!({ "description": "updated description" }),
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = put(
+        &mut app,
+        "/groups/api/v1/groups/nda",
+        json!({ "type": "Reviewed" }),
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = put(
+        &mut app,
+        "/groups/api/v1/groups/nda",
+        json!({ "trust": "Authenticated" }),
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    Ok(())
+}

@@ -301,8 +301,24 @@ pub fn get_curator_emails(
         &user.user_uuid,
     ))?;
 
-    let group = internal::group::get_group(&connection, group_name)?;
-    internal::member::get_curator_emails(&connection, group.id)
+    internal::member::get_curator_emails_by_group_name(&connection, group_name)
+}
+
+pub fn get_member_emails(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<Vec<String>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        &group_name,
+        &user.user_uuid,
+    ))?;
+
+    internal::member::get_member_emails_by_group_name(&connection, group_name)
 }
 
 pub fn get_anonymous_member_emails(

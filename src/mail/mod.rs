@@ -4,8 +4,9 @@ pub mod templates;
 
 use rusoto_ses::Body;
 use rusoto_ses::Content;
+use serde::Deserialize;
 
-#[derive(Clone)]
+#[derive(Clone, Default, Deserialize)]
 pub struct Message {
     pub subject: String,
     pub body: String,
@@ -29,7 +30,7 @@ impl Into<rusoto_ses::Message> for Message {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Email {
     pub to: Option<String>,
     pub bcc: Option<Vec<String>>,

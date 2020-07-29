@@ -72,6 +72,7 @@ impl Default for MembersQueryOptions {
 #[derive(Deserialize)]
 pub struct GroupUpdate {
     pub description: Option<String>,
+    #[serde(default, rename = "type")]
     pub typ: Option<GroupType>,
     pub capabilities: Option<Vec<CapabilityType>>,
     pub trust: Option<TrustType>,

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin Forms</title>
+  </head>
+  <body>
+    <section>
+      <h3>bcc email</h3>
+      <form action="bcc" method="POST">
+        <label>
+          bcc:
+          <input name="bcc" />
+        </label>
+        <label>
+          subject:
+          <input name="subject" />
+        </label>
+        <label>
+          body:
+          <textarea name="body"></textarea>
+        </label>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+    <hr />
+    <section>
+      <h3>group email</h3>
+      <form action="group" method="POST">
+        <label>
+          group:
+          <input name="group_name" />
+        </label>
+        <label>
+          subject:
+          <input name="subject" />
+        </label>
+        <label>
+          body:
+          <textarea name="body"></textarea>
+        </label>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+    <hr />
+  </body>
+</html>

@@ -31,11 +31,20 @@ pub fn send_emails(to: Vec<String>, t: &Template) {
     MAIL_MAN.send(Email::with_many(to, &MAIL_MAN.template_man.domain, message));
 }
 
+#[cfg(all(not(test), not(feature = "local")))]
+pub fn send_email_raw(mut email: Email) {
+    email.from = format!("no-reply@{}", &MAIL_MAN.template_man.domain);
+    MAIL_MAN.send(email);
+}
+
 #[cfg(any(test, feature = "local"))]
 pub fn send_email(_: String, _: &Template) {}
 
 #[cfg(any(test, feature = "local"))]
 pub fn send_emails(_: Vec<String>, _: &Template) {}
+
+#[cfg(any(test, feature = "local"))]
+pub fn send_email_raw(_: Email) {}
 
 #[derive(Clone)]
 pub struct MailMan<T: EmailSender> {

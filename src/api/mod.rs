@@ -1,6 +1,7 @@
 pub mod admins;
 pub mod current;
 pub mod error;
+pub mod forms;
 pub mod groups;
 pub mod internal;
 pub mod invitations;
