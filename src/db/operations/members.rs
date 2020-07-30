@@ -300,6 +300,8 @@ pub fn get_curator_emails(
         &group_name,
         &user.user_uuid,
     ))?;
+    // let group = internal::group::get_group(&connection, group_name)?;
+    // internal::member::get_curator_emails(&connection, group.id)
 
     internal::member::get_curator_emails_by_group_name(&connection, group_name)
 }

@@ -41,6 +41,7 @@ pub struct GroupImport {
     pub group: MozilliansGroup,
     pub memberships: Vec<MozilliansGroupMembership>,
     pub curators: Vec<MozilliansGroupCurator>,
+    pub staff_only: bool,
 }
 
 pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Result<(), Error> {
@@ -115,6 +116,7 @@ async fn import_curator(
     connection: &PgConnection,
     group_name: &str,
     curator: MozilliansGroupCurator,
+    staff_only: bool,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     let user_profile =
@@ -122,6 +124,16 @@ async fn import_curator(
     let user = User {
         user_uuid: user_profile.user_uuid,
     };
+    if staff_only
+        && !user_profile
+            .profile
+            .staff_information
+            .staff
+            .value
+            .unwrap_or_default()
+    {
+        return Ok(());
+    }
     internal::admin::add_admin(&connection, group_name, &User::default(), &user)?;
     drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await?;
@@ -132,11 +144,20 @@ pub async fn import_curators(
     connection: &PgConnection,
     group_name: &str,
     moz_curators: Vec<MozilliansGroupCurator>,
+    staff_only: bool,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     for curator in moz_curators {
         let user_id = curator.auth0_user_id.clone();
-        match import_curator(connection, group_name, curator, cis_client.clone()).await {
+        match import_curator(
+            connection,
+            group_name,
+            curator,
+            staff_only,
+            cis_client.clone(),
+        )
+        .await
+        {
             Ok(()) => {}
             Err(e) => warn!(
                 "unable to add curator {} for group {}: {}",
@@ -151,16 +172,29 @@ pub async fn import_member(
     connection: &PgConnection,
     group_name: &str,
     member: MozilliansGroupMembership,
+    staff_only: bool,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     use schema::memberships as m;
-    let group = internal::group::get_group(connection, group_name)?;
-    let expiration = calc_expiration(member.expiration, member.updated_on);
+
     let user_profile =
         get_user_profile(connection, &member.auth0_user_id, cis_client.clone()).await?;
+    if staff_only
+        && !user_profile
+            .profile
+            .staff_information
+            .staff
+            .value
+            .unwrap_or_default()
+    {
+        return Ok(());
+    }
+
     let user = User {
         user_uuid: user_profile.user_uuid,
     };
+    let group = internal::group::get_group(connection, group_name)?;
+    let expiration = calc_expiration(member.expiration, member.updated_on);
     let role = internal::member::role_for(connection, &user.user_uuid, group_name)?;
     if role.is_some() {
         diesel::update(m::table)
@@ -202,6 +236,7 @@ pub async fn import_members(
     connection: &PgConnection,
     group_name: &str,
     moz_members: Vec<MozilliansGroupMembership>,
+    staff_only: bool,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     use schema::groups as g;
@@ -213,7 +248,15 @@ pub async fn import_members(
             created = joined;
         }
         let user_id = member.auth0_user_id.clone();
-        match import_member(connection, group_name, member, cis_client.clone()).await {
+        match import_member(
+            connection,
+            group_name,
+            member,
+            staff_only,
+            cis_client.clone(),
+        )
+        .await
+        {
             Ok(()) => {}
             Err(e) => warn!(
                 "unable to add member {} for group {}: {}",
@@ -241,6 +284,7 @@ pub async fn import(
         &connection,
         &group_name,
         group_import.curators,
+        group_import.staff_only,
         cis_client.clone(),
     )
     .await?;
@@ -248,6 +292,7 @@ pub async fn import(
         &connection,
         &group_name,
         group_import.memberships,
+        group_import.staff_only,
         cis_client.clone(),
     )
     .await?;

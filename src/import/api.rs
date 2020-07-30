@@ -13,6 +13,7 @@ use csv::ReaderBuilder;
 use futures::StreamExt;
 use futures::TryFutureExt;
 use futures::TryStreamExt;
+use serde::Deserialize;
 use std::sync::Arc;
 
 #[derive(Debug, Default)]
@@ -22,11 +23,18 @@ struct GroupImportOption {
     pub curators: Option<Vec<MozilliansGroupCurator>>,
 }
 
+#[derive(Debug, Deserialize, Default)]
+struct GroupImportQuery {
+    staff_only: bool,
+}
+
 async fn full_group_import<T: AsyncCisClientTrait>(
     mut multipart: Multipart,
     pool: web::Data<Pool>,
     cis_client: web::Data<T>,
+    query: web::Query<GroupImportQuery>,
 ) -> Result<HttpResponse, ApiError> {
+    let GroupImportQuery { staff_only } = query.into_inner();
     let mut group_import = GroupImportOption {
         ..Default::default()
     };
@@ -87,6 +95,7 @@ async fn full_group_import<T: AsyncCisClientTrait>(
                 group,
                 curators,
                 memberships,
+                staff_only,
             };
             import(&pool, group_import, Arc::clone(&*cis_client)).await?
         }

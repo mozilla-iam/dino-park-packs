@@ -409,20 +409,6 @@ pub fn get_memberships_expire_between(
         .map_err(Into::into)
 }
 
-pub fn get_curator_emails(connection: &PgConnection, group_id: i32) -> Result<Vec<String>, Error> {
-    use schema::memberships as m;
-    use schema::profiles as p;
-    use schema::roles as r;
-    m::table
-        .filter(m::group_id.eq(group_id))
-        .inner_join(r::table)
-        .filter(r::typ.eq_any(&[RoleType::Admin, RoleType::Curator]))
-        .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
-        .select(p::email)
-        .get_results::<String>(connection)
-        .map_err(Into::into)
-}
-
 pub fn get_member_emails_by_group_name(
     connection: &PgConnection,
     group_name: &str,
@@ -433,6 +419,20 @@ pub fn get_member_emails_by_group_name(
     g::table
         .filter(g::name.eq(group_name))
         .inner_join(m::table)
+        .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
+        .select(p::email)
+        .get_results::<String>(connection)
+        .map_err(Into::into)
+}
+
+pub fn get_curator_emails(connection: &PgConnection, group_id: i32) -> Result<Vec<String>, Error> {
+    use schema::memberships as m;
+    use schema::profiles as p;
+    use schema::roles as r;
+    m::table
+        .filter(m::group_id.eq(group_id))
+        .inner_join(r::table.on(r::role_id.eq(m::role_id)))
+        .filter(r::typ.eq_any(&[RoleType::Admin, RoleType::Curator]))
         .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
         .select(p::email)
         .get_results::<String>(connection)
@@ -450,7 +450,7 @@ pub fn get_curator_emails_by_group_name(
     g::table
         .filter(g::name.eq(group_name))
         .inner_join(m::table)
-        .inner_join(r::table)
+        .inner_join(r::table.on(r::role_id.eq(m::role_id)))
         .filter(r::typ.eq_any(&[RoleType::Admin, RoleType::Curator]))
         .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
         .select(p::email)

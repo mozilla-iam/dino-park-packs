@@ -48,7 +48,7 @@ fn group() -> Result<MozilliansGroup, Error> {
 }
 
 #[actix_rt::test]
-async fn create() -> Result<(), Error> {
+async fn import() -> Result<(), Error> {
     reset()?;
     let (service, cis_client) = test_app_and_cis().await;
     let cis_client = Arc::new(cis_client);
@@ -60,7 +60,14 @@ async fn create() -> Result<(), Error> {
     let members = members()?;
     let connection = get_pool().get()?;
     import_group(&connection, group)?;
-    import_curators(&connection, "import-test", curators, cis_client.clone()).await?;
+    import_curators(
+        &connection,
+        "import-test",
+        curators,
+        false,
+        cis_client.clone(),
+    )
+    .await?;
 
     let res = get(&mut app, "/groups/api/v1/groups", &creator).await;
     assert!(res.status().is_success());
@@ -113,7 +120,14 @@ async fn create() -> Result<(), Error> {
         Some(0)
     );
 
-    import_members(&connection, "import-test", members, cis_client.clone()).await?;
+    import_members(
+        &connection,
+        "import-test",
+        members,
+        false,
+        cis_client.clone(),
+    )
+    .await?;
 
     let res = get(
         &mut app,
@@ -137,6 +151,125 @@ async fn create() -> Result<(), Error> {
     assert_eq!(
         read_json(res).await["members"].as_array().map(|a| a.len()),
         Some(5)
+    );
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/import-test/details",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let j = read_json(res).await;
+    assert_eq!(j["group"]["created"], "2019-10-24T17:56:21Z");
+
+    Ok(())
+}
+
+#[actix_rt::test]
+async fn import_staff_only() -> Result<(), Error> {
+    reset()?;
+    let (service, cis_client) = test_app_and_cis().await;
+    let cis_client = Arc::new(cis_client);
+    let app = App::new().service(service);
+    let mut app = test::init_service(app).await;
+    let creator = Soa::from(&basic_user(1, true)).creator().aal_medium();
+    let group = group()?;
+    let curators = curators()?;
+    let members = members()?;
+    let connection = get_pool().get()?;
+    import_group(&connection, group)?;
+    import_curators(
+        &connection,
+        "import-test",
+        curators,
+        true,
+        cis_client.clone(),
+    )
+    .await?;
+
+    let res = get(&mut app, "/groups/api/v1/groups", &creator).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await["groups"][0]["name"], "import-test");
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/import-test/details",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let j = read_json(res).await;
+    assert_eq!(j["group"]["terms"], true);
+    assert_eq!(
+        j["group"]["description"],
+        "import test group\n\n**Website:** [https://example.com/](https://example.com/)"
+    );
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/invitations/import-test/email",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await["body"], "some \ninvitation email");
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/members/import-test?r=Curator",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    assert_eq!(
+        read_json(res).await["members"].as_array().map(|a| a.len()),
+        Some(2)
+    );
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/members/import-test?r=Member",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    assert_eq!(
+        read_json(res).await["members"].as_array().map(|a| a.len()),
+        Some(0)
+    );
+
+    import_members(
+        &connection,
+        "import-test",
+        members,
+        true,
+        cis_client.clone(),
+    )
+    .await?;
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/members/import-test?r=Curator",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    assert_eq!(
+        read_json(res).await["members"].as_array().map(|a| a.len()),
+        Some(2)
+    );
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/members/import-test?r=Member",
+        &creator,
+    )
+    .await;
+    assert!(res.status().is_success());
+    assert_eq!(
+        read_json(res).await["members"].as_array().map(|a| a.len()),
+        Some(4)
     );
 
     let res = get(
