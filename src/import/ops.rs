@@ -135,7 +135,6 @@ async fn import_curator(
         return Ok(());
     }
     internal::admin::add_admin(&connection, group_name, &User::default(), &user)?;
-    drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await?;
     Ok(())
 }
@@ -222,7 +221,6 @@ pub async fn import_member(
         .execute(connection)
         .map(|_| ())?;
 
-    drop(connection);
     add_group_to_profile(
         cis_client.clone(),
         group_name.to_owned(),
