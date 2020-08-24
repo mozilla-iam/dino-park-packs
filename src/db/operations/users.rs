@@ -1,16 +1,21 @@
 use crate::db::internal;
+use crate::db::logs::log_comment_body;
+use crate::db::operations::members::revoke_memberships_by_trust;
 use crate::db::types::TrustType;
+use crate::db::users::trust_for_profile;
 use crate::db::users::DisplayUser;
 use crate::db::users::UserForGroup;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
+use crate::error::PacksError;
 use crate::rules::engine::SEARCH_USERS;
-use crate::rules::is_nda_group;
 use crate::rules::RuleContext;
 use crate::user::User;
+use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub fn batch_update_user_cache(pool: &Pool, profiles: Vec<Profile>) -> Result<usize, Error> {
@@ -56,12 +61,12 @@ pub fn search_users(
         &host.user_uuid,
     ))?;
 
+    let group = internal::group::get_group(&connection, &group_name)?;
+
     let trust = if let Some(trust) = trust {
         trust
-    } else if is_nda_group(&group_name) {
-        TrustType::Authenticated
     } else {
-        TrustType::Ndaed
+        group.trust
     };
 
     internal::user::search_users_for_group(
@@ -103,9 +108,42 @@ pub fn delete_user(pool: &Pool, user: &User) -> Result<(), Error> {
     internal::user::delete_user(&connection, user)
 }
 
-pub fn update_user_cache(pool: &Pool, profile: &Profile) -> Result<(), Error> {
+pub fn update_user_cache_unchecked(
+    pool: &Pool,
+    profile: &Profile,
+) -> Result<(), Error> {
     let connection = pool.get()?;
     internal::user::update_user_cache(&connection, profile)
+}
+
+pub async fn update_user_cache(
+    pool: &Pool,
+    profile: &Profile,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let new_trust = trust_for_profile(&profile);
+    internal::user::update_user_cache(&connection, profile)?;
+
+    let uuid = Uuid::parse_str(&profile.uuid.value.clone().ok_or(PacksError::NoUuid)?)?;
+    if let Some(old_profile) = internal::user::user_profile_by_uuid_maybe(&connection, &uuid)? {
+        let old_trust = trust_for_profile(&old_profile.profile);
+        drop(connection);
+        if new_trust < old_trust {
+            revoke_memberships_by_trust(
+                pool,
+                &[],
+                &User::default(),
+                &User { user_uuid: uuid },
+                true,
+                new_trust,
+                cis_client,
+                log_comment_body("trust revoked by CIS update"),
+            )
+            .await?;
+        }
+    }
+    Ok(())
 }
 
 pub fn user_by_id(pool: &Pool, user_id: &str) -> Result<User, Error> {

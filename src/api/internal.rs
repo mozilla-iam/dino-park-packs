@@ -28,8 +28,13 @@ pub struct NotificationStatus {
     expire_second: usize,
 }
 
-async fn update_user(pool: web::Data<Pool>, profile: web::Json<Profile>) -> impl Responder {
-    operations::users::update_user_cache(&pool, &profile).map(|_| HttpResponse::Ok().json(""))
+async fn update_user<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    profile: web::Json<Profile>,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    operations::users::update_user_cache(&pool, &profile, Arc::clone(&*cis_client)).await?;
+    Ok(HttpResponse::Ok().json(""))
 }
 
 async fn delete_user(pool: web::Data<Pool>, user_uuid: web::Path<Uuid>) -> impl Responder {
@@ -103,7 +108,7 @@ pub fn internal_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFacto
     web::scope("/internal")
         .app_data(web::JsonConfig::default().limit(1_048_576))
         .service(web::resource("/update/bulk").route(web::post().to(bulk_update_users)))
-        .service(web::resource("/update/user").route(web::post().to(update_user)))
+        .service(web::resource("/update/user").route(web::post().to(update_user::<T>)))
         .service(web::resource("/delete/{user_uuid}").route(web::delete().to(delete_user)))
         .service(web::resource("/expire/all").route(web::post().to(expire_all::<T>)))
         .service(

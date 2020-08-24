@@ -43,6 +43,19 @@ pub fn user_profile_by_uuid(
         .map_err(|_| PacksError::ProfileNotFound.into())
 }
 
+pub fn user_profile_by_uuid_maybe(
+    connection: &PgConnection,
+    user_uuid: &Uuid,
+) -> Result<Option<UserProfile>, Error> {
+    schema::profiles::table
+        .filter(schema::profiles::user_uuid.eq(user_uuid))
+        .first::<UserProfileValue>(connection)
+        .optional()
+        .map_err(Error::from)
+        .map(|p| p.and_then(|p| UserProfile::try_from(p).ok()))
+        .map_err(|_| PacksError::ProfileNotFound.into())
+}
+
 pub fn slim_user_profile_by_uuid(
     connection: &PgConnection,
     user_uuid: &Uuid,

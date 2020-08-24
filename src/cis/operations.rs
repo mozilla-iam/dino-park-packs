@@ -98,6 +98,9 @@ pub async fn remove_group_from_profile(
     group_names: &[&str],
     profile: Profile,
 ) -> Result<(), Error> {
+    if group_names.is_empty() {
+        return Ok(());
+    }
     let now = &Utc::now();
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;

@@ -103,7 +103,7 @@ fn field_for_display(field: &StandardAttributeString, display: &Display) -> Opti
     }
 }
 
-fn trust_for_profile(profile: &Profile) -> TrustType {
+pub fn trust_for_profile(profile: &Profile) -> TrustType {
     if profile.staff_information.staff.value.unwrap_or_default() {
         return TrustType::Staff;
     }

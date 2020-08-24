@@ -4,7 +4,6 @@ use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
 use crate::utils::valid_group_name;
 use dino_park_trust::GroupsTrust;
-use dino_park_trust::Trust;
 
 const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
 
@@ -93,7 +92,9 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
         ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?,
     )
     .map_err(|_| RuleError::UserNotFound)?;
-    let ndaed = trust >= TrustType::Ndaed;
+    let group =
+        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+    let ndaed = trust >= group.trust;
     if ndaed | is_nda_group(&ctx.group) {
         return Ok(());
     }
@@ -102,7 +103,10 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the current user is nda'd or the group is the nda group
 pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
-    let ndaed = ctx.scope_and_user.scope >= Trust::Ndaed;
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    let group =
+        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+    let ndaed = TrustType::from(&ctx.scope_and_user.scope) >= group.trust;
     if ndaed | is_nda_group(&ctx.group) {
         return Ok(());
     }

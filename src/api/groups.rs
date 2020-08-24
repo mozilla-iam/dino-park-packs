@@ -155,6 +155,7 @@ async fn group_details(
             },
             created: group.group.created,
             terms: group.terms,
+            trust: group.group.trust,
         },
         member_count,
         invitation_count,

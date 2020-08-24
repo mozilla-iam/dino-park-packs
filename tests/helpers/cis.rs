@@ -4,7 +4,7 @@ use cis_client::AsyncCisClientTrait;
 use cis_client::CisFut;
 use cis_profile::crypto::SecretStore;
 use cis_profile::schema::Profile;
-use dino_park_packs::db::operations::users::update_user_cache;
+use dino_park_packs::db::operations::users::update_user_cache_unchecked;
 use dino_park_packs::db::Pool;
 use futures::future::err;
 use futures::future::ok;
@@ -63,7 +63,7 @@ impl AsyncCisClientTrait for CisFakeClient {
             store.insert(id.to_owned(), profile.clone());
             profile
         };
-        match update_user_cache(&self.pool, &p) {
+        match update_user_cache_unchecked(&self.pool, &p) {
             Ok(_) => Box::pin(ok(json!({}))),
             Err(e) => Box::pin(err(e)),
         }

@@ -1,6 +1,7 @@
 use crate::db::model::Group;
 use crate::db::operations::models::DisplayMembershipAndHost;
 use crate::db::types::GroupType;
+use crate::db::types::TrustType;
 use crate::utils::to_utc;
 use chrono::NaiveDateTime;
 use serde::Serialize;
@@ -36,6 +37,7 @@ pub struct GroupInfo {
     #[serde(serialize_with = "to_utc")]
     pub created: NaiveDateTime,
     pub terms: bool,
+    pub trust: TrustType,
 }
 
 #[derive(Serialize)]

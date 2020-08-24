@@ -33,7 +33,13 @@ impl TrustType {
 
 impl From<Trust> for TrustType {
     fn from(t: Trust) -> Self {
-        match t {
+        TrustType::from(&t)
+    }
+}
+
+impl From<&Trust> for TrustType {
+    fn from(t: &Trust) -> Self {
+        match *t {
             Trust::Staff => TrustType::Staff,
             Trust::Ndaed => TrustType::Ndaed,
             Trust::Vouched => TrustType::Vouched,
