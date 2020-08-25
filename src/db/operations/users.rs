@@ -133,7 +133,6 @@ pub async fn update_user_cache(
                 &[],
                 &User::default(),
                 &User { user_uuid: uuid },
-                true,
                 new_trust,
                 cis_client,
                 log_comment_body("trust revoked by CIS update"),

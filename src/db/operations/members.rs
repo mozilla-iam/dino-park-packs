@@ -155,7 +155,6 @@ pub async fn revoke_memberships_by_trust(
     group_names: &[&str],
     host: &User,
     user: &User,
-    force: bool,
     trust: TrustType,
     cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
@@ -178,16 +177,7 @@ pub async fn revoke_memberships_by_trust(
         .collect::<Vec<_>>();
     revoked_groups.dedup();
     drop(connection);
-    _revoke_membership(
-        pool,
-        &revoked_groups,
-        host,
-        user,
-        force,
-        cis_client,
-        comment,
-    )
-    .await
+    _revoke_membership(pool, &revoked_groups, host, user, true, cis_client, comment).await
 }
 
 pub async fn revoke_membership(
@@ -214,7 +204,6 @@ pub async fn revoke_membership(
             group_names,
             host,
             user,
-            force,
             TrustType::Authenticated,
             cis_client,
             comment,
