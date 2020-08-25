@@ -7,5 +7,5 @@ mod groups;
 mod import;
 mod invitations;
 mod requests;
-mod sudo;
 mod revoke;
+mod sudo;

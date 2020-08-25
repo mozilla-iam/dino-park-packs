@@ -108,10 +108,7 @@ pub fn delete_user(pool: &Pool, user: &User) -> Result<(), Error> {
     internal::user::delete_user(&connection, user)
 }
 
-pub fn update_user_cache_unchecked(
-    pool: &Pool,
-    profile: &Profile,
-) -> Result<(), Error> {
+pub fn update_user_cache_unchecked(pool: &Pool, profile: &Profile) -> Result<(), Error> {
     let connection = pool.get()?;
     internal::user::update_user_cache(&connection, profile)
 }
@@ -123,10 +120,11 @@ pub async fn update_user_cache(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let new_trust = trust_for_profile(&profile);
+    let uuid = Uuid::parse_str(&profile.uuid.value.clone().ok_or(PacksError::NoUuid)?)?;
+    let old_profile = internal::user::user_profile_by_uuid_maybe(&connection, &uuid)?;
     internal::user::update_user_cache(&connection, profile)?;
 
-    let uuid = Uuid::parse_str(&profile.uuid.value.clone().ok_or(PacksError::NoUuid)?)?;
-    if let Some(old_profile) = internal::user::user_profile_by_uuid_maybe(&connection, &uuid)? {
+    if let Some(old_profile) = old_profile {
         let old_trust = trust_for_profile(&old_profile.profile);
         drop(connection);
         if new_trust < old_trust {

@@ -1,7 +1,6 @@
 use crate::helpers::api::*;
 use crate::helpers::db::get_pool;
 use crate::helpers::db::reset;
-use crate::helpers::misc::test_app;
 use crate::helpers::misc::test_app_and_cis;
 use crate::helpers::misc::Soa;
 use crate::helpers::users::basic_user;
