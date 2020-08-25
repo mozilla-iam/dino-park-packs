@@ -174,7 +174,7 @@ pub async fn revoke_memberships_by_trust(
         .iter()
         .filter(|g| trust < g.trust)
         .map(|g| g.name.as_str())
-        .chain(group_names.iter().map(|s| *s))
+        .chain(group_names.iter().copied())
         .collect::<Vec<_>>();
     revoked_groups.dedup();
     drop(connection);

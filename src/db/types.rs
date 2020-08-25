@@ -93,7 +93,7 @@ pub enum PermissionType {
 #[DieselType = "Capability_type"]
 pub enum CapabilityType {
     Gdrive,
-    Deiscourse,
+    Discourse,
 }
 
 #[derive(Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]

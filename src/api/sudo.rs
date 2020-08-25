@@ -94,7 +94,7 @@ async fn delete_inactive_group(
 ) -> impl Responder {
     operations::groups::delete_inactive_group(&pool, &scope_and_user, &group_name)
         .map(|_| HttpResponse::Ok().json(""))
-        .map_err(|e| ApiError::GenericBadRequest(e))
+        .map_err(ApiError::GenericBadRequest)
 }
 
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
