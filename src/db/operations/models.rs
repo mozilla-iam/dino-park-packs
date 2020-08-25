@@ -134,7 +134,7 @@ pub struct NewGroup {
 impl NewGroup {
     pub fn checked(self) -> Result<Self, PacksError> {
         if self.description.len() > DESCRIPTION_MAX_LEN || self.trust < TrustType::Authenticated {
-            return Err(PacksError::InvalidGroupName);
+            return Err(PacksError::InvalidGroupData);
         }
         if !valid_group_name(&self.name) {
             return Err(PacksError::InvalidGroupName);
