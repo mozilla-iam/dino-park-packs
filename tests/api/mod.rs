@@ -1,5 +1,6 @@
 mod anonmail;
 mod basics;
+mod create;
 mod delete;
 mod details;
 mod errors;

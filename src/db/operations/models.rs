@@ -105,6 +105,14 @@ impl GroupUpdate {
         {
             return Err(PacksError::InvalidGroupData);
         }
+        if self
+            .trust
+            .as_ref()
+            .map(|t| t < &TrustType::Authenticated)
+            .unwrap_or_default()
+        {
+            return Err(PacksError::InvalidGroupData);
+        }
         Ok(self)
     }
 }
@@ -125,8 +133,8 @@ pub struct NewGroup {
 
 impl NewGroup {
     pub fn checked(self) -> Result<Self, PacksError> {
-        if self.description.len() > DESCRIPTION_MAX_LEN {
-            return Err(PacksError::InvalidGroupData);
+        if self.description.len() > DESCRIPTION_MAX_LEN || self.trust < TrustType::Authenticated {
+            return Err(PacksError::InvalidGroupName);
         }
         if !valid_group_name(&self.name) {
             return Err(PacksError::InvalidGroupName);
