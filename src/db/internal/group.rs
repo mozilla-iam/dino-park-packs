@@ -97,6 +97,29 @@ pub fn add_group(
         })
 }
 
+pub fn update_group_trust(
+    host_uuid: &Uuid,
+    connection: &PgConnection,
+    name: &str,
+    trust: &TrustType,
+) -> Result<Group, Error> {
+    diesel::update(schema::groups::table.filter(schema::groups::name.eq(name)))
+        .set((schema::groups::trust.eq(trust),))
+        .get_result::<Group>(connection)
+        .map_err(Into::into)
+        .map(move |group| {
+            let log_ctx = LogContext::with(group.id, *host_uuid);
+            internal::log::db_log(
+                connection,
+                &log_ctx,
+                LogTargetType::Group,
+                LogOperationType::Updated,
+                log_comment_body("trust"),
+            );
+            group
+        })
+}
+
 pub fn update_group(
     host_uuid: &Uuid,
     connection: &PgConnection,
@@ -113,7 +136,6 @@ pub fn update_group(
                 .capabilities
                 .map(|c| schema::groups::capabilities.eq(c)),
             group_update.typ.map(|t| schema::groups::typ.eq(t)),
-            group_update.trust.map(|t| schema::groups::trust.eq(t)),
             group_update
                 .group_expiration
                 .map(|e| e.and_then(|i| if i < 1 { None } else { Some(i) }))

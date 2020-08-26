@@ -2,12 +2,14 @@ use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
 use crate::db::logs::add_to_comment_body;
+use crate::db::operations;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::*;
 use crate::db::Pool;
 use crate::error;
+use crate::error::PacksError;
 use crate::mail::manager::send_email;
 use crate::mail::manager::send_emails;
 use crate::mail::templates::Template;
@@ -25,6 +27,8 @@ use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
 use failure::Error;
+use futures::future::try_join_all;
+use futures::TryFutureExt;
 use log::error;
 use serde_json::Value;
 use std::sync::Arc;
@@ -148,6 +152,52 @@ pub async fn add(
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
+}
+
+pub async fn remove_members(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    members: &[User],
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    REMOVE_MEMBER.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    drop(connection);
+    let v = members
+        .iter()
+        .map(|user| {
+            let user_uuid = user.user_uuid;
+            log::debug!("removing {} for {}", &group_name, user_uuid);
+            operations::members::remove(
+                &pool,
+                &scope_and_user,
+                &group_name,
+                &host,
+                &user,
+                Arc::clone(&cis_client),
+            )
+            .map_ok(move |k| {
+                log::debug!("removed {} for {}", &group_name, user_uuid);
+                k
+            })
+            .map_err(move |e| {
+                log::warn!("failed to remove {} for {}: {}", &group_name, user_uuid, e);
+                e
+            })
+        })
+        .collect::<Vec<_>>();
+    log::info!("deleting {} members", v.len());
+    try_join_all(v)
+        .map_err(|_| PacksError::ErrorDeletingMembers)
+        .await?;
+    Ok(())
 }
 
 pub async fn revoke_memberships_by_trust(

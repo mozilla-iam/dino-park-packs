@@ -10,3 +10,4 @@ mod invitations;
 mod requests;
 mod revoke;
 mod sudo;
+mod upgrade;

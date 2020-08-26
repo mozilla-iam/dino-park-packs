@@ -1,5 +1,6 @@
 use crate::api::error::ApiError;
 use crate::db::operations;
+use crate::db::types::TrustType;
 use crate::db::Pool;
 use crate::user::User;
 use actix_web::dev::HttpServiceFactory;
@@ -11,6 +12,11 @@ use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
+
+#[derive(Clone, Deserialize)]
+pub struct ChangeTrust {
+    trust: TrustType,
+}
 
 #[derive(Clone, Deserialize)]
 pub struct AddMember {
@@ -97,12 +103,34 @@ async fn delete_inactive_group(
         .map_err(ApiError::GenericBadRequest)
 }
 
+#[guard(Staff, Admin, Medium)]
+async fn change_trust<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+    trust_change: web::Json<ChangeTrust>,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    operations::groups::update_group_trust(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &trust_change.trust,
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
         .service(web::resource("/groups/inactive").route(web::get().to(list_inactive_groups)))
         .service(
             web::resource("/groups/inactive/{group_name}")
                 .route(web::delete().to(delete_inactive_group)),
+        )
+        .service(
+            web::resource("/trust/groups/{group_name}").route(web::put().to(change_trust::<T>)),
         )
         .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
         .service(web::resource("/curators/{group_name}").route(web::get().to(curator_emails)))

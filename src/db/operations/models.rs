@@ -75,7 +75,6 @@ pub struct GroupUpdate {
     #[serde(default, rename = "type")]
     pub typ: Option<GroupType>,
     pub capabilities: Option<Vec<CapabilityType>>,
-    pub trust: Option<TrustType>,
     #[allow(clippy::option_option)]
     pub group_expiration: Option<Option<i32>>,
 }
@@ -86,7 +85,6 @@ impl GroupUpdate {
             self.description.as_ref().map(|_| "description"),
             self.typ.as_ref().map(|_| "typ"),
             self.capabilities.as_ref().map(|_| "capabilities"),
-            self.trust.as_ref().map(|_| "trust"),
             self.group_expiration.as_ref().map(|_| "expiration"),
         ]
         .iter()
@@ -101,14 +99,6 @@ impl GroupUpdate {
             .description
             .as_ref()
             .map(|d| d.len() > DESCRIPTION_MAX_LEN)
-            .unwrap_or_default()
-        {
-            return Err(PacksError::InvalidGroupData);
-        }
-        if self
-            .trust
-            .as_ref()
-            .map(|t| t < &TrustType::Authenticated)
             .unwrap_or_default()
         {
             return Err(PacksError::InvalidGroupData);
@@ -456,18 +446,16 @@ mod test {
             description: Some("something".into()),
             typ: None,
             capabilities: Some(vec![]),
-            trust: Some(TrustType::Public),
             group_expiration: Some(None),
         };
         assert_eq!(
             group_update.log_comment(),
-            "description, capabilities, trust, expiration"
+            "description, capabilities, expiration"
         );
         let group_update = GroupUpdate {
             description: None,
             typ: None,
             capabilities: None,
-            trust: None,
             group_expiration: None,
         };
         assert_eq!(group_update.log_comment(), "");

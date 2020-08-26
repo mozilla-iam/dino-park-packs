@@ -388,6 +388,25 @@ pub fn get_members_not_current(
         .map_err(Into::into)
 }
 
+pub fn get_members_by_trust_less_than(
+    connection: &PgConnection,
+    group_name: &str,
+    trust: &TrustType,
+) -> Result<Vec<User>, Error> {
+    let group = internal::group::get_group(connection, group_name)?;
+    schema::memberships::table
+        .filter(schema::memberships::group_id.eq(group.id))
+        .left_join(
+            schema::profiles::table
+                .on(schema::profiles::user_uuid.eq(schema::memberships::user_uuid)),
+        )
+        .filter(schema::profiles::trust.lt(trust))
+        .select(schema::memberships::user_uuid)
+        .get_results(connection)
+        .map(|r| r.into_iter().map(|user_uuid| User { user_uuid }).collect())
+        .map_err(Into::into)
+}
+
 pub fn get_memberships_expired_before(
     connection: &PgConnection,
     before: NaiveDateTime,

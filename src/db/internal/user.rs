@@ -15,9 +15,9 @@ use std::convert::TryFrom;
 use uuid::Uuid;
 
 pub fn user_trust(connection: &PgConnection, user_uuid: &Uuid) -> Result<TrustType, Error> {
-    schema::users_staff::table
-        .filter(schema::users_staff::user_uuid.eq(user_uuid))
-        .select(schema::users_staff::trust)
+    schema::profiles::table
+        .filter(schema::profiles::user_uuid.eq(user_uuid))
+        .select(schema::profiles::trust)
         .first(connection)
         .map_err(Into::into)
 }
@@ -63,7 +63,7 @@ pub fn slim_user_profile_by_uuid(
     use schema::profiles as p;
     schema::profiles::table
         .filter(p::user_uuid.eq(user_uuid))
-        .select((p::user_uuid, p::user_id, p::email, p::username))
+        .select((p::user_uuid, p::user_id, p::email, p::username, p::trust))
         .first::<UserProfileSlim>(connection)
         .map_err(|_| PacksError::ProfileNotFound.into())
 }
