@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 
-#[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Rule_type"]
 pub enum RuleType {
     Staff,
@@ -15,7 +15,7 @@ pub enum RuleType {
     Custom,
 }
 
-#[derive(Clone, DbEnum, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
 #[DieselType = "Trust_type"]
 pub enum TrustType {
     Public,
@@ -77,7 +77,7 @@ impl TryFrom<Display> for TrustType {
     }
 }
 
-#[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Permission_type"]
 pub enum PermissionType {
     InviteMember,
@@ -89,14 +89,14 @@ pub enum PermissionType {
     EditTerms,
 }
 
-#[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Capability_type"]
 pub enum CapabilityType {
     Gdrive,
     Discourse,
 }
 
-#[derive(Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Role_type"]
 pub enum RoleType {
     Admin,
@@ -128,7 +128,7 @@ impl RoleType {
     }
 }
 
-#[derive(DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
 #[DieselType = "Group_type"]
 pub enum GroupType {
     Open,

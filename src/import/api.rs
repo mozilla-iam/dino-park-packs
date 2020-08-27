@@ -1,4 +1,5 @@
 use crate::api::error::ApiError;
+use crate::db::types::TrustType;
 use crate::db::Pool;
 use crate::import::ops::*;
 use crate::import::tsv::*;
@@ -25,7 +26,7 @@ struct GroupImportOption {
 
 #[derive(Debug, Deserialize, Default)]
 struct GroupImportQuery {
-    staff_only: bool,
+    trust: Option<TrustType>,
 }
 
 async fn full_group_import<T: AsyncCisClientTrait>(
@@ -34,7 +35,7 @@ async fn full_group_import<T: AsyncCisClientTrait>(
     cis_client: web::Data<T>,
     query: web::Query<GroupImportQuery>,
 ) -> Result<HttpResponse, ApiError> {
-    let GroupImportQuery { staff_only } = query.into_inner();
+    let trust = query.into_inner().trust.unwrap_or(TrustType::Ndaed);
     let mut group_import = GroupImportOption {
         ..Default::default()
     };
@@ -95,7 +96,7 @@ async fn full_group_import<T: AsyncCisClientTrait>(
                 group,
                 curators,
                 memberships,
-                staff_only,
+                trust,
             };
             import(&pool, group_import, Arc::clone(&*cis_client)).await?
         }

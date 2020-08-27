@@ -4,6 +4,7 @@ use crate::db::logs::LogContext;
 use crate::db::operations::models::NewGroup;
 use crate::db::schema;
 use crate::db::types::*;
+use crate::db::users::trust_for_profile;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
 use crate::import::tsv::MozilliansGroup;
@@ -41,10 +42,14 @@ pub struct GroupImport {
     pub group: MozilliansGroup,
     pub memberships: Vec<MozilliansGroupMembership>,
     pub curators: Vec<MozilliansGroupCurator>,
-    pub staff_only: bool,
+    pub trust: TrustType,
 }
 
-pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Result<(), Error> {
+pub fn import_group(
+    connection: &PgConnection,
+    moz_group: MozilliansGroup,
+    trust: TrustType,
+) -> Result<(), Error> {
     let group_name = moz_group.name.clone();
     let description = match (moz_group.website.as_str(), moz_group.wiki.as_str()) {
         ("", "") => moz_group.description,
@@ -73,7 +78,7 @@ pub fn import_group(connection: &PgConnection, moz_group: MozilliansGroup) -> Re
             GroupType::Closed
         },
         description,
-        trust: TrustType::Ndaed,
+        trust,
         capabilities: Default::default(),
         group_expiration: Some(moz_group.expiration),
     };
@@ -116,7 +121,7 @@ async fn import_curator(
     connection: &PgConnection,
     group_name: &str,
     curator: MozilliansGroupCurator,
-    staff_only: bool,
+    trust: TrustType,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     let user_profile =
@@ -124,14 +129,7 @@ async fn import_curator(
     let user = User {
         user_uuid: user_profile.user_uuid,
     };
-    if staff_only
-        && !user_profile
-            .profile
-            .staff_information
-            .staff
-            .value
-            .unwrap_or_default()
-    {
+    if trust_for_profile(&user_profile.profile) < trust {
         return Ok(());
     }
     internal::admin::add_admin(&connection, group_name, &User::default(), &user)?;
@@ -143,20 +141,12 @@ pub async fn import_curators(
     connection: &PgConnection,
     group_name: &str,
     moz_curators: Vec<MozilliansGroupCurator>,
-    staff_only: bool,
+    trust: TrustType,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     for curator in moz_curators {
         let user_id = curator.auth0_user_id.clone();
-        match import_curator(
-            connection,
-            group_name,
-            curator,
-            staff_only,
-            cis_client.clone(),
-        )
-        .await
-        {
+        match import_curator(connection, group_name, curator, trust, cis_client.clone()).await {
             Ok(()) => {}
             Err(e) => warn!(
                 "unable to add curator {} for group {}: {}",
@@ -171,21 +161,14 @@ pub async fn import_member(
     connection: &PgConnection,
     group_name: &str,
     member: MozilliansGroupMembership,
-    staff_only: bool,
+    trust: TrustType,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     use schema::memberships as m;
 
     let user_profile =
         get_user_profile(connection, &member.auth0_user_id, cis_client.clone()).await?;
-    if staff_only
-        && !user_profile
-            .profile
-            .staff_information
-            .staff
-            .value
-            .unwrap_or_default()
-    {
+    if trust_for_profile(&user_profile.profile) < trust {
         return Ok(());
     }
 
@@ -234,7 +217,7 @@ pub async fn import_members(
     connection: &PgConnection,
     group_name: &str,
     moz_members: Vec<MozilliansGroupMembership>,
-    staff_only: bool,
+    trust: TrustType,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     use schema::groups as g;
@@ -246,15 +229,7 @@ pub async fn import_members(
             created = joined;
         }
         let user_id = member.auth0_user_id.clone();
-        match import_member(
-            connection,
-            group_name,
-            member,
-            staff_only,
-            cis_client.clone(),
-        )
-        .await
-        {
+        match import_member(connection, group_name, member, trust, cis_client.clone()).await {
             Ok(()) => {}
             Err(e) => warn!(
                 "unable to add member {} for group {}: {}",
@@ -277,12 +252,12 @@ pub async fn import(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let group_name = group_import.group.name.clone();
-    import_group(&connection, group_import.group)?;
+    import_group(&connection, group_import.group, group_import.trust)?;
     import_curators(
         &connection,
         &group_name,
         group_import.curators,
-        group_import.staff_only,
+        group_import.trust,
         cis_client.clone(),
     )
     .await?;
@@ -290,7 +265,7 @@ pub async fn import(
         &connection,
         &group_name,
         group_import.memberships,
-        group_import.staff_only,
+        group_import.trust,
         cis_client.clone(),
     )
     .await?;

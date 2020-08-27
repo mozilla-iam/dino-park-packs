@@ -8,6 +8,7 @@ use crate::helpers::users::basic_user;
 use actix_web::test;
 use actix_web::App;
 use csv::ReaderBuilder;
+use dino_park_packs::db::types::TrustType;
 use dino_park_packs::import::ops::*;
 use dino_park_packs::import::tsv::MozilliansGroup;
 use dino_park_packs::import::tsv::MozilliansGroupCurator;
@@ -59,12 +60,12 @@ async fn import() -> Result<(), Error> {
     let curators = curators()?;
     let members = members()?;
     let connection = get_pool().get()?;
-    import_group(&connection, group)?;
+    import_group(&connection, group, TrustType::Authenticated)?;
     import_curators(
         &connection,
         "import-test",
         curators,
-        false,
+        TrustType::Authenticated,
         cis_client.clone(),
     )
     .await?;
@@ -124,7 +125,7 @@ async fn import() -> Result<(), Error> {
         &connection,
         "import-test",
         members,
-        false,
+        TrustType::Authenticated,
         cis_client.clone(),
     )
     .await?;
@@ -178,12 +179,12 @@ async fn import_staff_only() -> Result<(), Error> {
     let curators = curators()?;
     let members = members()?;
     let connection = get_pool().get()?;
-    import_group(&connection, group)?;
+    import_group(&connection, group, TrustType::Staff)?;
     import_curators(
         &connection,
         "import-test",
         curators,
-        true,
+        TrustType::Staff,
         cis_client.clone(),
     )
     .await?;
@@ -243,7 +244,7 @@ async fn import_staff_only() -> Result<(), Error> {
         &connection,
         "import-test",
         members,
-        true,
+        TrustType::Staff,
         cis_client.clone(),
     )
     .await?;
