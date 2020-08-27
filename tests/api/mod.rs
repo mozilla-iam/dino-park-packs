@@ -1,10 +1,14 @@
 mod anonmail;
 mod basics;
+mod create;
 mod delete;
 mod details;
 mod errors;
 mod groups;
 mod import;
 mod invitations;
+mod join;
 mod requests;
+mod revoke;
 mod sudo;
+mod upgrade;

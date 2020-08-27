@@ -1,0 +1,6 @@
+ALTER TABLE GROUPS
+    DROP CONSTRAINT mintrust;
+
+ALTER TABLE profiles
+    DROP COLUMN trust;
+

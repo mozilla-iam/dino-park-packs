@@ -8,6 +8,7 @@ use crate::db::operations::models::GroupWithTermsFlag;
 use crate::db::operations::models::NewGroup;
 use crate::db::operations::models::PaginatedGroupsLists;
 use crate::db::operations::models::SortGroupsBy;
+use crate::db::types::TrustType;
 use crate::db::Pool;
 use crate::error::PacksError;
 use crate::mail::manager::send_emails;
@@ -21,8 +22,6 @@ use cis_client::AsyncCisClientTrait;
 use diesel::pg::PgConnection;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
-use futures::future::try_join_all;
-use futures::TryFutureExt;
 use std::convert::TryFrom;
 use std::sync::Arc;
 
@@ -67,7 +66,6 @@ pub async fn delete_group(
     group_name: &str,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
-    // TODO: clean up and reserve group name
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
@@ -79,33 +77,14 @@ pub async fn delete_group(
     let bcc = internal::member::get_curator_emails_by_group_name(&connection, group_name)?;
     let members = internal::member::get_members_not_current(&connection, group_name, &host)?;
     drop(connection);
-    let v = members
-        .iter()
-        .map(|user| {
-            let user_uuid = user.user_uuid;
-            log::debug!("removing {} for {}", &group_name, user_uuid);
-            operations::members::remove(
-                &pool,
-                &scope_and_user,
-                &group_name,
-                &host,
-                &user,
-                Arc::clone(&cis_client),
-            )
-            .map_ok(move |k| {
-                log::debug!("removed {} for {}", &group_name, user_uuid);
-                k
-            })
-            .map_err(move |e| {
-                log::warn!("failed to remove {} for {}: {}", &group_name, user_uuid, e);
-                e
-            })
-        })
-        .collect::<Vec<_>>();
-    log::info!("deleting {} members", v.len());
-    try_join_all(v)
-        .map_err(|_| PacksError::ErrorDeletingMembers)
-        .await?;
+    operations::members::remove_members(
+        pool,
+        scope_and_user,
+        group_name,
+        &members,
+        Arc::clone(&cis_client),
+    )
+    .await?;
     operations::members::remove(
         &pool,
         &scope_and_user,
@@ -122,6 +101,25 @@ pub async fn delete_group(
         bcc,
         &Template::GroupDeleted(group_name.to_string(), host_profile.username),
     );
+    Ok(())
+}
+
+pub async fn update_group_trust(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    trust: &TrustType,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let to_delete =
+        internal::member::get_members_by_trust_less_than(&connection, group_name, trust)?;
+    drop(connection);
+    operations::members::remove_members(pool, scope_and_user, group_name, &to_delete, cis_client)
+        .await?;
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    internal::group::update_group_trust(&host.user_uuid, &connection, group_name, trust)?;
     Ok(())
 }
 

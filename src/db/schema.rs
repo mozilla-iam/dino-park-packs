@@ -90,6 +90,7 @@ table! {
         email -> Varchar,
         username -> Varchar,
         profile -> Jsonb,
+        trust -> Trust_type,
     }
 }
 

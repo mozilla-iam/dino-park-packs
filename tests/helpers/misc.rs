@@ -14,9 +14,11 @@ use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::AALevel;
 use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
+use failure::Error;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use std::sync::Arc;
 
 use dino_park_packs::*;
 
@@ -162,4 +164,19 @@ pub async fn test_app_and_cis() -> (impl HttpServiceFactory, CisFakeClient) {
             ),
         cis_client,
     )
+}
+
+pub async fn create_nda(cis_client: Arc<impl AsyncCisClientTrait>) -> Result<(), Error> {
+    let pool = get_pool();
+    let host = Soa::from(&basic_user(1, true)).admin().aal_medium();
+    let nda_group = db::operations::models::NewGroup {
+        name: "nda".into(),
+        description: Default::default(),
+        typ: db::types::GroupType::Closed,
+        trust: db::types::TrustType::Authenticated,
+        capabilities: Default::default(),
+        group_expiration: None,
+    };
+
+    db::operations::groups::add_new_group(&pool, &host.into(), nda_group, cis_client).await
 }

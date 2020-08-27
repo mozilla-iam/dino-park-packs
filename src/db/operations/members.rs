@@ -2,12 +2,14 @@ use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
 use crate::db::internal;
 use crate::db::logs::add_to_comment_body;
+use crate::db::operations;
 use crate::db::operations::models::*;
 use crate::db::schema;
 use crate::db::schema::groups::dsl as groups;
 use crate::db::types::*;
 use crate::db::Pool;
 use crate::error;
+use crate::error::PacksError;
 use crate::mail::manager::send_email;
 use crate::mail::manager::send_emails;
 use crate::mail::templates::Template;
@@ -25,6 +27,8 @@ use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::Trust;
 use failure::Error;
+use futures::future::try_join_all;
+use futures::TryFutureExt;
 use log::error;
 use serde_json::Value;
 use std::sync::Arc;
@@ -150,6 +154,82 @@ pub async fn add(
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
 
+pub async fn remove_members(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    members: &[User],
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    REMOVE_MEMBER.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    drop(connection);
+    let v = members
+        .iter()
+        .map(|user| {
+            let user_uuid = user.user_uuid;
+            log::debug!("removing {} for {}", &group_name, user_uuid);
+            operations::members::remove(
+                &pool,
+                &scope_and_user,
+                &group_name,
+                &host,
+                &user,
+                Arc::clone(&cis_client),
+            )
+            .map_ok(move |k| {
+                log::debug!("removed {} for {}", &group_name, user_uuid);
+                k
+            })
+            .map_err(move |e| {
+                log::warn!("failed to remove {} for {}: {}", &group_name, user_uuid, e);
+                e
+            })
+        })
+        .collect::<Vec<_>>();
+    log::info!("deleting {} members", v.len());
+    try_join_all(v)
+        .map_err(|_| PacksError::ErrorDeletingMembers)
+        .await?;
+    Ok(())
+}
+
+pub async fn revoke_memberships_by_trust(
+    pool: &Pool,
+    group_names: &[&str],
+    host: &User,
+    user: &User,
+    trust: TrustType,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+    comment: Option<Value>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+
+    let comment = add_to_comment_body("reason", "trust revoked", comment);
+    for invited in internal::invitation::invited_groups_for_user(&connection, &user.user_uuid)?
+        .iter()
+        .filter(|i| trust < i.trust)
+    {
+        internal::invitation::delete(&connection, &invited.name, *host, *user, comment.clone())?;
+    }
+    let all_groups = internal::group::groups_for_user(&connection, &user.user_uuid)?;
+    let mut revoked_groups = all_groups
+        .iter()
+        .filter(|g| trust < g.trust)
+        .map(|g| g.name.as_str())
+        .chain(group_names.iter().copied())
+        .collect::<Vec<_>>();
+    revoked_groups.dedup();
+    drop(connection);
+    _revoke_membership(pool, &revoked_groups, host, user, true, cis_client, comment).await
+}
+
 pub async fn revoke_membership(
     pool: &Pool,
     group_names: &[&str],
@@ -161,24 +241,24 @@ pub async fn revoke_membership(
 ) -> Result<(), Error> {
     let connection = pool.get()?;
     let is_staff = internal::user::user_trust(&connection, &user.user_uuid)? == TrustType::Staff;
-    // are we dropping nda membership -> remove all groups and invitations
+    // are we dropping nda membership -> remove according groups and invitations
     if group_names
         .iter()
         .any(|group_name| is_nda_group(*group_name))
         && !is_staff
     {
-        let all_groups = internal::group::groups_for_user(&connection, &user.user_uuid)?;
-        let all_groups = all_groups
-            .iter()
-            .map(|group| group.name.as_str())
-            .collect::<Vec<_>>();
-        let comment = add_to_comment_body("reason", "nda revoked", comment);
-        let invited = internal::invitation::invited_groups_for_user(&connection, &user.user_uuid)?;
-        for group in invited {
-            internal::invitation::delete(&connection, &group.name, *host, *user, comment.clone())?;
-        }
+        let comment = add_to_comment_body("trust", "nda revoked", comment);
         drop(connection);
-        _revoke_membership(pool, &all_groups, host, user, force, cis_client, comment).await
+        revoke_memberships_by_trust(
+            pool,
+            group_names,
+            host,
+            user,
+            TrustType::Authenticated,
+            cis_client,
+            comment,
+        )
+        .await
     } else {
         drop(connection);
         _revoke_membership(pool, group_names, host, user, force, cis_client, comment).await
@@ -193,6 +273,9 @@ async fn _revoke_membership(
     cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
 ) -> Result<(), Error> {
+    if group_names.is_empty() {
+        return Ok(());
+    }
     let exit_on_error = group_names.len() == 1;
     let connection = pool.get()?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;

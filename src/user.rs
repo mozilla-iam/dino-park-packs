@@ -4,7 +4,7 @@ use failure::Error;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct User {
     pub user_uuid: Uuid,
 }

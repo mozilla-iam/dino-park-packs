@@ -1,7 +1,7 @@
 use crate::helpers::api::*;
 use crate::helpers::db::get_pool;
 use crate::helpers::db::reset;
-use crate::helpers::misc::test_app;
+use crate::helpers::misc::test_app_and_cis;
 use crate::helpers::misc::Soa;
 use crate::helpers::users::basic_user;
 use crate::helpers::users::user_uuid;
@@ -12,11 +12,14 @@ use dino_park_packs::db::operations::members::get_anonymous_member_emails;
 use dino_park_packs::db::operations::users::update_user_cache;
 use failure::Error;
 use serde_json::json;
+use std::sync::Arc;
 
 #[actix_rt::test]
 async fn hidden_member_emails() -> Result<(), Error> {
     reset()?;
-    let app = App::new().service(test_app().await);
+    let (service, cis_client) = test_app_and_cis().await;
+    let cis_client = Arc::new(cis_client);
+    let app = App::new().service(service);
     let mut app = test::init_service(app).await;
     let user = basic_user(1, true);
     let creator = Soa::from(&user).creator().aal_medium();
@@ -57,33 +60,33 @@ async fn hidden_member_emails() -> Result<(), Error> {
     assert!(res.status().is_success());
 
     user3.primary_email.metadata.display = Some(Display::Staff);
-    update_user_cache(&pool, &user3)?;
+    update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
     assert_eq!(emails, vec![String::from("hans3@knall.org")]);
 
     user3.primary_email.metadata.display = Some(Display::Ndaed);
-    update_user_cache(&pool, &user3)?;
+    update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
     assert!(emails.is_empty());
 
     user3.primary_email.metadata.display = Some(Display::Ndaed);
     user3.first_name.metadata.display = Some(Display::Staff);
     user3.last_name.metadata.display = Some(Display::Staff);
-    update_user_cache(&pool, &user3)?;
+    update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
     assert_eq!(emails, vec![String::from("hans3@knall.org")]);
 
     user3.primary_email.metadata.display = Some(Display::Ndaed);
     user3.first_name.metadata.display = Some(Display::Ndaed);
     user3.last_name.metadata.display = Some(Display::Staff);
-    update_user_cache(&pool, &user3)?;
+    update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
     assert!(emails.is_empty());
 
     user3.primary_email.metadata.display = Some(Display::Ndaed);
     user3.first_name.metadata.display = Some(Display::Staff);
     user3.last_name.metadata.display = Some(Display::Ndaed);
-    update_user_cache(&pool, &user3)?;
+    update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.into())?;
     assert!(emails.is_empty());
 

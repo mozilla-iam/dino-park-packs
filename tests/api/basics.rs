@@ -97,7 +97,7 @@ async fn update() -> Result<(), Error> {
         &creator,
     )
     .await;
-    assert!(res.status().is_success());
+    assert!(!res.status().is_success());
 
     Ok(())
 }

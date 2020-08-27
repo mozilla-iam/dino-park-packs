@@ -4,7 +4,6 @@ use crate::rules::error::RuleError;
 use crate::rules::RuleContext;
 use crate::utils::valid_group_name;
 use dino_park_trust::GroupsTrust;
-use dino_park_trust::Trust;
 
 const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
 
@@ -23,7 +22,7 @@ pub fn rule_only_admins(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if curent user is allowed to create groups.
+/// Check if current user is allowed to create groups.
 pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
     match ctx.scope_and_user.groups_scope {
         GroupsTrust::Creator | GroupsTrust::Admin => Ok(()),
@@ -31,7 +30,7 @@ pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `InviteMember` permissions for the given
+/// Check if the host is either `RoleType::Admin` or has `InviteMember` permissions for the given
 /// group.
 pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
@@ -46,7 +45,7 @@ pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `RemoveMember` permissions for the given
+/// Check if the host is either `RoleType::Admin` or has `RemoveMember` permissions for the given
 /// group.
 pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
@@ -93,8 +92,9 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
         ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?,
     )
     .map_err(|_| RuleError::UserNotFound)?;
-    let ndaed = trust >= TrustType::Ndaed;
-    if ndaed | is_nda_group(&ctx.group) {
+    let group =
+        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+    if trust >= group.trust {
         return Ok(());
     }
     Err(RuleError::NotAllowedToJoinGroup)
@@ -102,8 +102,10 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 
 /// Check if the current user is nda'd or the group is the nda group
 pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
-    let ndaed = ctx.scope_and_user.scope >= Trust::Ndaed;
-    if ndaed | is_nda_group(&ctx.group) {
+    let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
+    let group =
+        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+    if TrustType::from(&ctx.scope_and_user.scope) >= group.trust {
         return Ok(());
     }
     Err(RuleError::NotAllowedToJoinGroup)
@@ -129,7 +131,7 @@ pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` for the given group
+/// Check if the host is either `RoleType::Admin` for the given group
 pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
@@ -138,7 +140,7 @@ pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the member is either `RoleTpye::Member` for the given group
+/// Check if the member is either `RoleType::Member` for the given group
 pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
@@ -148,7 +150,7 @@ pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `EditTerms` permissions for the given
+/// Check if the host is either `RoleType::Admin` or has `EditTerms` permissions for the given
 /// group.
 pub fn rule_host_can_edit_terms(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;

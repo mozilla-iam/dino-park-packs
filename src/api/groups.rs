@@ -101,7 +101,7 @@ async fn group_details(
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let membership =
         operations::members::membership_and_scoped_host(&pool, &scope_and_user, &group_name)?;
-    let role = membership.as_ref().map(|m| m.role.clone());
+    let role = membership.as_ref().map(|m| m.role);
     let super_user = scope_and_user.groups_scope == GroupsTrust::Admin;
     let curator = role.as_ref().map(|r| r.is_curator()).unwrap_or_default() || super_user;
     let is_member = membership.is_some();
@@ -155,6 +155,7 @@ async fn group_details(
             },
             created: group.group.created,
             terms: group.terms,
+            trust: group.group.trust,
         },
         member_count,
         invitation_count,

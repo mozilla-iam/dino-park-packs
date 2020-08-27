@@ -15,9 +15,9 @@ use std::convert::TryFrom;
 use uuid::Uuid;
 
 pub fn user_trust(connection: &PgConnection, user_uuid: &Uuid) -> Result<TrustType, Error> {
-    schema::users_staff::table
-        .filter(schema::users_staff::user_uuid.eq(user_uuid))
-        .select(schema::users_staff::trust)
+    schema::profiles::table
+        .filter(schema::profiles::user_uuid.eq(user_uuid))
+        .select(schema::profiles::trust)
         .first(connection)
         .map_err(Into::into)
 }
@@ -43,6 +43,19 @@ pub fn user_profile_by_uuid(
         .map_err(|_| PacksError::ProfileNotFound.into())
 }
 
+pub fn user_profile_by_uuid_maybe(
+    connection: &PgConnection,
+    user_uuid: &Uuid,
+) -> Result<Option<UserProfile>, Error> {
+    schema::profiles::table
+        .filter(schema::profiles::user_uuid.eq(user_uuid))
+        .first::<UserProfileValue>(connection)
+        .optional()
+        .map_err(Error::from)
+        .map(|p| p.and_then(|p| UserProfile::try_from(p).ok()))
+        .map_err(|_| PacksError::ProfileNotFound.into())
+}
+
 pub fn slim_user_profile_by_uuid(
     connection: &PgConnection,
     user_uuid: &Uuid,
@@ -50,7 +63,7 @@ pub fn slim_user_profile_by_uuid(
     use schema::profiles as p;
     schema::profiles::table
         .filter(p::user_uuid.eq(user_uuid))
-        .select((p::user_uuid, p::user_id, p::email, p::username))
+        .select((p::user_uuid, p::user_id, p::email, p::username, p::trust))
         .first::<UserProfileSlim>(connection)
         .map_err(|_| PacksError::ProfileNotFound.into())
 }
@@ -118,6 +131,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
     };
 
     let profile_uuid = &user_profile.user_uuid;
+    let profile_user_id = &user_profile.user_id;
 
     match schema::user_ids::table
         .filter(schema::user_ids::user_uuid.eq(profile_uuid))
@@ -125,7 +139,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
     {
         Ok(ref id_uuid) if &profile_id_uuid != id_uuid => error!(
             "changed user_id/user_uuid: {}/{} → {}/{}",
-            id_uuid.user_uuid, id_uuid.user_id, profile_uuid, profile_uuid
+            id_uuid.user_uuid, id_uuid.user_id, profile_uuid, profile_user_id
         ),
         Err(diesel::NotFound) => diesel::insert_into(schema::user_ids::table)
             .values(profile_id_uuid)
@@ -135,7 +149,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
             error!("error verifying uuid/id consistency: {}", e);
             return Err(e.into());
         }
-        _ => (),
+        _ => {}
     }
 
     let staff_profile = UsersStaff::from(profile);

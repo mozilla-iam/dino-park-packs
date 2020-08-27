@@ -19,6 +19,7 @@ pub struct UserProfileSlim {
     pub user_id: String,
     pub email: String,
     pub username: String,
+    pub trust: TrustType,
 }
 
 #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
@@ -30,6 +31,7 @@ pub struct UserProfileValue {
     pub email: String,
     pub username: String,
     pub profile: Value,
+    pub trust: TrustType,
 }
 
 pub struct UserProfile {
@@ -38,6 +40,7 @@ pub struct UserProfile {
     pub email: String,
     pub username: String,
     pub profile: Profile,
+    pub trust: TrustType,
 }
 
 impl TryFrom<UserProfile> for UserProfileValue {
@@ -50,6 +53,7 @@ impl TryFrom<UserProfile> for UserProfileValue {
             email: u.email,
             username: u.username,
             profile: serde_json::to_value(u.profile)?,
+            trust: u.trust,
         })
     }
 }
@@ -63,6 +67,7 @@ impl TryFrom<UserProfileValue> for UserProfile {
             email: u.email,
             username: u.username,
             profile: serde_json::from_value(u.profile)?,
+            trust: u.trust,
         })
     }
 }
@@ -70,6 +75,7 @@ impl TryFrom<UserProfileValue> for UserProfile {
 impl TryFrom<Profile> for UserProfile {
     type Error = failure::Error;
     fn try_from(p: Profile) -> Result<Self, Self::Error> {
+        let trust = trust_for_profile(&p);
         Ok(UserProfile {
             user_uuid: Uuid::parse_str(&p.uuid.value.clone().unwrap_or_default())?,
             user_id: p.user_id.value.clone().ok_or(DBError::InvalidProfile)?,
@@ -84,6 +90,7 @@ impl TryFrom<Profile> for UserProfile {
                 .clone()
                 .ok_or(DBError::InvalidProfile)?,
             profile: p,
+            trust,
         })
     }
 }
@@ -103,7 +110,7 @@ fn field_for_display(field: &StandardAttributeString, display: &Display) -> Opti
     }
 }
 
-fn trust_for_profile(profile: &Profile) -> TrustType {
+pub fn trust_for_profile(profile: &Profile) -> TrustType {
     if profile.staff_information.staff.value.unwrap_or_default() {
         return TrustType::Staff;
     }
