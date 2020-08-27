@@ -63,11 +63,7 @@ pub fn search_users(
 
     let group = internal::group::get_group(&connection, &group_name)?;
 
-    let trust = if let Some(trust) = trust {
-        trust
-    } else {
-        group.trust
-    };
+    let trust = trust.unwrap_or(group.trust);
 
     internal::user::search_users_for_group(
         &connection,

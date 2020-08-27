@@ -1,6 +1,7 @@
 use crate::helpers::api::*;
 use crate::helpers::db::get_pool;
 use crate::helpers::db::reset;
+use crate::helpers::misc::create_nda;
 use crate::helpers::misc::read_json;
 use crate::helpers::misc::test_app_and_cis;
 use crate::helpers::misc::Soa;
@@ -28,14 +29,10 @@ async fn revoke_nda() -> Result<(), Error> {
     let normal_user_1 = basic_user(11, false);
     let host = Soa::from(&host_user).aal_medium();
 
-    let res = post(
-        &mut app,
-        "/groups/api/v1/groups",
-        json!({ "name": "nda", "description": "the nda group" }),
-        &host.clone().creator(),
-    )
-    .await;
-    assert!(res.status().is_success());
+    create_nda(Arc::clone(&cis_client)).await?;
+    add_to_group(&mut app, &host, &staff_user_1, "nda").await;
+    add_to_group(&mut app, &host, &staff_user_2, "nda").await;
+    add_to_group(&mut app, &host, &normal_user_1, "nda").await;
 
     let res = post(
         &mut app,
@@ -49,10 +46,6 @@ async fn revoke_nda() -> Result<(), Error> {
     let res = get(&mut app, "/groups/api/v1/groups", &host).await;
     assert!(res.status().is_success());
     assert_eq!(read_json(res).await["groups"][0]["typ"], "Closed");
-
-    add_to_group(&mut app, &host, &staff_user_1, "nda").await;
-    add_to_group(&mut app, &host, &staff_user_2, "nda").await;
-    add_to_group(&mut app, &host, &normal_user_1, "nda").await;
 
     add_to_group(&mut app, &host, &staff_user_1, "revoke-test").await;
     add_to_group(&mut app, &host, &staff_user_2, "revoke-test").await;
@@ -108,14 +101,8 @@ async fn revoke_staff() -> Result<(), Error> {
     let mut staff_user_2 = basic_user(3, true);
     let host = Soa::from(&host_user).aal_medium();
 
-    let res = post(
-        &mut app,
-        "/groups/api/v1/groups",
-        json!({ "name": "nda", "description": "the nda group" }),
-        &host.clone().creator(),
-    )
-    .await;
-    assert!(res.status().is_success());
+    create_nda(Arc::clone(&cis_client)).await?;
+    add_to_group(&mut app, &host, &staff_user_1, "nda").await;
 
     let res = post(
         &mut app,
@@ -129,8 +116,6 @@ async fn revoke_staff() -> Result<(), Error> {
     let res = get(&mut app, "/groups/api/v1/groups", &host).await;
     assert!(res.status().is_success());
     assert_eq!(read_json(res).await["groups"][0]["typ"], "Closed");
-
-    add_to_group(&mut app, &host, &staff_user_1, "nda").await;
 
     add_to_group(&mut app, &host, &staff_user_1, "revoke-test").await;
     add_to_group(&mut app, &host, &staff_user_2, "revoke-test").await;

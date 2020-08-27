@@ -7,6 +7,7 @@ mod errors;
 mod groups;
 mod import;
 mod invitations;
+mod join;
 mod requests;
 mod revoke;
 mod sudo;

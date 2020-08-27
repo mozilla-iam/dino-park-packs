@@ -22,7 +22,7 @@ pub fn rule_only_admins(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if curent user is allowed to create groups.
+/// Check if current user is allowed to create groups.
 pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
     match ctx.scope_and_user.groups_scope {
         GroupsTrust::Creator | GroupsTrust::Admin => Ok(()),
@@ -30,7 +30,7 @@ pub fn rule_is_creator(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `InviteMember` permissions for the given
+/// Check if the host is either `RoleType::Admin` or has `InviteMember` permissions for the given
 /// group.
 pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
@@ -45,7 +45,7 @@ pub fn rule_host_can_invite(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `RemoveMember` permissions for the given
+/// Check if the host is either `RoleType::Admin` or has `RemoveMember` permissions for the given
 /// group.
 pub fn rule_host_can_remove(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
@@ -94,8 +94,7 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     .map_err(|_| RuleError::UserNotFound)?;
     let group =
         internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
-    let ndaed = trust >= group.trust;
-    if ndaed | is_nda_group(&ctx.group) {
+    if trust >= group.trust {
         return Ok(());
     }
     Err(RuleError::NotAllowedToJoinGroup)
@@ -106,8 +105,7 @@ pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     let group =
         internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
-    let ndaed = TrustType::from(&ctx.scope_and_user.scope) >= group.trust;
-    if ndaed | is_nda_group(&ctx.group) {
+    if TrustType::from(&ctx.scope_and_user.scope) >= group.trust {
         return Ok(());
     }
     Err(RuleError::NotAllowedToJoinGroup)
@@ -133,7 +131,7 @@ pub fn rule_host_is_curator(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` for the given group
+/// Check if the host is either `RoleType::Admin` for the given group
 pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     match internal::member::role_for(&connection, ctx.host_uuid, ctx.group) {
@@ -142,7 +140,7 @@ pub fn rule_host_is_group_admin(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the member is either `RoleTpye::Member` for the given group
+/// Check if the member is either `RoleType::Member` for the given group
 pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     let member_uuid = ctx.member_uuid.ok_or(RuleError::InvalidRuleContext)?;
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
@@ -152,7 +150,7 @@ pub fn rule_user_has_member_role(ctx: &RuleContext) -> Result<(), RuleError> {
     }
 }
 
-/// Check if the host is either `RoleTpye::Admin` or has `EditTerms` permissions for the given
+/// Check if the host is either `RoleType::Admin` or has `EditTerms` permissions for the given
 /// group.
 pub fn rule_host_can_edit_terms(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;

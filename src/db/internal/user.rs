@@ -131,6 +131,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
     };
 
     let profile_uuid = &user_profile.user_uuid;
+    let profile_user_id = &user_profile.user_id;
 
     match schema::user_ids::table
         .filter(schema::user_ids::user_uuid.eq(profile_uuid))
@@ -138,7 +139,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
     {
         Ok(ref id_uuid) if &profile_id_uuid != id_uuid => error!(
             "changed user_id/user_uuid: {}/{} → {}/{}",
-            id_uuid.user_uuid, id_uuid.user_id, profile_uuid, profile_uuid
+            id_uuid.user_uuid, id_uuid.user_id, profile_uuid, profile_user_id
         ),
         Err(diesel::NotFound) => diesel::insert_into(schema::user_ids::table)
             .values(profile_id_uuid)
@@ -148,7 +149,7 @@ pub fn update_user_cache(connection: &PgConnection, profile: &Profile) -> Result
             error!("error verifying uuid/id consistency: {}", e);
             return Err(e.into());
         }
-        _ => (),
+        _ => {}
     }
 
     let staff_profile = UsersStaff::from(profile);
