@@ -9,7 +9,6 @@ use crate::db::types::LogTargetType;
 use crate::db::types::*;
 use crate::db::views;
 use crate::user::User;
-use crate::utils::to_expiration_ts;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use dino_park_trust::Trust;
@@ -351,6 +350,7 @@ pub fn renew(
     expiration: Option<i32>,
 ) -> Result<(), Error> {
     let group = internal::group::get_group(connection, group_name)?;
+    let expiration = internal::expiration::map_expiration(expiration, group.group_expiration);
     let log_ctx = LogContext::with(group.id, *host_uuid).with_user(member.user_uuid);
     diesel::update(
         schema::memberships::table.filter(
@@ -359,7 +359,7 @@ pub fn renew(
                 .and(schema::memberships::user_uuid.eq(member.user_uuid)),
         ),
     )
-    .set(schema::memberships::expiration.eq(expiration.map(to_expiration_ts)))
+    .set(schema::memberships::expiration.eq(expiration))
     .execute(connection)
     .map(|_| {
         internal::log::db_log(

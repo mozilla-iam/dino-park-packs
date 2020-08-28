@@ -4,6 +4,7 @@ mod create;
 mod delete;
 mod details;
 mod errors;
+mod expiration;
 mod groups;
 mod import;
 mod invitations;
