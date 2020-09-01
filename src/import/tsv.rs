@@ -22,6 +22,9 @@ mod sql_date {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
+        if s == "NULL" {
+            return Ok(Utc.ymd(2011, 3, 22).and_hms(0, 0, 0));
+        }
         Utc.datetime_from_str(&s, FORMAT)
             .map_err(serde::de::Error::custom)
     }
