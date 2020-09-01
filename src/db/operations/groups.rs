@@ -200,3 +200,20 @@ pub fn delete_inactive_group(
 
     internal::group::delete_inactive_group(&connection, group_name)
 }
+
+pub fn reserve_group(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        &pool.clone(),
+        scope_and_user,
+        group_name,
+        &user.user_uuid,
+    ))?;
+
+    internal::group::reserve_group(&connection, &user.user_uuid, group_name)
+}

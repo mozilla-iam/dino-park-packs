@@ -104,6 +104,17 @@ async fn delete_inactive_group(
 }
 
 #[guard(Staff, Admin, Medium)]
+async fn reserve_group(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+    group_name: web::Path<String>,
+) -> impl Responder {
+    operations::groups::reserve_group(&pool, &scope_and_user, &group_name)
+        .map(|_| HttpResponse::Ok().json(""))
+        .map_err(ApiError::GenericBadRequest)
+}
+
+#[guard(Staff, Admin, Medium)]
 async fn change_trust<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
@@ -124,6 +135,7 @@ async fn change_trust<T: AsyncCisClientTrait>(
 
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
+        .service(web::resource("/groups/reserve/{group_name}").route(web::post().to(reserve_group)))
         .service(web::resource("/groups/inactive").route(web::get().to(list_inactive_groups)))
         .service(
             web::resource("/groups/inactive/{group_name}")

@@ -102,3 +102,33 @@ async fn list() -> Result<(), Error> {
     assert_eq!(j["groups"][0]["name"], "group3");
     Ok(())
 }
+
+#[actix_rt::test]
+async fn reserve() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+    let user = basic_user(1, true);
+    let creator = Soa::from(&user).creator().aal_medium();
+    let res = get(&mut app, "/groups/api/v1/groups", &creator).await;
+    assert!(res.status().is_success());
+    assert_eq!(read_json(res).await, json!({ "groups": [], "next": null }));
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/sudo/groups/reserve/reserve-test",
+        json!({}),
+        &creator.clone().admin(),
+    )
+    .await;
+    assert!(res.status().is_success());
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "reserve-test", "description": "a group" }),
+        &creator,
+    )
+    .await;
+    assert!(!res.status().is_success());
+    Ok(())
+}

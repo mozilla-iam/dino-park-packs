@@ -229,6 +229,34 @@ pub fn groups_for_user(connection: &PgConnection, user_uuid: &Uuid) -> Result<Ve
         .map_err(Into::into)
 }
 
+pub fn reserve_group(connection: &PgConnection, host_uuid: &Uuid, name: &str) -> Result<(), Error> {
+    let group = InsertGroup {
+        name: name.into(),
+        active: false,
+        path: String::from("/access_information/mozillians/"),
+        description: Default::default(),
+        capabilities: Default::default(),
+        typ: GroupType::Closed,
+        trust: TrustType::Staff,
+        group_expiration: None,
+    };
+    diesel::insert_into(schema::groups::table)
+        .values(&group)
+        .on_conflict_do_nothing()
+        .get_result::<Group>(connection)
+        .map_err(Into::into)
+        .map(|group| {
+            let log_ctx = LogContext::with(group.id, *host_uuid);
+            internal::log::db_log(
+                connection,
+                &log_ctx,
+                LogTargetType::Group,
+                LogOperationType::Created,
+                log_comment_body("reserved"),
+            );
+        })
+}
+
 pub fn list_groups(
     connection: &PgConnection,
     filter: Option<String>,
