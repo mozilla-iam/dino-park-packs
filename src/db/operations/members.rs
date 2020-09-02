@@ -25,6 +25,7 @@ use cis_client::AsyncCisClientTrait;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
+use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
 use failure::Error;
 use futures::future::try_join_all;
@@ -57,11 +58,18 @@ pub fn membership_and_scoped_host(
 pub fn scoped_members_and_host(
     pool: &Pool,
     group_name: &str,
-    scope: &Trust,
+    scope_and_user: &ScopeAndUser,
     options: MembersQueryOptions,
 ) -> Result<PaginatedDisplayMembersAndHost, Error> {
     let connection = pool.get()?;
-    match *scope {
+    match &scope_and_user.scope {
+        Trust::Staff if options.privileged && scope_and_user.groups_scope == GroupsTrust::Admin => {
+            internal::member::privileged_staff_scoped_members_and_host(
+                &connection,
+                group_name,
+                options,
+            )
+        }
         Trust::Staff => {
             internal::member::staff_scoped_members_and_host(&connection, group_name, options)
         }
@@ -69,14 +77,12 @@ pub fn scoped_members_and_host(
             internal::member::ndaed_scoped_members_and_host(&connection, group_name, options)
         }
         Trust::Vouched => {
-            internal::member::vouched_scoped_members(&connection, group_name, options, scope)
+            internal::member::vouched_scoped_members(&connection, group_name, options)
         }
         Trust::Authenticated => {
-            internal::member::authenticated_scoped_members(&connection, group_name, options, scope)
+            internal::member::authenticated_scoped_members(&connection, group_name, options)
         }
-        Trust::Public => {
-            internal::member::public_scoped_members(&connection, group_name, options, scope)
-        }
+        Trust::Public => internal::member::public_scoped_members(&connection, group_name, options),
     }
 }
 

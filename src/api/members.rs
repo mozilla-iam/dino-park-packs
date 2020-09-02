@@ -45,6 +45,7 @@ pub struct GetMembersQuery {
     n: Option<i64>,
     s: Option<i64>,
     by: Option<SortMembersBy>,
+    p: Option<bool>,
 }
 
 impl From<GetMembersQuery> for MembersQueryOptions {
@@ -56,6 +57,7 @@ impl From<GetMembersQuery> for MembersQueryOptions {
             limit: q.s.unwrap_or_else(|| 20),
             offset: q.n,
             order: q.by.unwrap_or_default(),
+            privileged: q.p.unwrap_or_default(),
         }
     }
 }
@@ -71,7 +73,7 @@ async fn get_members(
     match operations::members::scoped_members_and_host(
         &pool,
         &group_name,
-        &scope_and_user.scope,
+        &scope_and_user,
         query.into_inner().into(),
     ) {
         Ok(members) => Ok(HttpResponse::Ok().json(members)),

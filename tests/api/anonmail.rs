@@ -49,7 +49,7 @@ async fn hidden_member_emails() -> Result<(), Error> {
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
     assert!(emails.is_empty());
 
-    let mut user3 = basic_user(3, true);
+    let mut user3 = basic_user(11, false);
     let res = post(
         &mut app,
         "/groups/api/v1/sudo/member/anonymous",
@@ -62,7 +62,7 @@ async fn hidden_member_emails() -> Result<(), Error> {
     user3.primary_email.metadata.display = Some(Display::Staff);
     update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
-    assert_eq!(emails, vec![String::from("hans3@knall.org")]);
+    assert_eq!(emails, vec![String::from("hans11@knall.org")]);
 
     user3.primary_email.metadata.display = Some(Display::Ndaed);
     update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
@@ -74,7 +74,7 @@ async fn hidden_member_emails() -> Result<(), Error> {
     user3.last_name.metadata.display = Some(Display::Staff);
     update_user_cache(&pool, &user3, Arc::clone(&cis_client)).await?;
     let emails = get_anonymous_member_emails(&pool, &admin.clone().into())?;
-    assert_eq!(emails, vec![String::from("hans3@knall.org")]);
+    assert_eq!(emails, vec![String::from("hans11@knall.org")]);
 
     user3.primary_email.metadata.display = Some(Display::Ndaed);
     user3.first_name.metadata.display = Some(Display::Ndaed);

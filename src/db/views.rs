@@ -19,6 +19,7 @@ macro_rules! hosts_table {
         allow_tables_to_appear_in_same_query!($t, roles,);
         allow_tables_to_appear_in_same_query!($t, invitations,);
         allow_tables_to_appear_in_same_query!($t, terms,);
+        allow_tables_to_appear_in_same_query!($t, profiles,);
     };
 }
 hosts_table!(hosts_staff, users_staff);

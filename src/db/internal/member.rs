@@ -19,12 +19,11 @@ use uuid::Uuid;
 const ROLE_MEMBER: &str = "member";
 
 macro_rules! scoped_members_for {
-    ($t:ident, $f:ident) => {
+    ($t:ident, $f:ident, $s:ident) => {
         pub fn $f(
             connection: &PgConnection,
             group_name: &str,
             options: MembersQueryOptions,
-            scope: &Trust,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
             use schema::groups as g;
             use schema::memberships as m;
@@ -72,7 +71,7 @@ macro_rules! scoped_members_for {
                     let members: Vec<DisplayMemberAndHost> = members
                         .into_iter()
                         .take(limit as usize)
-                        .map(|m| DisplayMemberAndHost::from_with_scope(m, scope))
+                        .map(|m| DisplayMemberAndHost::from_with_scope(m, &Trust::$s))
                         .collect();
                     (members, next)
                 })?;
@@ -163,6 +162,90 @@ macro_rules! scoped_members_and_host_for {
     };
 }
 
+macro_rules! privileged_scoped_members_and_host_for {
+    ($t:ident, $h:ident, $f:ident) => {
+        pub fn $f(
+            connection: &PgConnection,
+            group_name: &str,
+            options: MembersQueryOptions,
+        ) -> Result<PaginatedDisplayMembersAndHost, Error> {
+            use schema::groups as g;
+            use schema::memberships as m;
+            use schema::profiles as p;
+            use schema::roles as r;
+            use schema::$t as u;
+            use views::$h as h;
+            let offset = options.offset.unwrap_or_default();
+            let limit = options.limit;
+            let q = format!("{}%", options.query.unwrap_or_default());
+            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
+            let mut query = m::table
+                .filter(m::group_id.eq(group.id))
+                .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
+                .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
+                .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
+                .inner_join(r::table)
+                .filter(r::typ.eq_any(options.roles))
+                .filter(
+                    u::first_name
+                        .concat(" ")
+                        .concat(u::last_name)
+                        .ilike(&q)
+                        .or(u::first_name.ilike(&q))
+                        .or(u::last_name.ilike(&q))
+                        .or(u::username.ilike(&q))
+                        .or(p::email.ilike(&q)),
+                )
+                .select((
+                    m::user_uuid,
+                    u::picture,
+                    u::first_name,
+                    u::last_name,
+                    u::username,
+                    p::email.nullable(),
+                    u::trust.eq(TrustType::Staff),
+                    m::added_ts,
+                    m::expiration,
+                    r::typ,
+                    m::added_by,
+                    h::first_name.nullable(),
+                    h::last_name.nullable(),
+                    h::username.nullable(),
+                    h::email.nullable(),
+                ))
+                .into_boxed();
+            query = match options.order {
+                SortMembersBy::None => query,
+                SortMembersBy::ExpirationAsc => query.order_by((m::expiration.asc(), r::typ)),
+                SortMembersBy::ExpirationDesc => query.order_by((m::expiration.desc(), r::typ)),
+                SortMembersBy::RoleAsc => query.order_by((r::typ.asc(), m::expiration)),
+                SortMembersBy::RoleDesc => query.order_by((r::typ.desc(), m::expiration)),
+            };
+
+            query = query
+                .then_order_by(u::username)
+                .offset(offset)
+                .limit(limit + 1);
+            let (members, next) =
+                query
+                    .get_results::<MemberAndHost>(connection)
+                    .map(|members| {
+                        let next = match members.len() as i64 {
+                            l if l > limit => Some(offset + limit),
+                            _ => None,
+                        };
+                        let members: Vec<DisplayMemberAndHost> = members
+                            .into_iter()
+                            .take(limit as usize)
+                            .map(|m| m.into())
+                            .collect();
+                        (members, next)
+                    })?;
+            Ok(PaginatedDisplayMembersAndHost { next, members })
+        }
+    };
+}
+
 macro_rules! membership_and_scoped_host_for {
     ($h:ident, $f:ident) => {
         pub fn $f(
@@ -201,12 +284,21 @@ macro_rules! membership_and_scoped_host_for {
 
 // scoped_members_for!(users_staff, staff_scoped_members);
 // scoped_members_for!(users_ndaed, ndaed_scoped_members);
-scoped_members_for!(users_vouched, vouched_scoped_members);
-scoped_members_for!(users_authenticated, authenticated_scoped_members);
-scoped_members_for!(users_public, public_scoped_members);
+scoped_members_for!(users_vouched, vouched_scoped_members, Vouched);
+scoped_members_for!(
+    users_authenticated,
+    authenticated_scoped_members,
+    Authenticated
+);
+scoped_members_for!(users_public, public_scoped_members, Public);
 
 scoped_members_and_host_for!(users_staff, hosts_staff, staff_scoped_members_and_host);
 scoped_members_and_host_for!(users_ndaed, hosts_ndaed, ndaed_scoped_members_and_host);
+privileged_scoped_members_and_host_for!(
+    users_staff,
+    hosts_staff,
+    privileged_staff_scoped_members_and_host
+);
 /*
 scoped_members_and_host_for!(
     users_vouched,
@@ -484,9 +576,11 @@ pub fn get_anonymous_member_emails(connection: &PgConnection) -> Result<Vec<Stri
     m::table
         .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
         .filter(
-            u::email
-                .is_null()
-                .or(u::first_name.is_null().and(u::last_name.is_null())),
+            u::trust.ne(TrustType::Staff).and(
+                u::email
+                    .is_null()
+                    .or(u::first_name.is_null().and(u::last_name.is_null())),
+            ),
         )
         .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
         .select(p::email)

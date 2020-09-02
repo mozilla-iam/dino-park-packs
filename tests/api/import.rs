@@ -162,7 +162,7 @@ async fn import() -> Result<(), Error> {
     .await;
     assert!(res.status().is_success());
     let j = read_json(res).await;
-    assert_eq!(j["group"]["created"], "2019-10-24T17:56:21Z");
+    assert_eq!(j["group"]["created"], "2011-03-22T00:00:00Z");
 
     Ok(())
 }
@@ -281,7 +281,7 @@ async fn import_staff_only() -> Result<(), Error> {
     .await;
     assert!(res.status().is_success());
     let j = read_json(res).await;
-    assert_eq!(j["group"]["created"], "2019-10-24T17:56:21Z");
+    assert_eq!(j["group"]["created"], "2011-03-22T00:00:00Z");
 
     Ok(())
 }

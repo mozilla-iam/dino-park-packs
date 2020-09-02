@@ -55,6 +55,7 @@ pub struct MembersQueryOptions {
     pub limit: i64,
     pub offset: Option<i64>,
     pub order: SortMembersBy,
+    pub privileged: bool,
 }
 
 impl Default for MembersQueryOptions {
@@ -65,6 +66,7 @@ impl Default for MembersQueryOptions {
             limit: 20,
             offset: None,
             order: SortMembersBy::RoleAsc,
+            privileged: false,
         }
     }
 }
