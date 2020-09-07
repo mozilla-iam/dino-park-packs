@@ -8,7 +8,6 @@ use crate::rules::engine::*;
 use crate::rules::RuleContext;
 use crate::user::User;
 use cis_client::AsyncCisClientTrait;
-use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
 use std::sync::Arc;
@@ -20,7 +19,6 @@ pub async fn add_admin(
     host: &User,
     user: &User,
     cis_client: Arc<impl AsyncCisClientTrait>,
-    profile: Profile,
 ) -> Result<(), Error> {
     let group_name_f = group_name.to_owned();
     CAN_ADD_CURATOR.run(&RuleContext::minimal_with_member_uuid(
@@ -31,9 +29,10 @@ pub async fn add_admin(
         &user.user_uuid,
     ))?;
     let connection = pool.get()?;
+    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
     internal::admin::add_admin(&connection, &group_name, host, user)?;
     drop(connection);
-    add_group_to_profile(cis_client, group_name_f, profile).await
+    add_group_to_profile(cis_client, group_name_f, user_profile.profile).await
 }
 
 pub fn demote(

@@ -32,7 +32,6 @@ async fn add_admin<T: AsyncCisClientTrait>(
     let pool_f = pool.clone();
     let user_uuid = add_admin.member_uuid;
     let host = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
-    let user_profile = operations::users::user_profile_by_uuid(&pool.clone(), &user_uuid)?;
     operations::admins::add_admin(
         &pool_f,
         &scope_and_user,
@@ -40,7 +39,6 @@ async fn add_admin<T: AsyncCisClientTrait>(
         &host,
         &User { user_uuid },
         Arc::clone(&*cis_client),
-        user_profile.profile,
     )
     .await?;
     Ok(HttpResponse::Ok().json(""))

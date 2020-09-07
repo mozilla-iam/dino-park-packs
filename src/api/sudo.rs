@@ -19,9 +19,11 @@ pub struct ChangeTrust {
 }
 
 #[derive(Clone, Deserialize)]
-pub struct AddMember {
+pub struct AddUser {
     user_uuid: Uuid,
     group_expiration: Option<i32>,
+    #[serde(default)]
+    no_host: bool,
 }
 
 #[derive(Deserialize)]
@@ -41,11 +43,15 @@ async fn add_member<T: AsyncCisClientTrait>(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-    add_member: web::Json<AddMember>,
+    add_member: web::Json<AddUser>,
     cis_client: web::Data<T>,
 ) -> Result<HttpResponse, ApiError> {
     let user_uuid = add_member.user_uuid;
-    let host = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
+    let host = if add_member.no_host {
+        User::default()
+    } else {
+        operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?
+    };
     operations::members::add(
         &pool,
         &scope_and_user,
@@ -53,6 +59,32 @@ async fn add_member<T: AsyncCisClientTrait>(
         &host,
         &User { user_uuid },
         add_member.group_expiration,
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn add_admin<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+    add_admin: web::Json<AddUser>,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    let user_uuid = add_admin.user_uuid;
+    let host = if add_admin.no_host {
+        User::default()
+    } else {
+        operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?
+    };
+    operations::admins::add_admin(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &User { user_uuid },
         Arc::clone(&*cis_client),
     )
     .await?;
@@ -170,6 +202,10 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
             web::resource("/member/{group_name}/{user_uuid}")
                 .route(web::delete().to(remove_member::<T>)),
         )
-        .service(web::resource("/curators/{group_name}").route(web::get().to(curator_emails)))
+        .service(
+            web::resource("/curators/{group_name}")
+                .route(web::get().to(curator_emails))
+                .route(web::post().to(add_admin::<T>)),
+        )
         .service(web::resource("/logs/all/raw").route(web::get().to(all_raw_logs)))
 }
