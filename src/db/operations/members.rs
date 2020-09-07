@@ -160,7 +160,7 @@ pub async fn add(
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
 
-pub async fn remove_members(
+pub async fn remove_members_silent(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
     group_name: &str,
@@ -181,7 +181,7 @@ pub async fn remove_members(
         .map(|user| {
             let user_uuid = user.user_uuid;
             log::debug!("removing {} for {}", &group_name, user_uuid);
-            operations::members::remove(
+            operations::members::remove_silent(
                 &pool,
                 &scope_and_user,
                 &group_name,
@@ -206,11 +206,10 @@ pub async fn remove_members(
     Ok(())
 }
 
-pub async fn revoke_memberships_by_trust(
+pub async fn revoke_memberships_by_trust<'a>(
     pool: &Pool,
-    group_names: &[&str],
+    mut remove_groups: RemoveGroups<'a>,
     host: &User,
-    user: &User,
     trust: TrustType,
     cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
@@ -218,37 +217,47 @@ pub async fn revoke_memberships_by_trust(
     let connection = pool.get()?;
 
     let comment = add_to_comment_body("reason", "trust revoked", comment);
-    for invited in internal::invitation::invited_groups_for_user(&connection, &user.user_uuid)?
-        .iter()
-        .filter(|i| trust < i.trust)
+    for invited in
+        internal::invitation::invited_groups_for_user(&connection, &remove_groups.user.user_uuid)?
+            .iter()
+            .filter(|i| trust < i.trust)
     {
-        internal::invitation::delete(&connection, &invited.name, *host, *user, comment.clone())?;
+        internal::invitation::delete(
+            &connection,
+            &invited.name,
+            *host,
+            remove_groups.user,
+            comment.clone(),
+        )?;
     }
-    let all_groups = internal::group::groups_for_user(&connection, &user.user_uuid)?;
+    let all_groups = internal::group::groups_for_user(&connection, &remove_groups.user.user_uuid)?;
     let mut revoked_groups = all_groups
         .iter()
         .filter(|g| trust < g.trust)
         .map(|g| g.name.as_str())
-        .chain(group_names.iter().copied())
+        .chain(remove_groups.group_names.iter().copied())
         .collect::<Vec<_>>();
     revoked_groups.dedup();
+    remove_groups.group_names = &revoked_groups;
+    remove_groups.force = true;
+
     drop(connection);
-    _revoke_membership(pool, &revoked_groups, host, user, true, cis_client, comment).await
+    _revoke_membership(pool, remove_groups, host, cis_client, comment).await
 }
 
-pub async fn revoke_membership(
+pub async fn revoke_membership<'a>(
     pool: &Pool,
-    group_names: &[&str],
+    remove_groups: RemoveGroups<'a>,
     host: &User,
-    user: &User,
-    force: bool,
     cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
-    let is_staff = internal::user::user_trust(&connection, &user.user_uuid)? == TrustType::Staff;
+    let is_staff =
+        internal::user::user_trust(&connection, &remove_groups.user.user_uuid)? == TrustType::Staff;
     // are we dropping nda membership -> remove according groups and invitations
-    if group_names
+    if remove_groups
+        .group_names
         .iter()
         .any(|group_name| is_nda_group(*group_name))
         && !is_staff
@@ -257,9 +266,8 @@ pub async fn revoke_membership(
         drop(connection);
         revoke_memberships_by_trust(
             pool,
-            group_names,
+            remove_groups,
             host,
-            user,
             TrustType::Authenticated,
             cis_client,
             comment,
@@ -267,18 +275,22 @@ pub async fn revoke_membership(
         .await
     } else {
         drop(connection);
-        _revoke_membership(pool, group_names, host, user, force, cis_client, comment).await
+        _revoke_membership(pool, remove_groups, host, cis_client, comment).await
     }
 }
-async fn _revoke_membership(
+async fn _revoke_membership<'a>(
     pool: &Pool,
-    group_names: &[&str],
+    remove_groups: RemoveGroups<'a>,
     host: &User,
-    user: &User,
-    force: bool,
     cis_client: Arc<impl AsyncCisClientTrait>,
     comment: Option<Value>,
 ) -> Result<(), Error> {
+    let RemoveGroups {
+        user,
+        group_names,
+        force,
+        notify,
+    } = remove_groups;
     if group_names.is_empty() {
         return Ok(());
     }
@@ -308,12 +320,37 @@ async fn _revoke_membership(
                 );
             }
         }
-        send_email(
-            user_profile.email.clone(),
-            &Template::DeleteMember(group_name.to_string()),
-        );
+        if notify {
+            send_email(
+                user_profile.email.clone(),
+                &Template::DeleteMember(group_name.to_string()),
+            );
+        }
     }
     Ok(())
+}
+
+pub async fn remove_silent(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    host: &User,
+    user: &User,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    REMOVE_MEMBER.run(&RuleContext::minimal(
+        &pool,
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+    ))?;
+    let remove_groups = RemoveGroups {
+        user: *user,
+        group_names: &[group_name],
+        force: true,
+        notify: false,
+    };
+    revoke_membership(pool, remove_groups, host, cis_client, None).await
 }
 
 pub async fn remove(
@@ -330,7 +367,13 @@ pub async fn remove(
         &group_name,
         &host.user_uuid,
     ))?;
-    revoke_membership(pool, &[group_name], host, user, true, cis_client, None).await
+    let remove_groups = RemoveGroups {
+        user: *user,
+        group_names: &[group_name],
+        force: true,
+        notify: true,
+    };
+    revoke_membership(pool, remove_groups, host, cis_client, None).await
 }
 
 pub async fn leave(
@@ -343,7 +386,13 @@ pub async fn leave(
     let connection = pool.get()?;
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     let host = User::default();
-    revoke_membership(pool, &[group_name], &host, &user, force, cis_client, None).await
+    let remove_groups = RemoveGroups {
+        user,
+        group_names: &[group_name],
+        force,
+        notify: true,
+    };
+    revoke_membership(pool, remove_groups, &host, cis_client, None).await
 }
 
 pub fn renew(

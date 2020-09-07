@@ -1,6 +1,7 @@
 use crate::db::internal;
 use crate::db::logs::log_comment_body;
 use crate::db::operations::members::revoke_memberships_by_trust;
+use crate::db::operations::models::RemoveGroups;
 use crate::db::types::TrustType;
 use crate::db::users::trust_for_profile;
 use crate::db::users::DisplayUser;
@@ -123,12 +124,17 @@ pub async fn update_user_cache(
     if let Some(old_profile) = old_profile {
         let old_trust = trust_for_profile(&old_profile.profile);
         drop(connection);
+        let remove_groups = RemoveGroups {
+            user: User { user_uuid: uuid },
+            group_names: &[],
+            force: true,
+            notify: true,
+        };
         if new_trust < old_trust {
             revoke_memberships_by_trust(
                 pool,
-                &[],
+                remove_groups,
                 &User::default(),
-                &User { user_uuid: uuid },
                 new_trust,
                 cis_client,
                 log_comment_body("trust revoked by CIS update"),

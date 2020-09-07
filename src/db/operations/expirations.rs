@@ -2,6 +2,7 @@ use crate::db::internal;
 use crate::db::logs::log_comment_body;
 use crate::db::model::Membership;
 use crate::db::operations::members::revoke_membership;
+use crate::db::operations::models::RemoveGroups;
 use crate::db::types::RoleType;
 use crate::db::Pool;
 use crate::error::PacksError;
@@ -33,12 +34,16 @@ async fn expire_membership(
     )?;
     let group_names = groups.iter().map(|g| g.name.as_str()).collect::<Vec<_>>();
     let host = User::default();
+    let remove_groups = RemoveGroups {
+        user: *user,
+        group_names: group_names.as_slice(),
+        force: true,
+        notify: true,
+    };
     revoke_membership(
         pool,
-        group_names.as_slice(),
+        remove_groups,
         &host,
-        &user,
-        true,
         cis_client,
         log_comment_body("expired"),
     )

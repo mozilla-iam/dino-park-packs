@@ -123,3 +123,64 @@ async fn inactive_group() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[actix_rt::test]
+async fn add_remove() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+
+    let host_user = basic_user(1, true);
+    let add_user_1 = basic_user(2, true);
+    let add_user_2 = basic_user(11, false);
+    let host = Soa::from(&host_user).admin().aal_medium();
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "add-rem-test", "description": "a group", "trust": "Authenticated" }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/curators/add-rem-test",
+        json!({ "member_uuid": user_uuid(&add_user_1) }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+    let res = post(
+        &mut app,
+        "/groups/api/v1/sudo/member/add-rem-test",
+        json!({ "user_uuid": user_uuid(&add_user_2) }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/members/add-rem-test", &host).await;
+    assert!(res.status().is_success());
+    let members = read_json(res).await;
+    assert_eq!(members["members"].as_array().map(|a| a.len()), Some(3));
+
+    let res = delete(
+        &mut app,
+        &format!(
+            "/groups/api/v1/sudo/member/add-rem-test/{}",
+            user_uuid(&add_user_1)
+        ),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/members/add-rem-test", &host).await;
+    assert!(res.status().is_success());
+    let members = read_json(res).await;
+    assert_eq!(members["members"].as_array().map(|a| a.len()), Some(2));
+
+    Ok(())
+}

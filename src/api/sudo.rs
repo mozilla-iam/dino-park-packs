@@ -60,6 +60,27 @@ async fn add_member<T: AsyncCisClientTrait>(
 }
 
 #[guard(Staff, Admin, Medium)]
+async fn remove_member<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    path: web::Path<(String, Uuid)>,
+    scope_and_user: ScopeAndUser,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    let (group_name, user_uuid) = path.into_inner();
+    let host = operations::users::user_by_id(&pool.clone(), &scope_and_user.user_id)?;
+    operations::members::remove_silent(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &User { user_uuid },
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
+#[guard(Staff, Admin, Medium)]
 async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
     let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::logs::raw_logs(&pool, &scope_and_user, &user) {
@@ -145,6 +166,10 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
             web::resource("/trust/groups/{group_name}").route(web::put().to(change_trust::<T>)),
         )
         .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
+        .service(
+            web::resource("/member/{group_name}/{user_uuid}")
+                .route(web::delete().to(remove_member::<T>)),
+        )
         .service(web::resource("/curators/{group_name}").route(web::get().to(curator_emails)))
         .service(web::resource("/logs/all/raw").route(web::get().to(all_raw_logs)))
 }

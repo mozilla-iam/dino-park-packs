@@ -2,6 +2,7 @@ use crate::db::model::Group;
 use crate::db::model::GroupsList;
 use crate::db::types::*;
 use crate::error::PacksError;
+use crate::user::User;
 use crate::utils::maybe_to_utc;
 use crate::utils::to_utc;
 use crate::utils::valid_group_name;
@@ -12,6 +13,13 @@ use serde::Serialize;
 use uuid::Uuid;
 
 const DESCRIPTION_MAX_LEN: usize = 1024;
+
+pub struct RemoveGroups<'a> {
+    pub user: User,
+    pub group_names: &'a [&'a str],
+    pub force: bool,
+    pub notify: bool,
+}
 
 #[derive(Clone, Debug)]
 pub struct NewPendingRequest {

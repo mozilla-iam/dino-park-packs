@@ -77,7 +77,7 @@ pub async fn delete_group(
     let bcc = internal::member::get_curator_emails_by_group_name(&connection, group_name)?;
     let members = internal::member::get_members_not_current(&connection, group_name, &host)?;
     drop(connection);
-    operations::members::remove_members(
+    operations::members::remove_members_silent(
         pool,
         scope_and_user,
         group_name,
@@ -115,8 +115,14 @@ pub async fn update_group_trust(
     let to_delete =
         internal::member::get_members_by_trust_less_than(&connection, group_name, trust)?;
     drop(connection);
-    operations::members::remove_members(pool, scope_and_user, group_name, &to_delete, cis_client)
-        .await?;
+    operations::members::remove_members_silent(
+        pool,
+        scope_and_user,
+        group_name,
+        &to_delete,
+        cis_client,
+    )
+    .await?;
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     internal::group::update_group_trust(&host.user_uuid, &connection, group_name, trust)?;
