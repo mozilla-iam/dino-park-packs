@@ -112,11 +112,13 @@ async fn get_user_profile(
     if let Ok(user_profile) = internal::user::user_profile_by_user_id(&connection, user_id) {
         Ok(user_profile)
     } else {
-        cis_client
+        warn!("no profile for {} → fetching", user_id);
+        let profile = cis_client
             .clone()
             .get_user_by(user_id, &GetBy::UserId, None)
-            .await
-            .and_then(|p| p.try_into())
+            .await?;
+        internal::user::update_user_cache(connection, &profile)?;
+        profile.try_into()
     }
 }
 
@@ -193,9 +195,11 @@ pub async fn import_member(
     let host = if member.host.is_empty() {
         User::default()
     } else {
-        let host_profile = get_user_profile(connection, &member.host, cis_client.clone()).await?;
-        User {
-            user_uuid: host_profile.user_uuid,
+        match get_user_profile(connection, &member.host, cis_client.clone()).await {
+            Ok(p) => User {
+                user_uuid: p.user_uuid,
+            },
+            _ => User::default(),
         }
     };
     internal::member::add_to_group(connection, group_name, &host, &user, expiration)?;
