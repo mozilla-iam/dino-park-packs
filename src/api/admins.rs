@@ -54,7 +54,7 @@ pub async fn downgrade(
     let (group_name, user_uuid) = path.into_inner();
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     let user = User { user_uuid };
-    log::info!("donwgrade");
+    log::info!("downgrade");
     operations::admins::demote(
         &pool,
         &scope_and_user,

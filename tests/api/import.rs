@@ -17,7 +17,7 @@ use failure::format_err;
 use failure::Error;
 use std::sync::Arc;
 
-fn members() -> Result<Vec<MozilliansGroupMembership>, Error> {
+fn get_members() -> Result<Vec<MozilliansGroupMembership>, Error> {
     let mut rdr = ReaderBuilder::new()
         .delimiter(b'\t')
         .from_path("tests/data/import-test/m.tsv")?;
@@ -27,7 +27,7 @@ fn members() -> Result<Vec<MozilliansGroupMembership>, Error> {
         .map_err(Into::into)
 }
 
-fn curators() -> Result<Vec<MozilliansGroupCurator>, Error> {
+fn get_curators() -> Result<Vec<MozilliansGroupCurator>, Error> {
     let mut rdr = ReaderBuilder::new()
         .delimiter(b'\t')
         .from_path("tests/data/import-test/c.tsv")?;
@@ -37,7 +37,7 @@ fn curators() -> Result<Vec<MozilliansGroupCurator>, Error> {
         .map_err(Into::into)
 }
 
-fn group() -> Result<MozilliansGroup, Error> {
+fn get_group() -> Result<MozilliansGroup, Error> {
     let mut rdr = ReaderBuilder::new()
         .delimiter(b'\t')
         .from_path("tests/data/import-test/g.tsv")?;
@@ -56,9 +56,9 @@ async fn import() -> Result<(), Error> {
     let app = App::new().service(service);
     let mut app = test::init_service(app).await;
     let creator = Soa::from(&basic_user(1, true)).creator().aal_medium();
-    let group = group()?;
-    let curators = curators()?;
-    let members = members()?;
+    let group = get_group()?;
+    let curators = get_curators()?;
+    let members = get_members()?;
     let connection = get_pool().get()?;
     import_group(&connection, group, TrustType::Authenticated)?;
     import_curators(
@@ -175,9 +175,9 @@ async fn import_staff_only() -> Result<(), Error> {
     let app = App::new().service(service);
     let mut app = test::init_service(app).await;
     let creator = Soa::from(&basic_user(1, true)).creator().aal_medium();
-    let group = group()?;
-    let curators = curators()?;
-    let members = members()?;
+    let group = get_group()?;
+    let curators = get_curators()?;
+    let members = get_members()?;
     let connection = get_pool().get()?;
     import_group(&connection, group, TrustType::Staff)?;
     import_curators(
@@ -283,5 +283,7 @@ async fn import_staff_only() -> Result<(), Error> {
     let j = read_json(res).await;
     assert_eq!(j["group"]["created"], "2011-03-22T00:00:00Z");
 
+    let group = get_group()?;
+    import_group(&connection, group, TrustType::Staff)?;
     Ok(())
 }

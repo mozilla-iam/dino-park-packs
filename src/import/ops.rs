@@ -50,6 +50,9 @@ pub fn import_group(
     moz_group: MozilliansGroup,
     trust: TrustType,
 ) -> Result<(), Error> {
+    if internal::group::get_group(connection, &moz_group.name).is_ok() {
+        return Ok(());
+    }
     let group_name = moz_group.name.clone();
     let description = match (moz_group.website.as_str(), moz_group.wiki.as_str()) {
         ("", "") => moz_group.description,
