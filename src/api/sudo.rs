@@ -2,6 +2,8 @@ use crate::api::error::ApiError;
 use crate::db::operations;
 use crate::db::types::TrustType;
 use crate::db::Pool;
+use crate::mail::manager::subscribe_nda;
+use crate::mail::manager::unsubscribe_nda;
 use crate::user::User;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
@@ -154,6 +156,26 @@ async fn delete_inactive_group(
     operations::groups::delete_inactive_group(&pool, &scope_and_user, &group_name)
         .map(|_| HttpResponse::Ok().json(""))
         .map_err(ApiError::GenericBadRequest)
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn subscribe_nda_mailing_list(
+    pool: web::Data<Pool>,
+    user_uuid: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let user_profile = operations::users::user_profile_by_uuid(&pool, &user_uuid)?;
+    subscribe_nda(user_profile.email);
+    Ok(HttpResponse::Ok().json(""))
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn unsubscribe_nda_mailing_list(
+    pool: web::Data<Pool>,
+    user_uuid: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let user_profile = operations::users::user_profile_by_uuid(&pool, &user_uuid)?;
+    unsubscribe_nda(user_profile.email);
+    Ok(HttpResponse::Ok().json(""))
 }
 
 #[guard(Staff, Admin, Medium)]

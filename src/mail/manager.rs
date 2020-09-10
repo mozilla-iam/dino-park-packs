@@ -7,15 +7,19 @@ use crate::mail::Email;
 #[cfg(all(not(test), not(feature = "local")))]
 use crate::settings::Settings;
 use actix_rt::Arbiter;
+use basket::Basket;
 #[cfg(all(not(test), not(feature = "local")))]
 use lazy_static::lazy_static;
 use log::error;
+
+const MOZILLIAN_NDA_LIST: &str = "mozillians-nda";
 
 #[cfg(all(not(test), not(feature = "local")))]
 lazy_static! {
     static ref MAIL_MAN: MailMan<SesSender> = {
         let s = Settings::new().expect("invalid settings");
-        MailMan::<SesSender>::new(s.packs.domain, s.packs.catcher)
+        let basket = s.basket.map(|b| Basket::new(b.api_key, b.basket_url));
+        MailMan::<SesSender>::new(s.packs.domain, s.packs.catcher, basket)
     };
 }
 
@@ -46,21 +50,39 @@ pub fn send_emails(_: Vec<String>, _: &Template) {}
 #[cfg(any(test, feature = "local"))]
 pub fn send_email_raw(_: Email) {}
 
+#[cfg(all(not(test), not(feature = "local")))]
+pub fn subscribe_nda(email: String) {
+    MAIL_MAN.subscribe_nda(email);
+}
+
+#[cfg(all(not(test), not(feature = "local")))]
+pub fn unsubscribe_nda(email: String) {
+    MAIL_MAN.unsubscribe_nda(email);
+}
+
+#[cfg(any(test, feature = "local"))]
+pub fn subscribe_nda(_: String) {}
+
+#[cfg(any(test, feature = "local"))]
+pub fn unsubscribe_nda(_: String) {}
+
 #[derive(Clone)]
 pub struct MailMan<T: EmailSender> {
     pub arbiter: Arbiter,
     pub sender: T,
     pub template_man: TemplateManager,
     pub catcher: Option<String>,
+    pub basket: Option<Basket>,
 }
 
 impl<T: EmailSender> MailMan<T> {
-    pub fn new(domain: String, catcher: Option<String>) -> Self {
+    pub fn new(domain: String, catcher: Option<String>, basket: Option<Basket>) -> Self {
         MailMan {
             arbiter: Arbiter::default(),
             sender: T::default(),
             template_man: TemplateManager::new(domain),
             catcher,
+            basket,
         }
     }
 }
@@ -86,5 +108,46 @@ impl<T: EmailSender> MailMan<T> {
             }
         });
         self.arbiter.send(f)
+    }
+
+    pub fn subscribe_nda(&self, email: String) {
+        if let Some(basket) = self.basket.clone() {
+            let f = Box::pin(async move {
+                if let Err(e) = basket
+                    .subscribe_private(&email, vec![MOZILLIAN_NDA_LIST.into()], None)
+                    .await
+                {
+                    error!("Error subscribing {} to nda-list: {}", email, e);
+                }
+            });
+            self.arbiter.send(f)
+        }
+    }
+
+    pub fn unsubscribe_nda(&self, email: String) {
+        if let Some(basket) = self.basket.clone() {
+            let f = Box::pin(async move {
+                let token = match basket.lookup_user(&email).await {
+                    Ok(j) if j["token"].is_string() => {
+                        j["token"].as_str().unwrap_or_default().to_owned()
+                    }
+                    Ok(_) => {
+                        error!("Invalid JSON when retrieving token for {}", &email);
+                        return;
+                    }
+                    Err(e) => {
+                        error!("Unable to retrieve token for {}: {}", &email, e);
+                        return;
+                    }
+                };
+                if let Err(e) = basket
+                    .unsubscribe(&token, vec![MOZILLIAN_NDA_LIST.into()], false)
+                    .await
+                {
+                    error!("Error unsubscribing {} to nda-list: {}", &email, e);
+                }
+            });
+            self.arbiter.send(f)
+        }
     }
 }

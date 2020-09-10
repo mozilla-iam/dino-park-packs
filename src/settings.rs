@@ -2,6 +2,7 @@ use cis_client::settings::CisSettings;
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 use std::env;
+use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Packs {
@@ -11,10 +12,17 @@ pub struct Packs {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct Basket {
+    pub api_key: String,
+    pub basket_url: Url,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub auth: String,
     pub cis: CisSettings,
     pub packs: Packs,
+    pub basket: Option<Basket>,
 }
 
 impl Settings {

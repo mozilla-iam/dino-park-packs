@@ -404,6 +404,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 
 [[package]]
+name = "basket"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c782229809bc87177643cf3ac558786e66e7d8dc8847bdf5d57ce002c110e2cc"
+dependencies = [
+ "failure",
+ "failure_derive",
+ "reqwest",
+ "serde 1.0.115",
+ "serde_derive",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "biscuit"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -796,6 +811,7 @@ dependencies = [
  "actix-rt",
  "actix-web",
  "base64 0.12.3",
+ "basket",
  "chrono",
  "cis_client",
  "cis_profile",
@@ -2841,6 +2857,7 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+ "serde 1.0.115",
 ]
 
 [[package]]
