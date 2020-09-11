@@ -229,5 +229,10 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
                 .route(web::get().to(curator_emails))
                 .route(web::post().to(add_admin::<T>)),
         )
+        .service(
+            web::resource("/mail/nda/{user_uuid}")
+                .route(web::post().to(subscribe_nda_mailing_list))
+                .route(web::delete().to(unsubscribe_nda_mailing_list)),
+        )
         .service(web::resource("/logs/all/raw").route(web::get().to(all_raw_logs)))
 }

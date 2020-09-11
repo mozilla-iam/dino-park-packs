@@ -43,7 +43,7 @@ rusoto_ses = "0.45"
 lazy_static = "1.4"
 actix-http = "1.0"
 csv = "1.1"
-basket = "0.0.3"
+basket = "0.0.4"
 url = { version = "2", features = ["serde"] }
 
 [dev-dependencies]

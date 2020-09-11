@@ -12,6 +12,8 @@ use crate::error;
 use crate::error::PacksError;
 use crate::mail::manager::send_email;
 use crate::mail::manager::send_emails;
+use crate::mail::manager::subscribe_nda;
+use crate::mail::manager::unsubscribe_nda;
 use crate::mail::templates::Template;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
@@ -156,6 +158,9 @@ pub async fn add(
     };
     internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    if group_name == "nda" {
+        subscribe_nda(&user_profile.email)
+    }
     drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
 }
@@ -256,6 +261,15 @@ pub async fn revoke_membership<'a>(
     let is_staff =
         internal::user::user_trust(&connection, &remove_groups.user.user_uuid)? == TrustType::Staff;
     // are we dropping nda membership -> remove according groups and invitations
+    if remove_groups
+        .group_names
+        .iter()
+        .any(|group_name| *group_name == "nda")
+    {
+        let user_profile =
+            internal::user::user_profile_by_uuid(&connection, &remove_groups.user.user_uuid)?;
+        unsubscribe_nda(user_profile.email);
+    }
     if remove_groups
         .group_names
         .iter()

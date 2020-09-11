@@ -3,6 +3,7 @@ use crate::db::internal;
 use crate::db::Pool;
 use crate::error::PacksError;
 use crate::mail::manager::send_email;
+use crate::mail::manager::subscribe_nda;
 use crate::mail::templates::Template;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
@@ -30,6 +31,9 @@ pub async fn add_admin(
     ))?;
     let connection = pool.get()?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    if group_name == "nda" {
+        subscribe_nda(&user_profile.email)
+    }
     internal::admin::add_admin(&connection, &group_name, host, user)?;
     drop(connection);
     add_group_to_profile(cis_client, group_name_f, user_profile.profile).await

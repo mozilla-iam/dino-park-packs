@@ -8,6 +8,8 @@ use crate::mail::Email;
 use crate::settings::Settings;
 use actix_rt::Arbiter;
 use basket::Basket;
+use basket::SubscribeOpts;
+use basket::YesNo;
 #[cfg(all(not(test), not(feature = "local")))]
 use lazy_static::lazy_static;
 use log::error;
@@ -51,20 +53,20 @@ pub fn send_emails(_: Vec<String>, _: &Template) {}
 pub fn send_email_raw(_: Email) {}
 
 #[cfg(all(not(test), not(feature = "local")))]
-pub fn subscribe_nda(email: String) {
+pub fn subscribe_nda(email: impl Into<String>) {
     MAIL_MAN.subscribe_nda(email);
 }
 
 #[cfg(all(not(test), not(feature = "local")))]
-pub fn unsubscribe_nda(email: String) {
+pub fn unsubscribe_nda(email: impl Into<String>) {
     MAIL_MAN.unsubscribe_nda(email);
 }
 
 #[cfg(any(test, feature = "local"))]
-pub fn subscribe_nda(_: String) {}
+pub fn subscribe_nda(_: impl Into<String>) {}
 
 #[cfg(any(test, feature = "local"))]
-pub fn unsubscribe_nda(_: String) {}
+pub fn unsubscribe_nda(_: impl Into<String>) {}
 
 #[derive(Clone)]
 pub struct MailMan<T: EmailSender> {
@@ -110,11 +112,17 @@ impl<T: EmailSender> MailMan<T> {
         self.arbiter.send(f)
     }
 
-    pub fn subscribe_nda(&self, email: String) {
+    pub fn subscribe_nda(&self, email: impl Into<String>) {
         if let Some(basket) = self.basket.clone() {
+            let email = email.into();
+            let opts = SubscribeOpts {
+                source_url: Some(self.template_man.domain.clone()),
+                optin: Some(YesNo::Y),
+                ..Default::default()
+            };
             let f = Box::pin(async move {
                 if let Err(e) = basket
-                    .subscribe_private(&email, vec![MOZILLIAN_NDA_LIST.into()], None)
+                    .subscribe_private(&email, vec![MOZILLIAN_NDA_LIST.into()], Some(opts))
                     .await
                 {
                     error!("Error subscribing {} to nda-list: {}", email, e);
@@ -124,8 +132,9 @@ impl<T: EmailSender> MailMan<T> {
         }
     }
 
-    pub fn unsubscribe_nda(&self, email: String) {
+    pub fn unsubscribe_nda(&self, email: impl Into<String>) {
         if let Some(basket) = self.basket.clone() {
+            let email = email.into();
             let f = Box::pin(async move {
                 let token = match basket.lookup_user(&email).await {
                     Ok(j) if j["token"].is_string() => {
@@ -141,7 +150,7 @@ impl<T: EmailSender> MailMan<T> {
                     }
                 };
                 if let Err(e) = basket
-                    .unsubscribe(&token, vec![MOZILLIAN_NDA_LIST.into()], false)
+                    .unsubscribe(&token, vec![MOZILLIAN_NDA_LIST.into()], YesNo::N)
                     .await
                 {
                     error!("Error unsubscribing {} to nda-list: {}", &email, e);
