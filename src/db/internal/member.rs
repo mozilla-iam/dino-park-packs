@@ -22,19 +22,17 @@ macro_rules! scoped_members_for {
     ($t:ident, $f:ident, $s:ident) => {
         pub fn $f(
             connection: &PgConnection,
-            group_name: &str,
+            group_id: i32,
             options: MembersQueryOptions,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
-            use schema::groups as g;
             use schema::memberships as m;
             use schema::roles as r;
             use schema::$t as u;
             let offset = options.offset.unwrap_or_default();
             let limit = options.limit;
             let q = format!("{}%", options.query.unwrap_or_default());
-            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
             let (members, next) = m::table
-                .filter(m::group_id.eq(group.id))
+                .filter(m::group_id.eq(group_id))
                 .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
                 .inner_join(r::table)
                 .filter(r::typ.eq_any(options.roles))
@@ -84,10 +82,9 @@ macro_rules! scoped_members_and_host_for {
     ($t:ident, $h:ident, $f:ident) => {
         pub fn $f(
             connection: &PgConnection,
-            group_name: &str,
+            group_id: i32,
             options: MembersQueryOptions,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
-            use schema::groups as g;
             use schema::memberships as m;
             use schema::roles as r;
             use schema::$t as u;
@@ -95,9 +92,8 @@ macro_rules! scoped_members_and_host_for {
             let offset = options.offset.unwrap_or_default();
             let limit = options.limit;
             let q = format!("{}%", options.query.unwrap_or_default());
-            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
             let mut query = m::table
-                .filter(m::group_id.eq(group.id))
+                .filter(m::group_id.eq(group_id))
                 .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
                 .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
                 .inner_join(r::table)
@@ -166,23 +162,21 @@ macro_rules! privileged_scoped_members_and_host_for {
     ($t:ident, $h:ident, $f:ident) => {
         pub fn $f(
             connection: &PgConnection,
-            group_name: &str,
+            group_id: i32,
             options: MembersQueryOptions,
         ) -> Result<PaginatedDisplayMembersAndHost, Error> {
-            use schema::groups as g;
+            use schema::legacy_user_data as l;
             use schema::memberships as m;
-            use schema::profiles as p;
             use schema::roles as r;
             use schema::$t as u;
             use views::$h as h;
             let offset = options.offset.unwrap_or_default();
             let limit = options.limit;
             let q = format!("{}%", options.query.unwrap_or_default());
-            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
             let mut query = m::table
-                .filter(m::group_id.eq(group.id))
+                .filter(m::group_id.eq(group_id))
                 .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
-                .inner_join(p::table.on(m::user_uuid.eq(p::user_uuid)))
+                .inner_join(l::table.on(m::user_uuid.eq(l::user_uuid)))
                 .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
                 .inner_join(r::table)
                 .filter(r::typ.eq_any(options.roles))
@@ -194,15 +188,19 @@ macro_rules! privileged_scoped_members_and_host_for {
                         .or(u::first_name.ilike(&q))
                         .or(u::last_name.ilike(&q))
                         .or(u::username.ilike(&q))
-                        .or(p::email.ilike(&q)),
+                        .or(u::email.ilike(&q))
+                        .or(l::first_name.ilike(&q))
+                        .or(l::email.ilike(&q)),
                 )
                 .select((
                     m::user_uuid,
                     u::picture,
                     u::first_name,
+                    l::first_name,
                     u::last_name,
                     u::username,
-                    p::email.nullable(),
+                    u::email.nullable(),
+                    l::email,
                     u::trust.eq(TrustType::Staff),
                     m::added_ts,
                     m::expiration,
@@ -228,7 +226,7 @@ macro_rules! privileged_scoped_members_and_host_for {
                 .limit(limit + 1);
             let (members, next) =
                 query
-                    .get_results::<MemberAndHost>(connection)
+                    .get_results::<LegacyMemberAndHost>(connection)
                     .map(|members| {
                         let next = match members.len() as i64 {
                             l if l > limit => Some(offset + limit),
@@ -250,16 +248,14 @@ macro_rules! membership_and_scoped_host_for {
     ($h:ident, $f:ident) => {
         pub fn $f(
             connection: &PgConnection,
-            group_name: &str,
+            group_id: i32,
             user_uuid: Uuid,
         ) -> Result<Option<DisplayMembershipAndHost>, Error> {
-            use schema::groups as g;
             use schema::memberships as m;
             use schema::roles as r;
             use views::$h as h;
-            let group: Group = g::table.filter(g::name.eq(group_name)).first(connection)?;
             m::table
-                .filter(m::group_id.eq(group.id))
+                .filter(m::group_id.eq(group_id))
                 .filter(m::user_uuid.eq(user_uuid))
                 .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
                 .inner_join(r::table)

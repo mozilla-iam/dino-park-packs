@@ -31,6 +31,13 @@ mod sql_date {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct LegacyUserDataRaw {
+    pub user_id: String,
+    pub full_name: Option<String>,
+    pub email: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct MozilliansGroupMembership {
     #[serde(with = "sql_date")]
     pub date_joined: DateTime<Utc>,

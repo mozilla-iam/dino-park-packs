@@ -27,7 +27,6 @@ use cis_client::AsyncCisClientTrait;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use dino_park_gate::scope::ScopeAndUser;
-use dino_park_trust::GroupsTrust;
 use dino_park_trust::Trust;
 use failure::Error;
 use futures::future::try_join_all;
@@ -46,12 +45,13 @@ pub fn membership_and_scoped_host(
 ) -> Result<Option<DisplayMembershipAndHost>, Error> {
     let connection = pool.get()?;
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    let group = internal::group::get_group(&connection, group_name)?;
     match scope_and_user.scope {
         Trust::Staff => {
-            internal::member::membership_and_staff_host(&connection, group_name, user.user_uuid)
+            internal::member::membership_and_staff_host(&connection, group.id, user.user_uuid)
         }
         Trust::Ndaed => {
-            internal::member::membership_and_ndaed_host(&connection, group_name, user.user_uuid)
+            internal::member::membership_and_ndaed_host(&connection, group.id, user.user_uuid)
         }
         _ => Ok(None),
     }
@@ -64,27 +64,34 @@ pub fn scoped_members_and_host(
     options: MembersQueryOptions,
 ) -> Result<PaginatedDisplayMembersAndHost, Error> {
     let connection = pool.get()?;
+    let group = internal::group::get_group(&connection, group_name)?;
+    let curator = if options.privileged {
+        let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+        internal::member::role_for(&connection, &user.user_uuid, group_name)?
+            .map(|r| r.typ == RoleType::Admin || r.typ == RoleType::Curator)
+            .unwrap_or_default()
+    } else {
+        false
+    };
     match &scope_and_user.scope {
-        Trust::Staff if options.privileged && scope_and_user.groups_scope == GroupsTrust::Admin => {
+        Trust::Staff if options.privileged && curator => {
             internal::member::privileged_staff_scoped_members_and_host(
                 &connection,
-                group_name,
+                group.id,
                 options,
             )
         }
         Trust::Staff => {
-            internal::member::staff_scoped_members_and_host(&connection, group_name, options)
+            internal::member::staff_scoped_members_and_host(&connection, group.id, options)
         }
         Trust::Ndaed => {
-            internal::member::ndaed_scoped_members_and_host(&connection, group_name, options)
+            internal::member::ndaed_scoped_members_and_host(&connection, group.id, options)
         }
-        Trust::Vouched => {
-            internal::member::vouched_scoped_members(&connection, group_name, options)
-        }
+        Trust::Vouched => internal::member::vouched_scoped_members(&connection, group.id, options),
         Trust::Authenticated => {
-            internal::member::authenticated_scoped_members(&connection, group_name, options)
+            internal::member::authenticated_scoped_members(&connection, group.id, options)
         }
-        Trust::Public => internal::member::public_scoped_members(&connection, group_name, options),
+        Trust::Public => internal::member::public_scoped_members(&connection, group.id, options),
     }
 }
 

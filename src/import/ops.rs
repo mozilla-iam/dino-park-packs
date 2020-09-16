@@ -5,8 +5,10 @@ use crate::db::operations::models::NewGroup;
 use crate::db::schema;
 use crate::db::types::*;
 use crate::db::users::trust_for_profile;
+use crate::db::users::LegacyUserData;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
+use crate::import::tsv::LegacyUserDataRaw;
 use crate::import::tsv::MozilliansGroup;
 use crate::import::tsv::MozilliansGroupCurator;
 use crate::import::tsv::MozilliansGroupMembership;
@@ -15,6 +17,7 @@ use chrono::DateTime;
 use chrono::Utc;
 use cis_client::getby::GetBy;
 use cis_client::AsyncCisClientTrait;
+use diesel::pg::upsert::excluded;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use failure::Error;
@@ -28,7 +31,7 @@ fn calc_expiration(member_expiration: i32, updated: DateTime<Utc>) -> Option<i32
     if member_expiration > 0 {
         let expiration =
             member_expiration - (Utc::now().signed_duration_since(updated).num_days() as i32);
-        if expiration > 60 {
+        if expiration > EXPIRATION_BUFFER {
             Some(expiration)
         } else {
             Some(EXPIRATION_BUFFER)
@@ -43,6 +46,40 @@ pub struct GroupImport {
     pub memberships: Vec<MozilliansGroupMembership>,
     pub curators: Vec<MozilliansGroupCurator>,
     pub trust: TrustType,
+}
+
+pub fn import_legacy_user_data(
+    pool: &Pool,
+    legacy_user_data_raw: Vec<LegacyUserDataRaw>,
+) -> Result<(), Error> {
+    use schema::legacy_user_data as lud;
+    let connection = pool.get()?;
+    let legacy_user_data: Vec<LegacyUserData> = legacy_user_data_raw
+        .into_iter()
+        .filter_map(
+            |ludr| match internal::user::user_by_id(&connection, &ludr.user_id) {
+                Ok(user) => Some(LegacyUserData {
+                    user_uuid: user.user_uuid,
+                    first_name: ludr.full_name,
+                    email: ludr.email,
+                }),
+                Err(e) => {
+                    warn!("no user_uuid for {}: {}", ludr.user_id, e);
+                    None
+                }
+            },
+        )
+        .collect();
+    diesel::insert_into(lud::table)
+        .values(legacy_user_data)
+        .on_conflict(lud::user_uuid)
+        .do_update()
+        .set((
+            lud::first_name.eq(excluded(lud::first_name)),
+            lud::email.eq(excluded(lud::email)),
+        ))
+        .execute(&connection)?;
+    Ok(())
 }
 
 pub fn import_group(

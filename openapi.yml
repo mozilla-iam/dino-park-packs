@@ -784,6 +784,12 @@ paths:
           schema:
             type: integer
         - in: query
+          name: "p"
+          description: display privileged information
+          required: false
+          schema:
+            type: boolean
+        - in: query
           name: by
           description: sort by
           required: false

@@ -352,6 +352,27 @@ pub struct MemberAndHost {
 }
 
 #[derive(Queryable)]
+pub struct LegacyMemberAndHost {
+    pub user_uuid: Uuid,
+    pub picture: Option<String>,
+    pub first_name: Option<String>,
+    pub legacy_first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub username: String,
+    pub email: Option<String>,
+    pub legacy_email: Option<String>,
+    pub is_staff: bool,
+    pub since: NaiveDateTime,
+    pub expiration: Option<NaiveDateTime>,
+    pub role: RoleType,
+    pub host_uuid: Uuid,
+    pub host_first_name: Option<String>,
+    pub host_last_name: Option<String>,
+    pub host_username: Option<String>,
+    pub host_email: Option<String>,
+}
+
+#[derive(Queryable)]
 pub struct MembershipAndHost {
     pub user_uuid: Uuid,
     pub since: NaiveDateTime,
@@ -383,6 +404,40 @@ impl DisplayMemberAndHost {
             expiration: None,
             role: m.role,
             added_by: None,
+        }
+    }
+}
+
+impl From<LegacyMemberAndHost> for DisplayMemberAndHost {
+    fn from(m: LegacyMemberAndHost) -> Self {
+        let first_name = if m.first_name.is_none() && m.last_name.is_none() {
+            m.legacy_first_name
+        } else {
+            m.first_name
+        };
+        let email = if m.email.is_none() {
+            m.legacy_email
+        } else {
+            m.email
+        };
+        DisplayMemberAndHost {
+            user_uuid: m.user_uuid,
+            picture: m.picture,
+            first_name,
+            last_name: m.last_name,
+            username: m.username,
+            email,
+            is_staff: m.is_staff,
+            since: Some(m.since),
+            expiration: m.expiration,
+            role: m.role,
+            added_by: Some(DisplayHost {
+                user_uuid: m.host_uuid,
+                first_name: m.host_first_name,
+                last_name: m.host_last_name,
+                username: m.host_username,
+                email: m.host_email,
+            }),
         }
     }
 }

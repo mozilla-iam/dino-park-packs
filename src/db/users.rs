@@ -6,10 +6,20 @@ use crate::rules::functions::is_nda_group;
 use cis_profile::schema::Display;
 use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
+use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 use std::convert::TryFrom;
 use uuid::Uuid;
+
+#[derive(Deserialize, Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[primary_key(user_uuid)]
+#[table_name = "legacy_user_data"]
+pub struct LegacyUserData {
+    pub user_uuid: Uuid,
+    pub first_name: Option<String>,
+    pub email: Option<String>,
+}
 
 #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_uuid)]

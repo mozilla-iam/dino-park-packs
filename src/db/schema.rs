@@ -53,6 +53,17 @@ table! {
     use diesel::sql_types::*;
     use crate::db::types::*;
 
+    legacy_user_data (user_uuid) {
+        user_uuid -> Uuid,
+        first_name -> Nullable<Varchar>,
+        email -> Nullable<Varchar>,
+    }
+}
+
+table! {
+    use diesel::sql_types::*;
+    use crate::db::types::*;
+
     logs (id) {
         id -> Int4,
         ts -> Timestamp,
@@ -243,6 +254,7 @@ allow_tables_to_appear_in_same_query!(
     groups,
     invitations,
     invitationtexts,
+    legacy_user_data,
     logs,
     memberships,
     profiles,
