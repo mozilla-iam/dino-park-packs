@@ -176,7 +176,7 @@ macro_rules! privileged_scoped_members_and_host_for {
             let mut query = m::table
                 .filter(m::group_id.eq(group_id))
                 .inner_join(u::table.on(m::user_uuid.eq(u::user_uuid)))
-                .inner_join(l::table.on(m::user_uuid.eq(l::user_uuid)))
+                .left_outer_join(l::table.on(m::user_uuid.eq(l::user_uuid)))
                 .left_outer_join(h::table.on(m::added_by.eq(h::user_uuid)))
                 .inner_join(r::table)
                 .filter(r::typ.eq_any(options.roles))
@@ -196,11 +196,11 @@ macro_rules! privileged_scoped_members_and_host_for {
                     m::user_uuid,
                     u::picture,
                     u::first_name,
-                    l::first_name,
+                    l::first_name.nullable(),
                     u::last_name,
                     u::username,
                     u::email.nullable(),
-                    l::email,
+                    l::email.nullable(),
                     u::trust.eq(TrustType::Staff),
                     m::added_ts,
                     m::expiration,
