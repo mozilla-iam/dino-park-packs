@@ -5,6 +5,7 @@ use crate::db::logs::log_comment_body;
 use crate::db::operations::models::*;
 use crate::db::Pool;
 use crate::mail::manager::send_email;
+use crate::mail::manager::subscribe_nda;
 use crate::mail::templates::Template;
 use crate::rules::engine::*;
 use crate::rules::RuleContext;
@@ -196,6 +197,9 @@ pub async fn accept_invitation(
     ))?;
     let connection = pool.get()?;
     let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    if group_name == "nda" {
+        subscribe_nda(&user_profile.email)
+    }
     accept(&connection, group_name, user)?;
     drop(connection);
     add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
