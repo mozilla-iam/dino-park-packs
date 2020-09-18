@@ -9,7 +9,6 @@ use crate::user::User;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
@@ -126,7 +125,10 @@ async fn remove_member<T: AsyncCisClientTrait>(
 }
 
 #[guard(Staff, Admin, Medium)]
-async fn all_raw_logs(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
+async fn all_raw_logs(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+) -> Result<HttpResponse, ApiError> {
     let user = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::logs::raw_logs(&pool, &scope_and_user, &user) {
         Ok(logs) => Ok(HttpResponse::Ok().json(logs)),
@@ -139,7 +141,7 @@ async fn curator_emails(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     group_name: web::Path<String>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     match operations::members::get_curator_emails(&pool, &scope_and_user, &group_name) {
         Ok(emails) => Ok(HttpResponse::Ok().json(emails)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
@@ -151,7 +153,7 @@ async fn list_inactive_groups(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     query: web::Query<LimitOffsetQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let query = query.into_inner();
     operations::groups::list_inactive_groups(&pool, &scope_and_user, query.s, query.n)
         .map(|groups| HttpResponse::Ok().json(groups))
@@ -163,7 +165,7 @@ async fn delete_inactive_group(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     group_name: web::Path<String>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     operations::groups::delete_inactive_group(&pool, &scope_and_user, &group_name)
         .map(|_| HttpResponse::Ok().json(""))
         .map_err(ApiError::GenericBadRequest)
@@ -194,7 +196,7 @@ async fn reserve_group(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     group_name: web::Path<String>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     operations::groups::reserve_group(&pool, &scope_and_user, &group_name)
         .map(|_| HttpResponse::Ok().json(""))
         .map_err(ApiError::GenericBadRequest)

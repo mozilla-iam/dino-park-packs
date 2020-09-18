@@ -11,7 +11,6 @@ use crate::db::Pool;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use dino_park_trust::GroupsTrust;
@@ -35,13 +34,20 @@ fn default_groups_list_size() -> i64 {
 }
 
 #[guard(Authenticated)]
-async fn get_group(pool: web::Data<Pool>, group_name: web::Path<String>) -> impl Responder {
+async fn get_group(
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+) -> Result<HttpResponse, ApiError> {
     operations::groups::get_group(&pool, &group_name)
         .map(|group| HttpResponse::Ok().json(DisplayGroup::from(group)))
+        .map_err(Into::into)
 }
 
 #[guard(Ndaed)]
-async fn list_groups(pool: web::Data<Pool>, query: web::Query<ListGroupsQuery>) -> impl Responder {
+async fn list_groups(
+    pool: web::Data<Pool>,
+    query: web::Query<ListGroupsQuery>,
+) -> Result<HttpResponse, ApiError> {
     let query = query.into_inner();
     operations::groups::list_groups(&pool, query.f, query.by, query.s, query.n)
         .map(|groups| HttpResponse::Ok().json(groups))
@@ -54,7 +60,7 @@ async fn update_group(
     scope_and_user: ScopeAndUser,
     group_update: web::Json<GroupUpdate>,
     group_name: web::Path<String>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let group_update = group_update.into_inner().checked()?;
     operations::groups::update_group(
         &pool,

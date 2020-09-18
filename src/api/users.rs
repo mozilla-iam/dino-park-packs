@@ -6,7 +6,6 @@ use crate::db::Pool;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 
@@ -33,7 +32,7 @@ async fn search_users(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     query: web::Query<SearchUsersQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let query = query.into_inner();
     let curators = query.c;
     let mut users = if curators {
@@ -66,7 +65,7 @@ async fn search_all_users(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
     query: web::Query<SearchAllUsersQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let query = query.into_inner();
     let users =
         operations::users::search_all_users(&pool, scope_and_user, query.t, &query.q, query.l);

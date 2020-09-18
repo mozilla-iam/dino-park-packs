@@ -8,7 +8,7 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
-use actix_web::Responder;
+
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -32,7 +32,7 @@ async fn delete_invitation(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let member = User { user_uuid };
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
@@ -55,7 +55,7 @@ async fn update_invitation(
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
     invitation: web::Json<InvitationUpdate>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let invitation = invitation.into_inner();
     let invitation_expiration = invitation.invitation_expiration.map(to_expiration_ts);
@@ -83,7 +83,7 @@ async fn invite_member(
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     invitation: web::Json<Invitation>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let invitation = invitation.into_inner();
     let invitation_expiration = invitation.invitation_expiration.map(to_expiration_ts);
     let group_expiration = invitation.group_expiration;
@@ -111,7 +111,7 @@ async fn pending(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::invitations::pending_invitations(&pool, &scope_and_user, &group_name, &host) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
@@ -125,7 +125,7 @@ async fn invitation_email(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::invitations::get_invitation_email(&pool, &scope_and_user, &group_name, &host)
     {
@@ -141,7 +141,7 @@ async fn update_invitation_email(
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     invitation_email: web::Json<InvitationEmail>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
     match operations::invitations::set_invitation_email(
         &pool,

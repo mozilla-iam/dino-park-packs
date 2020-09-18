@@ -6,7 +6,6 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use dino_park_gate::scope::ScopeAndUser;
 use uuid::Uuid;
 
@@ -16,7 +15,7 @@ async fn reject(
     pool: web::Data<Pool>,
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let member = User { user_uuid };
     match operations::requests::reject_request(&pool, &scope_and_user, &group_name, &member) {
@@ -31,7 +30,7 @@ async fn pending(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     match operations::requests::pending_requests(&pool, &scope_and_user, &group_name) {
         Ok(requests) => Ok(HttpResponse::Ok().json(requests)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),

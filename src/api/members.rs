@@ -9,7 +9,6 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
@@ -69,7 +68,7 @@ async fn get_members(
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
     query: web::Query<GetMembersQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     match operations::members::scoped_members_and_host(
         &pool,
         &group_name,
@@ -109,7 +108,7 @@ async fn renew_member(
     path: web::Path<(String, Uuid)>,
     scope_and_user: ScopeAndUser,
     renew_member: web::Json<RenewMember>,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     let (group_name, user_uuid) = path.into_inner();
     let user = User { user_uuid };
     let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;

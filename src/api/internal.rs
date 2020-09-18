@@ -7,7 +7,6 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::web::Bytes;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use futures::StreamExt;
@@ -37,11 +36,16 @@ async fn update_user<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Ok().json(""))
 }
 
-async fn delete_user(pool: web::Data<Pool>, user_uuid: web::Path<Uuid>) -> impl Responder {
+async fn delete_user(
+    pool: web::Data<Pool>,
+    user_uuid: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
     let user = User {
         user_uuid: user_uuid.into_inner(),
     };
-    operations::users::delete_user(&pool, &user).map(|_| HttpResponse::Ok().json(""))
+    operations::users::delete_user(&pool, &user)
+        .map(|_| HttpResponse::Ok().json(""))
+        .map_err(Into::into)
 }
 
 async fn expire_all<T: AsyncCisClientTrait>(

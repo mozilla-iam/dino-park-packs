@@ -126,7 +126,7 @@ pub async fn populate(cis_client: &CisFakeClient) {
     }
 }
 
-pub async fn read_json<B: MessageBody>(res: ServiceResponse<B>) -> Value {
+pub async fn read_json<B: MessageBody + Unpin>(res: ServiceResponse<B>) -> Value {
     serde_json::from_slice(test::read_body(res).await.as_ref()).unwrap()
 }
 

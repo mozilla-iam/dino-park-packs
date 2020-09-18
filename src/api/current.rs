@@ -5,7 +5,6 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use cis_client::AsyncCisClientTrait;
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
@@ -62,7 +61,7 @@ async fn request(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     match operations::requests::request_membership(&pool, &scope_and_user, &group_name, None) {
         Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
@@ -75,7 +74,7 @@ async fn cancel_request(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     match operations::requests::cancel_request(&pool, &scope_and_user, &group_name) {
         Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
@@ -88,7 +87,7 @@ async fn reject_invitation(
     pool: web::Data<Pool>,
     group_name: web::Path<String>,
     scope_and_user: ScopeAndUser,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
     match operations::invitations::reject_invitation(&pool, &scope_and_user, &group_name) {
         Ok(_) => Ok(HttpResponse::Created().json("")),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
@@ -96,7 +95,10 @@ async fn reject_invitation(
 }
 
 #[guard(Authenticated)]
-async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
+async fn invitations(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+) -> Result<HttpResponse, ApiError> {
     match operations::invitations::pending_invitations_for_user(&pool, &scope_and_user) {
         Ok(invitations) => Ok(HttpResponse::Ok().json(invitations)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
@@ -104,7 +106,10 @@ async fn invitations(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> imp
 }
 
 #[guard(Authenticated)]
-async fn requests(pool: web::Data<Pool>, scope_and_user: ScopeAndUser) -> impl Responder {
+async fn requests(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+) -> Result<HttpResponse, ApiError> {
     match operations::requests::pending_requests_for_user(&pool, &scope_and_user) {
         Ok(requests) => Ok(HttpResponse::Ok().json(requests)),
         Err(e) => Err(ApiError::GenericBadRequest(e)),
