@@ -1,4 +1,4 @@
-use crate::cis::operations::add_group_to_profile;
+use crate::cis::operations::send_groups_to_cis;
 use crate::db::internal;
 use crate::db::logs::LogContext;
 use crate::db::model::Group;
@@ -22,7 +22,6 @@ use cis_client::AsyncCisClientTrait;
 use diesel::pg::PgConnection;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
-use std::convert::TryFrom;
 use std::sync::Arc;
 
 fn add_new_group_db(
@@ -45,19 +44,16 @@ pub async fn add_new_group(
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     let connection = pool.get()?;
-    let user_profile =
-        internal::user::user_profile_by_user_id(&connection, &scope_and_user.user_id)?;
-    let user = User::try_from(&user_profile.profile)?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     CREATE_GROUP.run(&RuleContext::minimal(
         pool,
         scope_and_user,
         &new_group.name,
         &user.user_uuid,
     ))?;
-    let new_group_name = new_group.name.clone();
     add_new_group_db(&connection, new_group, user).map_err(|_| PacksError::GroupNameExists)?;
     drop(connection);
-    add_group_to_profile(cis_client, new_group_name, user_profile.profile).await
+    send_groups_to_cis(pool, cis_client, &user.user_uuid).await
 }
 
 pub async fn delete_group(

@@ -1,4 +1,4 @@
-use crate::cis::operations::add_group_to_profile;
+use crate::cis::operations::_send_groups_to_cis;
 use crate::db::internal;
 use crate::db::logs::LogContext;
 use crate::db::operations::models::NewGroup;
@@ -175,7 +175,8 @@ async fn import_curator(
         return Ok(());
     }
     internal::admin::add_admin(&connection, group_name, &User::default(), &user)?;
-    add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await?;
+    let groups = internal::member::group_names_for_user(connection, &user.user_uuid)?;
+    _send_groups_to_cis(cis_client, groups, user_profile.profile).await?;
     Ok(())
 }
 
@@ -248,12 +249,8 @@ pub async fn import_member(
         .execute(connection)
         .map(|_| ())?;
 
-    add_group_to_profile(
-        cis_client.clone(),
-        group_name.to_owned(),
-        user_profile.profile,
-    )
-    .await?;
+    let groups = internal::member::group_names_for_user(connection, &user.user_uuid)?;
+    _send_groups_to_cis(cis_client, groups, user_profile.profile).await?;
     Ok(())
 }
 

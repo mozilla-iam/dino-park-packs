@@ -1,4 +1,4 @@
-use crate::cis::operations::add_group_to_profile;
+use crate::cis::operations::send_groups_to_cis;
 use crate::db::internal;
 use crate::db::Pool;
 use crate::error::PacksError;
@@ -21,7 +21,6 @@ pub async fn add_admin(
     user: &User,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
-    let group_name_f = group_name.to_owned();
     CAN_ADD_CURATOR.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
@@ -30,13 +29,13 @@ pub async fn add_admin(
         &user.user_uuid,
     ))?;
     let connection = pool.get()?;
-    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    let user_profile = internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
     if group_name == "nda" {
         subscribe_nda(&user_profile.email)
     }
     internal::admin::add_admin(&connection, &group_name, host, user)?;
     drop(connection);
-    add_group_to_profile(cis_client, group_name_f, user_profile.profile).await
+    send_groups_to_cis(pool, cis_client, &user.user_uuid).await
 }
 
 pub fn demote(

@@ -1,4 +1,5 @@
 use crate::api::error::ApiError;
+use crate::cis::operations::send_groups_to_cis;
 use crate::db::operations;
 use crate::db::types::TrustType;
 use crate::db::Pool;
@@ -90,6 +91,16 @@ async fn add_admin<T: AsyncCisClientTrait>(
         Arc::clone(&*cis_client),
     )
     .await?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn update_cis_for_user<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    user_uuid: web::Path<Uuid>,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    send_groups_to_cis(&pool, Arc::clone(&*cis_client), &user_uuid).await?;
     Ok(HttpResponse::Ok().json(""))
 }
 
@@ -223,6 +234,9 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
         .service(
             web::resource("/member/{group_name}/{user_uuid}")
                 .route(web::delete().to(remove_member::<T>)),
+        )
+        .service(
+            web::resource("/user/cis/{user_uuid}").route(web::post().to(update_cis_for_user::<T>)),
         )
         .service(
             web::resource("/curators/{group_name}")

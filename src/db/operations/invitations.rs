@@ -1,4 +1,4 @@
-use crate::cis::operations::add_group_to_profile;
+use crate::cis::operations::send_groups_to_cis;
 use crate::db::internal;
 use crate::db::internal::invitation::*;
 use crate::db::logs::log_comment_body;
@@ -196,13 +196,13 @@ pub async fn accept_invitation(
         &Uuid::default(),
     ))?;
     let connection = pool.get()?;
-    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    let user_profile = internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
     if group_name == "nda" {
         subscribe_nda(&user_profile.email)
     }
     accept(&connection, group_name, user)?;
     drop(connection);
-    add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
+    send_groups_to_cis(pool, cis_client, &user.user_uuid).await
 }
 
 pub fn set_invitation_email(

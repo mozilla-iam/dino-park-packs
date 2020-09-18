@@ -1,5 +1,5 @@
-use crate::cis::operations::add_group_to_profile;
 use crate::cis::operations::remove_group_from_profile;
+use crate::cis::operations::send_groups_to_cis;
 use crate::db::internal;
 use crate::db::logs::add_to_comment_body;
 use crate::db::operations;
@@ -164,12 +164,12 @@ pub async fn add(
         expiration
     };
     internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)?;
-    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
+    let user_profile = internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
     if group_name == "nda" {
         subscribe_nda(&user_profile.email)
     }
     drop(connection);
-    add_group_to_profile(cis_client, group_name.to_owned(), user_profile.profile).await
+    send_groups_to_cis(pool, cis_client, &user.user_uuid).await
 }
 
 pub async fn remove_members_silent(

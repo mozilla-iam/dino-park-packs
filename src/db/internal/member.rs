@@ -584,3 +584,18 @@ pub fn get_anonymous_member_emails(connection: &PgConnection) -> Result<Vec<Stri
         .get_results::<String>(connection)
         .map_err(Into::into)
 }
+
+pub fn group_names_for_user(
+    connection: &PgConnection,
+    user_uuid: &Uuid,
+) -> Result<Vec<String>, Error> {
+    use schema::groups as g;
+    use schema::memberships as m;
+
+    m::table
+        .filter(m::user_uuid.eq(user_uuid))
+        .inner_join(g::table)
+        .select(g::name)
+        .get_results::<String>(connection)
+        .map_err(Into::into)
+}
