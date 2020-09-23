@@ -9,6 +9,7 @@ use crate::db::users::UserForGroup;
 use crate::db::users::UserProfile;
 use crate::db::Pool;
 use crate::error::PacksError;
+use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::SEARCH_USERS;
 use crate::rules::RuleContext;
 use crate::user::User;
@@ -153,4 +154,31 @@ pub fn user_by_id(pool: &Pool, user_id: &str) -> Result<User, Error> {
 pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile, Error> {
     let connection = pool.get()?;
     internal::user::user_profile_by_uuid(&connection, user_uuid)
+}
+
+pub fn get_all_member_uuids(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+) -> Result<Vec<Uuid>, Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    SEARCH_USERS.run(&RuleContext::minimal(
+        pool,
+        &scope_and_user,
+        "",
+        &host.user_uuid,
+    ))?;
+    internal::user::all_members(&connection)
+}
+
+pub fn get_all_staff_uuids(pool: &Pool, scope_and_user: &ScopeAndUser) -> Result<Vec<Uuid>, Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    SEARCH_USERS.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        "",
+        &host.user_uuid,
+    ))?;
+    internal::user::all_staff(&connection)
 }

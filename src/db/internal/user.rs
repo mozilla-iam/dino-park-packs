@@ -404,3 +404,19 @@ pub fn search_users(
         }
     }
 }
+
+pub fn all_staff(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
+    schema::profiles::table
+        .filter(schema::profiles::trust.ge(TrustType::Staff))
+        .select(schema::profiles::user_uuid)
+        .get_results::<Uuid>(connection)
+        .map_err(Into::into)
+}
+
+pub fn all_members(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
+    schema::memberships::table
+        .select(schema::memberships::user_uuid)
+        .distinct()
+        .get_results::<Uuid>(connection)
+        .map_err(Into::into)
+}

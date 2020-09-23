@@ -125,6 +125,28 @@ async fn remove_member<T: AsyncCisClientTrait>(
 }
 
 #[guard(Staff, Admin, Medium)]
+async fn all_staff_uuids(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+) -> Result<HttpResponse, ApiError> {
+    match operations::users::get_all_staff_uuids(&pool, &scope_and_user) {
+        Ok(uuids) => Ok(HttpResponse::Ok().json(uuids)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn all_member_uuids(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+) -> Result<HttpResponse, ApiError> {
+    match operations::users::get_all_member_uuids(&pool, &scope_and_user) {
+        Ok(uuids) => Ok(HttpResponse::Ok().json(uuids)),
+        Err(e) => Err(ApiError::GenericBadRequest(e)),
+    }
+}
+
+#[guard(Staff, Admin, Medium)]
 async fn all_raw_logs(
     pool: web::Data<Pool>,
     scope_and_user: ScopeAndUser,
@@ -221,6 +243,19 @@ async fn change_trust<T: AsyncCisClientTrait>(
     Ok(HttpResponse::Ok().json(""))
 }
 
+#[guard(Staff, Admin, Medium)]
+async fn delete_user(
+    pool: web::Data<Pool>,
+    user_uuid: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let user = User {
+        user_uuid: user_uuid.into_inner(),
+    };
+    operations::users::delete_user(&pool, &user)
+        .map(|_| HttpResponse::Ok().json(""))
+        .map_err(Into::into)
+}
+
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
         .service(web::resource("/groups/reserve/{group_name}").route(web::post().to(reserve_group)))
@@ -237,6 +272,9 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
             web::resource("/member/{group_name}/{user_uuid}")
                 .route(web::delete().to(remove_member::<T>)),
         )
+        .service(web::resource("/user/{uuid}").route(web::delete().to(delete_user)))
+        .service(web::resource("/user/uuids/staff").route(web::post().to(all_staff_uuids)))
+        .service(web::resource("/user/uuids/members").route(web::post().to(all_member_uuids)))
         .service(
             web::resource("/user/cis/{user_uuid}").route(web::post().to(update_cis_for_user::<T>)),
         )

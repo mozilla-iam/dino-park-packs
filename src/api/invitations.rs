@@ -8,7 +8,6 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
-
 use dino_park_gate::scope::ScopeAndUser;
 use serde::Deserialize;
 use uuid::Uuid;
