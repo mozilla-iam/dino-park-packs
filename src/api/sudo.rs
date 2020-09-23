@@ -273,8 +273,8 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
                 .route(web::delete().to(remove_member::<T>)),
         )
         .service(web::resource("/user/{uuid}").route(web::delete().to(delete_user)))
-        .service(web::resource("/user/uuids/staff").route(web::post().to(all_staff_uuids)))
-        .service(web::resource("/user/uuids/members").route(web::post().to(all_member_uuids)))
+        .service(web::resource("/user/uuids/staff").route(web::get().to(all_staff_uuids)))
+        .service(web::resource("/user/uuids/members").route(web::get().to(all_member_uuids)))
         .service(
             web::resource("/user/cis/{user_uuid}").route(web::post().to(update_cis_for_user::<T>)),
         )
