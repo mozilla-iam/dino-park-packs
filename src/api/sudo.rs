@@ -194,6 +194,16 @@ async fn delete_inactive_group(
 }
 
 #[guard(Staff, Admin, Medium)]
+async fn delete_inactive_users(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+) -> Result<HttpResponse, ApiError> {
+    operations::users::delete_inactive_users(&pool, &scope_and_user)
+        .map(|_| HttpResponse::Ok().json(""))
+        .map_err(ApiError::GenericBadRequest)
+}
+
+#[guard(Staff, Admin, Medium)]
 async fn subscribe_nda_mailing_list(
     pool: web::Data<Pool>,
     user_uuid: web::Path<Uuid>,
@@ -272,6 +282,7 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
             web::resource("/member/{group_name}/{user_uuid}")
                 .route(web::delete().to(remove_member::<T>)),
         )
+        .service(web::resource("/user/inactive").route(web::delete().to(delete_inactive_users)))
         .service(web::resource("/user/{uuid}").route(web::delete().to(delete_user)))
         .service(web::resource("/user/uuids/staff").route(web::get().to(all_staff_uuids)))
         .service(web::resource("/user/uuids/members").route(web::get().to(all_member_uuids)))

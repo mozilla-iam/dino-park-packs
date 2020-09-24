@@ -1,3 +1,4 @@
+use crate::cis::operations::send_groups_to_cis;
 use crate::db::internal;
 use crate::db::logs::log_comment_body;
 use crate::db::operations::members::revoke_memberships_by_trust;
@@ -17,6 +18,7 @@ use cis_client::AsyncCisClientTrait;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
+use log::info;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -116,17 +118,20 @@ pub async fn update_user_cache(
     profile: &Profile,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
+    let user_uuid = Uuid::parse_str(&profile.uuid.value.clone().ok_or(PacksError::NoUuid)?)?;
+    if profile.active.value == Some(false) {
+        return delete_user(pool, &User { user_uuid });
+    }
     let connection = pool.get()?;
     let new_trust = trust_for_profile(&profile);
-    let uuid = Uuid::parse_str(&profile.uuid.value.clone().ok_or(PacksError::NoUuid)?)?;
-    let old_profile = internal::user::user_profile_by_uuid_maybe(&connection, &uuid)?;
+    let old_profile = internal::user::user_profile_by_uuid_maybe(&connection, &user_uuid)?;
     internal::user::update_user_cache(&connection, profile)?;
 
     if let Some(old_profile) = old_profile {
         let old_trust = trust_for_profile(&old_profile.profile);
         drop(connection);
         let remove_groups = RemoveGroups {
-            user: User { user_uuid: uuid },
+            user: User { user_uuid },
             group_names: &[],
             force: true,
             notify: true,
@@ -142,7 +147,12 @@ pub async fn update_user_cache(
             )
             .await?;
         }
+    } else if let Some(ref groups) = profile.access_information.mozilliansorg.values {
+        if !groups.0.is_empty() {
+            send_groups_to_cis(pool, cis_client, &user_uuid).await?;
+        }
     }
+
     Ok(())
 }
 
@@ -156,13 +166,32 @@ pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile
     internal::user::user_profile_by_uuid(&connection, user_uuid)
 }
 
+pub fn delete_inactive_users(pool: &Pool, scope_and_user: &ScopeAndUser) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        pool,
+        &scope_and_user,
+        "",
+        &host.user_uuid,
+    ))?;
+    let inactive_uuids = internal::user::all_inactive(&connection)?;
+    drop(connection);
+    info!("deleting {} users", inactive_uuids.len());
+    for user_uuid in inactive_uuids {
+        delete_user(pool, &User { user_uuid })?;
+        info!("delete user {}", user_uuid);
+    }
+    Ok(())
+}
+
 pub fn get_all_member_uuids(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
 ) -> Result<Vec<Uuid>, Error> {
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
-    SEARCH_USERS.run(&RuleContext::minimal(
+    ONLY_ADMINS.run(&RuleContext::minimal(
         pool,
         &scope_and_user,
         "",
@@ -174,7 +203,7 @@ pub fn get_all_member_uuids(
 pub fn get_all_staff_uuids(pool: &Pool, scope_and_user: &ScopeAndUser) -> Result<Vec<Uuid>, Error> {
     let connection = pool.get()?;
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
-    SEARCH_USERS.run(&RuleContext::minimal(
+    ONLY_ADMINS.run(&RuleContext::minimal(
         pool,
         scope_and_user,
         "",
@@ -182,3 +211,5 @@ pub fn get_all_staff_uuids(pool: &Pool, scope_and_user: &ScopeAndUser) -> Result
     ))?;
     internal::user::all_staff(&connection)
 }
+
+pub use internal::user::update_user_cache as _update_user_cache;

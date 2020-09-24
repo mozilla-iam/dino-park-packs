@@ -30,6 +30,10 @@ pub fn user_uuid(p: &Profile) -> String {
     p.uuid.value.clone().unwrap()
 }
 
+pub fn user_id(p: &Profile) -> String {
+    p.user_id.value.clone().unwrap()
+}
+
 pub fn user_email(p: &Profile) -> String {
     p.primary_email.value.clone().unwrap()
 }

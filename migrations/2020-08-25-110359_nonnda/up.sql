@@ -12,4 +12,3 @@ FROM
     users_staff u
 WHERE
     p.user_uuid = u.user_uuid;
-

@@ -7,6 +7,7 @@ mod errors;
 mod expiration;
 mod groups;
 mod import;
+mod inactive;
 mod invitations;
 mod join;
 mod requests;

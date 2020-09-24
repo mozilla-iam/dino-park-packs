@@ -81,6 +81,9 @@ pub fn user_profile_by_user_id(
 }
 
 pub fn delete_user(connection: &PgConnection, user: &User) -> Result<(), Error> {
+    diesel::delete(schema::requests::table)
+        .filter(schema::requests::user_uuid.eq(user.user_uuid))
+        .execute(connection)?;
     diesel::delete(schema::invitations::table)
         .filter(schema::invitations::user_uuid.eq(user.user_uuid))
         .execute(connection)?;
@@ -417,6 +420,40 @@ pub fn all_members(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
     schema::memberships::table
         .select(schema::memberships::user_uuid)
         .distinct()
+        .get_results::<Uuid>(connection)
+        .map_err(Into::into)
+}
+
+use diesel::pg::expression::dsl::array;
+use diesel::pg::types::sql_types::Array;
+use diesel::pg::types::sql_types::Jsonb;
+use diesel::pg::Pg;
+use diesel::sql_types::Text;
+
+sql_function! {
+    fn jsonb_extract_path(from_json: Jsonb, path_elems: Array<Text>) -> Jsonb
+}
+
+diesel_infix_operator!(ExtrPath, " #> ", Jsonb, backend: Pg);
+
+fn extr_path<T, U>(left: T, right: U) -> ExtrPath<T, U>
+where
+    T: Expression,
+    U: Expression,
+{
+    ExtrPath::new(left, right)
+}
+
+pub fn all_inactive(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
+    schema::profiles::table
+        .filter(
+            extr_path(
+                schema::profiles::profile,
+                array::<Text, _>(("active".to_string(), "value".to_string())),
+            )
+            .eq(serde_json::Value::from(false)),
+        )
+        .select(schema::profiles::user_uuid)
         .get_results::<Uuid>(connection)
         .map_err(Into::into)
 }
