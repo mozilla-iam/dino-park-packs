@@ -219,3 +219,14 @@ pub fn reserve_group(
 
     internal::group::reserve_group(&connection, &user.user_uuid, group_name)
 }
+
+pub fn groups_for_current_user(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+) -> Result<Vec<String>, Error> {
+    let connection = pool.get()?;
+    let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+
+    internal::group::groups_for_user(&connection, &user.user_uuid)
+        .map(|groups| groups.into_iter().map(|g| g.name).collect())
+}

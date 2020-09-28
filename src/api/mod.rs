@@ -3,6 +3,7 @@ pub mod current;
 pub mod error;
 pub mod forms;
 pub mod groups;
+pub mod info;
 pub mod internal;
 pub mod invitations;
 pub mod members;

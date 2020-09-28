@@ -60,7 +60,8 @@ async fn main() -> std::io::Result<()> {
                     .service(api::admins::admins_app::<CisClient>())
                     .service(api::requests::requests_app())
                     .service(api::sudo::sudo_app::<CisClient>())
-                    .service(api::forms::forms_app::<CisClient>()),
+                    .service(api::forms::forms_app::<CisClient>())
+                    .service(api::info::info_app(provider.clone())),
             )
     })
     .bind("0.0.0.0:8085")?
