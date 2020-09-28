@@ -1,4 +1,3 @@
-use crate::cis::operations::remove_group_from_profile;
 use crate::cis::operations::send_groups_to_cis;
 use crate::db::internal;
 use crate::db::logs::add_to_comment_body;
@@ -317,12 +316,8 @@ async fn _revoke_membership<'a>(
     }
     let exit_on_error = group_names.len() == 1;
     let connection = pool.get()?;
-    let user_profile = internal::user::user_profile_by_uuid(&connection, &user.user_uuid)?;
-    drop(connection);
-    log::debug!("removing group from profile");
-    remove_group_from_profile(cis_client, group_names, user_profile.profile).await?;
-    log::debug!("removed group from profile");
-    let connection = pool.get()?;
+    let user_profile_slim =
+        internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
     for group_name in group_names {
         if let Err(e) = db_leave(
             &host.user_uuid,
@@ -343,11 +338,15 @@ async fn _revoke_membership<'a>(
         }
         if notify {
             send_email(
-                user_profile.email.clone(),
+                user_profile_slim.email.clone(),
                 &Template::DeleteMember(group_name.to_string()),
             );
         }
     }
+    drop(connection);
+    log::debug!("removing group from profile");
+    send_groups_to_cis(pool, cis_client, &user.user_uuid).await?;
+    log::debug!("removed group from profile");
     Ok(())
 }
 
@@ -432,6 +431,7 @@ pub fn renew(
         &user.user_uuid,
     ))?;
     let connection = pool.get()?;
+
     internal::member::renew(&host.user_uuid, &connection, group_name, user, expiration)
 }
 
@@ -442,6 +442,7 @@ pub fn role_for_current(
 ) -> Result<Option<RoleType>, Error> {
     let connection = pool.get()?;
     let user = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+
     internal::member::role_for(&connection, &user.user_uuid, group_name)
         .map(|role| role.map(|role| role.typ))
 }
@@ -459,8 +460,6 @@ pub fn get_curator_emails(
         &group_name,
         &user.user_uuid,
     ))?;
-    // let group = internal::group::get_group(&connection, group_name)?;
-    // internal::member::get_curator_emails(&connection, group.id)
 
     internal::member::get_curator_emails_by_group_name(&connection, group_name)
 }

@@ -15,9 +15,11 @@ use crate::rules::engine::SEARCH_USERS;
 use crate::rules::RuleContext;
 use crate::user::User;
 use cis_client::AsyncCisClientTrait;
+use cis_profile::schema::KeyValue;
 use cis_profile::schema::Profile;
 use dino_park_gate::scope::ScopeAndUser;
 use failure::Error;
+use log::error;
 use log::info;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -213,3 +215,50 @@ pub fn get_all_staff_uuids(pool: &Pool, scope_and_user: &ScopeAndUser) -> Result
 }
 
 pub use internal::user::update_user_cache as _update_user_cache;
+
+pub async fn consolidate_users_with_cis(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    dry_run: bool,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ONLY_ADMINS.run(&RuleContext::minimal(
+        pool,
+        scope_and_user,
+        "",
+        &host.user_uuid,
+    ))?;
+    let all_with_groups = internal::user::all_with_groups(&connection)?;
+    for user_uuid in all_with_groups {
+        let user_profile = internal::user::user_profile_by_uuid(&connection, &user_uuid)?;
+        if let Some(KeyValue(ref groups)) =
+            user_profile.profile.access_information.mozilliansorg.values
+        {
+            if groups.values().any(Option::is_none) {
+                let legacy_groups = groups
+                    .iter()
+                    .filter_map(|(k, v)| if v.is_none() { Some(k.as_str()) } else { None })
+                    .collect::<Vec<_>>()
+                    .as_slice()
+                    .join(", ");
+                if dry_run {
+                    info!(
+                        "would have removed {} for {} ({})",
+                        legacy_groups, user_profile.user_uuid, user_profile.email,
+                    );
+                } else {
+                    match send_groups_to_cis(pool, Arc::clone(&cis_client), &user_uuid).await {
+                        Err(e) => error!("failed to consolidate groups for {}: {}", &user_uuid, e),
+                        Ok(_) => info!(
+                            "removed {} for {} ({})",
+                            legacy_groups, user_profile.user_uuid, user_profile.email,
+                        ),
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
