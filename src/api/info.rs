@@ -37,7 +37,7 @@ async fn groups(
         .iter()
         .cloned()
         .collect::<HashSet<_>>()
-        .difference(&token.iter().cloned().collect::<HashSet<_>>())
+        .symmetric_difference(&token.iter().cloned().collect::<HashSet<_>>())
         .cloned()
         .collect();
     Ok(HttpResponse::Ok().json(AllGroups { token, packs, diff }))
