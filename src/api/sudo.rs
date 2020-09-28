@@ -16,6 +16,11 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
+pub struct ConsolidateQuery {
+    dry_run: bool,
+}
+
+#[derive(Clone, Deserialize)]
 pub struct ChangeTrust {
     trust: TrustType,
 }
@@ -87,6 +92,23 @@ async fn add_admin<T: AsyncCisClientTrait>(
         &group_name,
         &host,
         &User { user_uuid },
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn consolidate_users_with_cis<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+    query: web::Query<ConsolidateQuery>,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    operations::users::consolidate_users_with_cis(
+        &pool,
+        &scope_and_user,
+        query.dry_run,
         Arc::clone(&*cis_client),
     )
     .await?;
@@ -269,23 +291,27 @@ async fn delete_user(
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
         .service(web::resource("/groups/reserve/{group_name}").route(web::post().to(reserve_group)))
-        .service(web::resource("/groups/inactive").route(web::get().to(list_inactive_groups)))
         .service(
             web::resource("/groups/inactive/{group_name}")
                 .route(web::delete().to(delete_inactive_group)),
         )
+        .service(web::resource("/groups/inactive").route(web::get().to(list_inactive_groups)))
         .service(
             web::resource("/trust/groups/{group_name}").route(web::put().to(change_trust::<T>)),
         )
-        .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
         .service(
             web::resource("/member/{group_name}/{user_uuid}")
                 .route(web::delete().to(remove_member::<T>)),
         )
-        .service(web::resource("/user/inactive").route(web::delete().to(delete_inactive_users)))
-        .service(web::resource("/user/{uuid}").route(web::delete().to(delete_user)))
+        .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
         .service(web::resource("/user/uuids/staff").route(web::get().to(all_staff_uuids)))
         .service(web::resource("/user/uuids/members").route(web::get().to(all_member_uuids)))
+        .service(
+            web::resource("/user/consolidate")
+                .route(web::delete().to(consolidate_users_with_cis::<T>)),
+        )
+        .service(web::resource("/user/inactive").route(web::delete().to(delete_inactive_users)))
+        .service(web::resource("/user/{uuid}").route(web::delete().to(delete_user)))
         .service(
             web::resource("/user/cis/{user_uuid}").route(web::post().to(update_cis_for_user::<T>)),
         )

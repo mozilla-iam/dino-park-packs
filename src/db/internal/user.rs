@@ -425,14 +425,10 @@ pub fn all_members(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
 }
 
 use diesel::pg::expression::dsl::array;
-use diesel::pg::types::sql_types::Array;
 use diesel::pg::types::sql_types::Jsonb;
 use diesel::pg::Pg;
 use diesel::sql_types::Text;
-
-sql_function! {
-    fn jsonb_extract_path(from_json: Jsonb, path_elems: Array<Text>) -> Jsonb
-}
+use serde_json::json;
 
 diesel_infix_operator!(ExtrPath, " #> ", Jsonb, backend: Pg);
 
@@ -452,6 +448,24 @@ pub fn all_inactive(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
                 array::<Text, _>(("active".to_string(), "value".to_string())),
             )
             .eq(serde_json::Value::from(false)),
+        )
+        .select(schema::profiles::user_uuid)
+        .get_results::<Uuid>(connection)
+        .map_err(Into::into)
+}
+
+pub fn all_with_groups(connection: &PgConnection) -> Result<Vec<Uuid>, Error> {
+    schema::profiles::table
+        .filter(
+            extr_path(
+                schema::profiles::profile,
+                array::<Text, _>((
+                    "access_information".to_string(),
+                    "mozilliansorg".to_string(),
+                    "values".to_string(),
+                )),
+            )
+            .ne_all(vec![json!(null), json!({})]),
         )
         .select(schema::profiles::user_uuid)
         .get_results::<Uuid>(connection)
