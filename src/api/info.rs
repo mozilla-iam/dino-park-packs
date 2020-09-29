@@ -42,7 +42,11 @@ async fn groups(
         .collect();
     diff.sort();
 
-    Ok(HttpResponse::Ok().json(AllGroups { cis, dino_park, diff }))
+    Ok(HttpResponse::Ok().json(AllGroups {
+        cis,
+        dino_park,
+        diff,
+    }))
 }
 
 pub fn info_app(provider: Provider) -> impl HttpServiceFactory {
