@@ -20,7 +20,7 @@ docker_build() {
 
 package_local() {
   compile_release
-  docker_build_local $REV
+  docker_build_local
 }
 
 push_image() {
@@ -28,7 +28,6 @@ push_image() {
 }
 
 deploy() {
-  local DEPLOY_ENV=${1:-$DEPLOY_ENV}
   if [ -z ${DEPLOY_ENV} ]; then exit 1; fi
   helm template -f k8s/values.yaml -f k8s/values/${DEPLOY_ENV}.yaml \
     --set docker_registry=${DOCKER_REGISTRY},rev=${REV} k8s/ | kubectl apply -f -
@@ -41,5 +40,5 @@ then
   echo "commands:"
   declare -F | sed  "s/declare -f /\t/g"
 else 
-  `$1` $@
+  $1 
 fi
