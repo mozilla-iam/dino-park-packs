@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DPP_PG_URL: postgres://postgres:passw@localhost:5432/dino-park-packs-test-1
+  DPP_PG_URL: postgres://postgres:passw@localhost:5432/dino-park-packs-test-gha
 
 jobs:
   build:
