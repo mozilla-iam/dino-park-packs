@@ -9,6 +9,37 @@ info:
     name: MPL 2.0
     url: https://www.mozilla.org/media/MPL/2.0/index.txt
 paths:
+  "/info/groups":
+    get:
+      summary: groups from token vs groups service
+      description: |
+        this can be used to debug inconsistencies between DinoPark and CIS
+      responses:
+        "200":
+          description: groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cis:
+                    type: array
+                    items:
+                      type: string
+                  dino_park:
+                    type: array
+                    items:
+                      type: string
+                  diff:
+                    type: array
+                    items:
+                      type: string
+        "403":
+          description: operation forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericError"
   "/groups/api/v1/groups":
     post:
       summary: creates a group

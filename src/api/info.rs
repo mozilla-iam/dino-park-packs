@@ -13,8 +13,8 @@ use std::collections::HashSet;
 
 #[derive(Serialize)]
 pub struct AllGroups {
-    token: Vec<String>,
-    packs: Vec<String>,
+    cis: Vec<String>,
+    dino_park: Vec<String>,
     diff: Vec<String>,
 }
 
@@ -24,23 +24,25 @@ async fn groups(
     scope_and_user: ScopeAndUser,
     groups: Groups,
 ) -> Result<HttpResponse, ApiError> {
-    let mut packs = operations::groups::groups_for_current_user(&pool, &scope_and_user)?;
-    packs.sort();
-    let mut token: Vec<String> = groups
+    let mut dino_park = operations::groups::groups_for_current_user(&pool, &scope_and_user)?;
+    dino_park.sort();
+    let mut cis: Vec<String> = groups
         .groups
         .into_iter()
         .filter_map(|g| g.strip_prefix("mozilliansorg_").map(String::from))
         .collect();
-    token.sort();
+    cis.sort();
 
-    let diff = packs
+    let mut diff: Vec<String> = dino_park
         .iter()
         .cloned()
         .collect::<HashSet<_>>()
-        .symmetric_difference(&token.iter().cloned().collect::<HashSet<_>>())
+        .symmetric_difference(&cis.iter().cloned().collect::<HashSet<_>>())
         .cloned()
         .collect();
-    Ok(HttpResponse::Ok().json(AllGroups { token, packs, diff }))
+    diff.sort();
+
+    Ok(HttpResponse::Ok().json(AllGroups { cis, dino_park, diff }))
 }
 
 pub fn info_app(provider: Provider) -> impl HttpServiceFactory {
