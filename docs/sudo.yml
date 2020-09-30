@@ -1,0 +1,101 @@
+openapi: 3.0.0
+info:
+  description: Mozilla's IAM group sudo API
+  version: 1.0.0-oas3
+  title: Groups
+  contact:
+    email: fiji@mozilla.com
+  license:
+    name: MPL 2.0
+    url: https://www.mozilla.org/media/MPL/2.0/index.txt
+paths:
+  "/sudo/groups/reserve/{group_name}":
+    post:
+      summary: reserve a group name
+  "/sudo/groups/inactive/{group_name}":
+    delete:
+      summary: delete a inactive group
+  "/sudo/groups/inactive":
+    get:
+      summary: list inactive groups
+  "/sudo/trust/groups/{group_name}":
+    put:
+      summary: change the trust level of a group
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trust:
+                  type: string
+                  enum: [Authenticated, Ndaed, Staff]
+  "/sudo/member/{group_name}/{user_uuid}":
+    delete:
+      summary: remove a member from a group
+  "/sudo/member/{group_name}":
+    post:
+      summary: add a member to a group
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_uuid:
+                  type: string
+                  format: uuid
+                expiration:
+                  type: integer
+                  required: false
+                no_host:
+                  type: bool
+                  required: false
+                  default: false
+  "/sudo/user/uuids/staff":
+    get:
+      summary: all uuuids of staff profiles
+  "/sudo/user/uuids/members":
+    get:
+      summary: all uuuids of profiles that are member of any group
+  "/sudo/user/consolidate":
+    delete:
+      summary: consolidate DinoPark with CIS using DinoPark as source of truth
+  "/sudo/user/inactive":
+    delete:
+      summary: delete all inactive users from the DB
+  "/sudo/user/{uuid}":
+    delete:
+      summary: delete a user from the DB
+  "/sudo/user/cis/{user_uuid}":
+    post:
+      summary: send a profile of a user to CIS
+  "/sudo/curators/{group_name}":
+    get:
+      summary: list all emails from the curators of a group
+    post:
+      summary: add a curator to a group
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_uuid:
+                  type: string
+                  format: uuid
+                expiration:
+                  type: integer
+                  required: false
+                no_host:
+                  type: bool
+                  required: false
+                  default: false
+  "/sudo/mail/nda/{user_uuid}":
+    post:
+      summary: subscribe a user to the nda mailing list
+    delete:
+      summary: unsubscribe a user to the nda mailing list
+  "/sudo/logs/all/raw":
+    get:
+      summary: retrieve raw logs
