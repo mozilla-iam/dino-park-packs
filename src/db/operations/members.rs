@@ -14,6 +14,7 @@ use crate::mail::manager::send_emails;
 use crate::mail::manager::subscribe_nda;
 use crate::mail::manager::unsubscribe_nda;
 use crate::mail::templates::Template;
+use crate::rules::engine::ADMIN_CAN_ADD_MEMBER;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::engine::RENEW_MEMBER;
@@ -52,6 +53,14 @@ pub fn membership_and_scoped_host(
         Trust::Ndaed => {
             internal::member::membership_and_ndaed_host(&connection, group.id, user.user_uuid)
         }
+        Trust::Vouched => {
+            internal::member::membership_and_vouched_host(&connection, group.id, user.user_uuid)
+        }
+        Trust::Authenticated => internal::member::membership_and_authenticated_host(
+            &connection,
+            group.id,
+            user.user_uuid,
+        ),
         _ => Ok(None),
     }
 }
@@ -141,6 +150,37 @@ fn db_leave(
     )
 }
 
+pub async fn transfer(
+    pool: &Pool,
+    scope_and_user: &ScopeAndUser,
+    group_name: &str,
+    old_user: &User,
+    new_user: &User,
+    cis_client: Arc<impl AsyncCisClientTrait>,
+) -> Result<(), Error> {
+    let connection = pool.get()?;
+    let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
+    ADMIN_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
+        &pool.clone(),
+        scope_and_user,
+        &group_name,
+        &host.user_uuid,
+        &new_user.user_uuid,
+    ))?;
+    internal::member::transfer_membership(&connection, &group_name, &host, &old_user, &new_user)?;
+    if group_name == "nda" {
+        let old_user_profile =
+            internal::user::slim_user_profile_by_uuid(&connection, &old_user.user_uuid)?;
+        let new_user_profile =
+            internal::user::slim_user_profile_by_uuid(&connection, &old_user.user_uuid)?;
+        unsubscribe_nda(&old_user_profile.email);
+        subscribe_nda(&new_user_profile.email);
+    }
+    drop(connection);
+    send_groups_to_cis(pool, Arc::clone(&cis_client), &old_user.user_uuid).await?;
+    send_groups_to_cis(pool, cis_client, &new_user.user_uuid).await
+}
+
 pub async fn add(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
@@ -150,11 +190,12 @@ pub async fn add(
     expiration: Option<i32>,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
-    ONLY_ADMINS.run(&RuleContext::minimal(
+    ADMIN_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         &pool.clone(),
         scope_and_user,
         &group_name,
         &host.user_uuid,
+        &user.user_uuid,
     ))?;
     let connection = pool.get()?;
     let expiration = if expiration.is_none() {

@@ -184,3 +184,133 @@ async fn add_remove() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[actix_rt::test]
+async fn transfer() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+
+    let host_user = basic_user(1, true);
+    let add_user_1 = basic_user(11, false);
+    let add_user_2 = basic_user(12, false);
+    let host = Soa::from(&host_user).admin().aal_medium();
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "some-group", "description": "a group", "trust": "Authenticated" }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/sudo/member/some-group",
+        json!({ "user_uuid": user_uuid(&add_user_1) }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/members/some-group", &host).await;
+    assert!(res.status().is_success());
+    let members = read_json(res).await;
+    assert_eq!(members["members"].as_array().map(|a| a.len()), Some(2));
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/some-group/details",
+        &Soa::from(&add_user_2),
+    )
+    .await;
+    assert!(res.status().is_success());
+    let details = read_json(res).await;
+    assert_eq!(details["member"].as_bool(), Some(false));
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/some-group/details",
+        &Soa::from(&add_user_1),
+    )
+    .await;
+    assert!(res.status().is_success());
+    let details = read_json(res).await;
+    assert_eq!(details["member"].as_bool(), Some(true));
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/sudo/transfer",
+        json!({ "group_name": "some-group", "old_user_uuid": user_uuid(&add_user_1), "new_user_uuid": user_uuid(&add_user_2) }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(&mut app, "/groups/api/v1/members/some-group", &host).await;
+    assert!(res.status().is_success());
+    let members = read_json(res).await;
+    assert_eq!(members["members"].as_array().map(|a| a.len()), Some(2));
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/some-group/details",
+        &Soa::from(&add_user_2),
+    )
+    .await;
+    assert!(res.status().is_success());
+    let details = read_json(res).await;
+    assert_eq!(details["member"].as_bool(), Some(true));
+
+    let res = get(
+        &mut app,
+        "/groups/api/v1/groups/some-group/details",
+        &Soa::from(&add_user_1),
+    )
+    .await;
+    assert!(res.status().is_success());
+    let details = read_json(res).await;
+    assert_eq!(details["member"].as_bool(), Some(false));
+
+    Ok(())
+}
+
+#[actix_rt::test]
+async fn raw_data() -> Result<(), Error> {
+    reset()?;
+    let app = App::new().service(test_app().await);
+    let mut app = test::init_service(app).await;
+
+    let host_user = basic_user(1, true);
+    let add_user_1 = basic_user(11, false);
+    let host = Soa::from(&host_user).admin().aal_medium();
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/groups",
+        json!({ "name": "some-group", "description": "a group", "trust": "Authenticated" }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = post(
+        &mut app,
+        "/groups/api/v1/sudo/member/some-group",
+        json!({ "user_uuid": user_uuid(&add_user_1) }),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    let res = get(
+        &mut app,
+        &format!("/groups/api/v1/sudo/user/data/{}", user_uuid(&host_user)),
+        &host,
+    )
+    .await;
+    assert!(res.status().is_success());
+
+    Ok(())
+}

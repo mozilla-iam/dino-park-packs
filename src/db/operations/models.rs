@@ -1,6 +1,11 @@
+use crate::db::logs::Log;
 use crate::db::model::Group;
 use crate::db::model::GroupsList;
+use crate::db::model::Invitation;
+use crate::db::model::Membership;
+use crate::db::model::Request;
 use crate::db::types::*;
+use crate::db::users::UserProfile;
 use crate::error::PacksError;
 use crate::user::User;
 use crate::utils::maybe_to_utc;
@@ -499,6 +504,15 @@ pub struct PaginatedGroupsLists {
 #[derive(Serialize, Deserialize)]
 pub struct InvitationEmail {
     pub body: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct RawUserData {
+    pub user_profile: UserProfile,
+    pub memberships: Vec<Membership>,
+    pub invitations: Vec<Invitation>,
+    pub requests: Vec<Request>,
+    pub logs: Vec<Log>,
 }
 
 #[cfg(test)]

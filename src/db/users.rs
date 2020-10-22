@@ -6,6 +6,7 @@ use crate::rules::functions::is_nda_group;
 use cis_profile::schema::Display;
 use cis_profile::schema::Profile;
 use cis_profile::schema::StandardAttributeString;
+use failure::Error;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
@@ -44,6 +45,7 @@ pub struct UserProfileValue {
     pub trust: TrustType,
 }
 
+#[derive(Serialize)]
 pub struct UserProfile {
     pub user_uuid: Uuid,
     pub user_id: String,
@@ -54,7 +56,7 @@ pub struct UserProfile {
 }
 
 impl TryFrom<UserProfile> for UserProfileValue {
-    type Error = serde_json::Error;
+    type Error = Error;
 
     fn try_from(u: UserProfile) -> Result<Self, Self::Error> {
         Ok(UserProfileValue {
@@ -69,7 +71,7 @@ impl TryFrom<UserProfile> for UserProfileValue {
 }
 
 impl TryFrom<UserProfileValue> for UserProfile {
-    type Error = serde_json::Error;
+    type Error = Error;
     fn try_from(u: UserProfileValue) -> Result<Self, Self::Error> {
         Ok(UserProfile {
             user_uuid: u.user_uuid,
@@ -83,7 +85,7 @@ impl TryFrom<UserProfileValue> for UserProfile {
 }
 
 impl TryFrom<Profile> for UserProfile {
-    type Error = failure::Error;
+    type Error = Error;
     fn try_from(p: Profile) -> Result<Self, Self::Error> {
         let trust = trust_for_profile(&p);
         Ok(UserProfile {

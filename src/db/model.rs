@@ -37,7 +37,7 @@ pub struct Role {
     pub permissions: Vec<PermissionType>,
 }
 
-#[derive(Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Serialize, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
 pub struct Membership {
@@ -49,7 +49,9 @@ pub struct Membership {
     pub added_ts: NaiveDateTime,
 }
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(
+    Serialize, Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset,
+)]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
 pub struct Invitation {
@@ -68,7 +70,9 @@ pub struct Invitationtext {
     pub body: String,
 }
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(
+    Serialize, Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset,
+)]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
 pub struct Request {

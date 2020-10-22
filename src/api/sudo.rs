@@ -41,6 +41,13 @@ struct LimitOffsetQuery {
     s: i64,
 }
 
+#[derive(Deserialize)]
+pub struct TransferMemberShip {
+    group_name: String,
+    old_user_uuid: Uuid,
+    new_user_uuid: Uuid,
+}
+
 fn default_groups_list_size() -> i64 {
     20
 }
@@ -288,8 +295,44 @@ async fn delete_user(
         .map_err(Into::into)
 }
 
+#[guard(Staff, Admin, Medium)]
+async fn transfer_membership<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    transfer: web::Json<TransferMemberShip>,
+    scope_and_user: ScopeAndUser,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    operations::members::transfer(
+        &pool,
+        &scope_and_user,
+        &transfer.group_name,
+        &User {
+            user_uuid: transfer.old_user_uuid,
+        },
+        &User {
+            user_uuid: transfer.new_user_uuid,
+        },
+        Arc::clone(&*cis_client),
+    )
+    .await
+    .map(|_| HttpResponse::Ok().json(""))
+    .map_err(Into::into)
+}
+
+#[guard(Staff, Admin, Medium)]
+async fn raw_data(
+    pool: web::Data<Pool>,
+    scope_and_user: ScopeAndUser,
+    user_uuid: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    operations::raws::raw_user_data(&pool, &scope_and_user, Some(user_uuid.into_inner()))
+        .map(|data| HttpResponse::Ok().json(data))
+        .map_err(Into::into)
+}
+
 pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/sudo")
+        .service(web::resource("/transfer").route(web::post().to(transfer_membership::<T>)))
         .service(web::resource("/groups/reserve/{group_name}").route(web::post().to(reserve_group)))
         .service(
             web::resource("/groups/inactive/{group_name}")
@@ -304,6 +347,7 @@ pub fn sudo_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
                 .route(web::delete().to(remove_member::<T>)),
         )
         .service(web::resource("/member/{group_name}").route(web::post().to(add_member::<T>)))
+        .service(web::resource("/user/data/{user_uuid}").route(web::get().to(raw_data)))
         .service(web::resource("/user/uuids/staff").route(web::get().to(all_staff_uuids)))
         .service(web::resource("/user/uuids/members").route(web::get().to(all_member_uuids)))
         .service(

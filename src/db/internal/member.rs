@@ -311,6 +311,8 @@ scoped_members_and_host_for!(users_public, hosts_public, public_scoped_members_a
 
 membership_and_scoped_host_for!(hosts_staff, membership_and_staff_host);
 membership_and_scoped_host_for!(hosts_ndaed, membership_and_ndaed_host);
+membership_and_scoped_host_for!(hosts_vouched, membership_and_vouched_host);
+membership_and_scoped_host_for!(hosts_authenticated, membership_and_authenticated_host);
 
 pub fn add_member_role(
     host_uuid: &Uuid,
@@ -428,6 +430,44 @@ pub fn add_to_group(
             );
         })
         .map_err(Into::into)
+}
+
+pub fn transfer_membership(
+    connection: &PgConnection,
+    group_name: &str,
+    host: &User,
+    old_member: &User,
+    new_member: &User,
+) -> Result<(), Error> {
+    let group = internal::group::get_group(connection, group_name)?;
+    let log_ctx_old = LogContext::with(group.id, host.user_uuid).with_user(old_member.user_uuid);
+    let log_ctx_new = LogContext::with(group.id, host.user_uuid).with_user(new_member.user_uuid);
+    diesel::update(
+        schema::memberships::table.filter(
+            schema::memberships::group_id
+                .eq(group.id)
+                .and(schema::memberships::user_uuid.eq(old_member.user_uuid)),
+        ),
+    )
+    .set(schema::memberships::user_uuid.eq(new_member.user_uuid))
+    .execute(connection)
+    .map(|_| {
+        internal::log::db_log(
+            connection,
+            &log_ctx_old,
+            LogTargetType::Membership,
+            LogOperationType::Updated,
+            log_comment_body(&format!("moved to {}", new_member.user_uuid)),
+        );
+        internal::log::db_log(
+            connection,
+            &log_ctx_new,
+            LogTargetType::Membership,
+            LogOperationType::Updated,
+            log_comment_body(&format!("moved from {}", old_member.user_uuid)),
+        );
+    })
+    .map_err(Into::into)
 }
 
 pub fn renew(
