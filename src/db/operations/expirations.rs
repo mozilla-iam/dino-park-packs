@@ -114,8 +114,8 @@ pub fn expiration_notification(pool: &Pool, first: bool) -> Result<usize, Error>
             match internal::member::role_for(&connection, &host.user_uuid, &group.name)? {
                 Some(r) => r.typ != RoleType::Member,
                 None => false,
-            };
-        let user = internal::user::slim_user_profile_by_uuid(&connection, &membership.added_by)?;
+            } && !host.email.is_empty();
+        let user = internal::user::slim_user_profile_by_uuid(&connection, &membership.user_uuid)?;
         if first {
             if host_valid {
                 send_email(

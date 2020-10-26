@@ -22,7 +22,7 @@ pub struct LegacyUserData {
     pub email: Option<String>,
 }
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset, Default)]
 #[primary_key(user_uuid)]
 #[table_name = "profiles"]
 pub struct UserProfileSlim {
@@ -45,7 +45,7 @@ pub struct UserProfileValue {
     pub trust: TrustType,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct UserProfile {
     pub user_uuid: Uuid,
     pub user_id: String,
