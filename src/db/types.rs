@@ -31,6 +31,12 @@ impl TrustType {
     }
 }
 
+impl Default for TrustType {
+    fn default() -> Self {
+        Self::Public
+    }
+}
+
 impl From<Trust> for TrustType {
     fn from(t: Trust) -> Self {
         TrustType::from(&t)

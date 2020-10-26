@@ -14,7 +14,13 @@ use log::info;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
+const DEFAULT_UUID: Uuid = Uuid::nil();
+
 pub fn user_trust(connection: &PgConnection, user_uuid: &Uuid) -> Result<TrustType, Error> {
+    if user_uuid == &DEFAULT_UUID {
+        return Ok(Default::default());
+    }
+
     schema::profiles::table
         .filter(schema::profiles::user_uuid.eq(user_uuid))
         .select(schema::profiles::trust)
@@ -35,6 +41,10 @@ pub fn user_profile_by_uuid(
     connection: &PgConnection,
     user_uuid: &Uuid,
 ) -> Result<UserProfile, Error> {
+    if user_uuid == &DEFAULT_UUID {
+        return Ok(Default::default());
+    }
+
     schema::profiles::table
         .filter(schema::profiles::user_uuid.eq(user_uuid))
         .first::<UserProfileValue>(connection)
@@ -47,6 +57,10 @@ pub fn user_profile_by_uuid_maybe(
     connection: &PgConnection,
     user_uuid: &Uuid,
 ) -> Result<Option<UserProfile>, Error> {
+    if user_uuid == &DEFAULT_UUID {
+        return Ok(Default::default());
+    }
+
     schema::profiles::table
         .filter(schema::profiles::user_uuid.eq(user_uuid))
         .first::<UserProfileValue>(connection)
@@ -61,6 +75,11 @@ pub fn slim_user_profile_by_uuid(
     user_uuid: &Uuid,
 ) -> Result<UserProfileSlim, Error> {
     use schema::profiles as p;
+
+    if user_uuid == &DEFAULT_UUID {
+        return Ok(Default::default());
+    }
+
     schema::profiles::table
         .filter(p::user_uuid.eq(user_uuid))
         .select((p::user_uuid, p::user_id, p::email, p::username, p::trust))
