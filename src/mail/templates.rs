@@ -144,7 +144,7 @@ fn first_host_expiration(group_name: &str, user: &str, domain: &str) -> Message 
 Dear Curator,
 {user}'s membership of the '{group_name}' group will expire in 14 days.
 
-Please visit https://{domain}/a/{group_name}//edit?section=members to renew the \
+Please visit https://{domain}/a/{group_name}/edit?section=members to renew the \
 membership if applicable.
 
 Or visit {user}'s profile first: https://{domain}/p/{user}
