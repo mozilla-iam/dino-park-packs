@@ -5,7 +5,12 @@ use crate::rules::RuleContext;
 use crate::utils::valid_group_name;
 use dino_park_trust::GroupsTrust;
 
-const NDA_GROUPS: [&str; 2] = ["nda", "contingentworkernda"];
+/*
+The other places these groups are handled.
+https://github.com/mozilla-iam/dino-park-gate/pull/3
+https://github.com/mozilla-iam/dino-park-front-end/pull/662
+*/
+const NDA_GROUPS: [&str; 3] = ["nda", "contingentworkernda", "ghe_group_curators"];
 
 pub fn is_nda_group(group_name: &str) -> bool {
     NDA_GROUPS.contains(&group_name)

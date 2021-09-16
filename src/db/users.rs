@@ -143,7 +143,7 @@ macro_rules! user_t {
     ($user_typ:ident, $table:expr, $display:expr) => {
         #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
         #[primary_key(user_uuid)]
-        #[changeset_options(treat_none_as_null="true")]
+        #[changeset_options(treat_none_as_null = "true")]
         #[table_name = $table]
         pub struct $user_typ {
             pub user_uuid: Uuid,
@@ -171,17 +171,15 @@ macro_rules! user_t {
         impl From<&Profile> for $user_typ {
             fn from(profile: &Profile) -> $user_typ {
                 $user_typ {
-                    user_uuid: Uuid::parse_str(
-                        &profile.uuid.value.clone().unwrap_or_default()
-                    ).unwrap_or_default(),
+                    user_uuid: Uuid::parse_str(&profile.uuid.value.clone().unwrap_or_default())
+                        .unwrap_or_default(),
                     picture: field_for_display(&profile.picture, &$display),
                     first_name: field_for_display(&profile.first_name, &$display),
                     last_name: field_for_display(&profile.last_name, &$display),
                     username: profile.primary_username.value.clone().unwrap_or_default(),
                     email: field_for_display(&profile.primary_email, &$display),
-                    trust: trust_for_profile(profile)
+                    trust: trust_for_profile(profile),
                 }
-
             }
         }
     };
