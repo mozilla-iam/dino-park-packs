@@ -50,7 +50,7 @@ pub fn user_profile_by_uuid(
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
         .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
-        .map_err(|_| PacksError::ProfileNotFound.into())
+        .map_err(|err| PacksError::ProfileNotFound(user_uuid.to_string(), err.to_string()).into())
 }
 
 pub fn user_profile_by_uuid_maybe(
@@ -67,7 +67,7 @@ pub fn user_profile_by_uuid_maybe(
         .optional()
         .map_err(Error::from)
         .map(|p| p.and_then(|p| UserProfile::try_from(p).ok()))
-        .map_err(|_| PacksError::ProfileNotFound.into())
+        .map_err(|err| PacksError::ProfileNotFound(user_uuid.to_string(), err.to_string()).into())
 }
 
 pub fn slim_user_profile_by_uuid(
@@ -84,7 +84,7 @@ pub fn slim_user_profile_by_uuid(
         .filter(p::user_uuid.eq(user_uuid))
         .select((p::user_uuid, p::user_id, p::email, p::username, p::trust))
         .first::<UserProfileSlim>(connection)
-        .map_err(|_| PacksError::ProfileNotFound.into())
+        .map_err(|err| PacksError::ProfileNotFound(user_uuid.to_string(), err.to_string()).into())
 }
 
 pub fn user_profile_by_user_id(
@@ -96,7 +96,7 @@ pub fn user_profile_by_user_id(
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
         .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
-        .map_err(|_| PacksError::ProfileNotFound.into())
+        .map_err(|err| PacksError::ProfileNotFound(user_id.to_string(), err.to_string()).into())
 }
 
 pub fn delete_user(connection: &PgConnection, user: &User) -> Result<(), Error> {
