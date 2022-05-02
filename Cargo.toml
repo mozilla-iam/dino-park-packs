@@ -18,7 +18,7 @@ local = ["dino_park_gate/localuserscope"]
 [dependencies]
 cis_client = { git = "https://github.com/mozilla-iam/cis_client-rust", branch = "0.7", version = "0.7" }
 cis_profile = { git = "https://github.com/mozilla-iam/cis_profile-rust", branch = "0.4", version = "0.4", features = ["aws", "vendored"] }
-dino_park_gate = { git = "https://github.com/mozilla-iam/dino-park-gate", branch = "0.8.1", version = "0.8.1" }
+dino_park_gate = { git = "https://github.com/mozilla-iam/dino-park-gate", branch = "0.8.2", version = "0.8.2" }
 dino_park_guard = { git = "https://github.com/mozilla-iam/dino-park-guard", branch = "0.3", version = "0.3" }
 dino_park_trust = { git = "https://github.com/mozilla-iam/dino-park-trust", tag = "0.0.7", version = "0.0.7" }
 diesel = { version = "1.4", features = ["postgres", "uuidv07", "r2d2", "chrono", "serde_json"] }
