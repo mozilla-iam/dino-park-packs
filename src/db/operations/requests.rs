@@ -26,7 +26,7 @@ pub fn request_membership(
     CURRENT_USER_CAN_REQUEST.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &user.user_uuid,
     ))?;
     request(&connection, group_name, user, request_expiration)
@@ -43,7 +43,7 @@ pub fn reject_request(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     reject(&connection, group_name, &host, user)?;
@@ -72,7 +72,7 @@ pub fn request_count(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &user.user_uuid,
     ))?;
     count(&connection, group_name)
@@ -97,7 +97,7 @@ pub fn pending_requests(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &user.user_uuid,
     ))?;
     match scope_and_user.scope {

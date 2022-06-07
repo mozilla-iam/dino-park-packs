@@ -12,16 +12,16 @@ pub struct Message {
     pub body: String,
 }
 
-impl Into<rusoto_ses::Message> for Message {
-    fn into(self) -> rusoto_ses::Message {
+impl From<Message> for rusoto_ses::Message {
+    fn from(m: Message) -> rusoto_ses::Message {
         rusoto_ses::Message {
             subject: Content {
-                data: self.subject,
+                data: m.subject,
                 ..Default::default()
             },
             body: Body {
                 text: Some(Content {
-                    data: self.body,
+                    data: m.body,
                     charset: Some("UTF-8".to_owned()),
                 }),
                 ..Default::default()

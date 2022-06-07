@@ -49,11 +49,11 @@ pub struct GetMembersQuery {
 
 impl From<GetMembersQuery> for MembersQueryOptions {
     fn from(q: GetMembersQuery) -> Self {
-        let roles = q.r.unwrap_or_else(|| MemberRoles::Any).get_role_types();
+        let roles = q.r.unwrap_or(MemberRoles::Any).get_role_types();
         MembersQueryOptions {
             query: q.q,
             roles,
-            limit: q.s.unwrap_or_else(|| 20),
+            limit: q.s.unwrap_or(20),
             offset: q.n,
             order: q.by.unwrap_or_default(),
             privileged: q.p.unwrap_or_default(),
