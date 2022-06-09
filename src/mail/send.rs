@@ -24,18 +24,18 @@ impl Default for SesSender {
     }
 }
 
-impl Into<SendEmailRequest> for Email {
-    fn into(self) -> SendEmailRequest {
+impl From<Email> for SendEmailRequest {
+    fn from(e: Email) -> SendEmailRequest {
         let destination = Destination {
-            to_addresses: self.to.map(|s| vec![s]),
-            bcc_addresses: self.bcc,
+            to_addresses: e.to.map(|s| vec![s]),
+            bcc_addresses: e.bcc,
             ..Default::default()
         };
-        let message = self.message.into();
+        let message = e.message.into();
         SendEmailRequest {
             destination,
             message,
-            source: self.from,
+            source: e.from,
             ..Default::default()
         }
     }

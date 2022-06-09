@@ -32,7 +32,7 @@ pub fn delete_invitation(
     DELETE_INVITATION.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
@@ -64,7 +64,7 @@ pub fn update_invitation(
     INVITE_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
         &member.user_uuid,
     ))?;
@@ -92,7 +92,7 @@ pub fn invite_member(
     INVITE_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
         &member.user_uuid,
     ))?;
@@ -136,7 +136,7 @@ pub fn pending_invitations_count(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
@@ -152,7 +152,7 @@ pub fn pending_invitations(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
@@ -192,7 +192,7 @@ pub async fn accept_invitation(
     CURRENT_USER_CAN_JOIN.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &Uuid::default(),
     ))?;
     let connection = pool.get()?;
@@ -215,7 +215,7 @@ pub fn set_invitation_email(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;
@@ -239,7 +239,7 @@ pub fn get_invitation_email(
     HOST_IS_CURATOR.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;

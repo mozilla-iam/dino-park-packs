@@ -54,7 +54,7 @@ pub async fn _send_groups_to_cis(
         &mut update_profile.access_information.mozilliansorg,
         groups,
         cis_client.get_secret_store(),
-        &now,
+        now,
     ) {
         Ok(_) => {
             if let Some(user_id) = profile.user_id.value.clone() {

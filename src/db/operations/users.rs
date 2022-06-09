@@ -44,7 +44,7 @@ pub fn search_all_users(
 
     internal::user::search_users(
         &connection,
-        trust.unwrap_or_else(|| TrustType::Authenticated),
+        trust.unwrap_or(TrustType::Authenticated),
         scope_and_user.scope.into(),
         q,
         limit,
@@ -125,7 +125,7 @@ pub async fn update_user_cache(
         return delete_user(pool, &User { user_uuid });
     }
     let connection = pool.get()?;
-    let new_trust = trust_for_profile(&profile);
+    let new_trust = trust_for_profile(profile);
     let old_profile = internal::user::user_profile_by_uuid_maybe(&connection, &user_uuid)?;
     internal::user::update_user_cache(&connection, profile)?;
 
@@ -173,7 +173,7 @@ pub fn delete_inactive_users(pool: &Pool, scope_and_user: &ScopeAndUser) -> Resu
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     ONLY_ADMINS.run(&RuleContext::minimal(
         pool,
-        &scope_and_user,
+        scope_and_user,
         "",
         &host.user_uuid,
     ))?;
@@ -195,7 +195,7 @@ pub fn get_all_member_uuids(
     let host = internal::user::user_by_id(&connection, &scope_and_user.user_id)?;
     ONLY_ADMINS.run(&RuleContext::minimal(
         pool,
-        &scope_and_user,
+        scope_and_user,
         "",
         &host.user_uuid,
     ))?;

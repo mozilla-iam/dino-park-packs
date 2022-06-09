@@ -16,7 +16,7 @@ pub fn update_terms(
     EDIT_TERMS.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     internal::terms::set_terms(&host.user_uuid, &connection, group_name, text)
@@ -32,7 +32,7 @@ pub fn delete_terms(
     EDIT_TERMS.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     internal::terms::delete_terms(&host.user_uuid, &connection, group_name)

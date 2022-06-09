@@ -24,7 +24,7 @@ pub async fn add_admin(
     CAN_ADD_CURATOR.run(&RuleContext::minimal_with_member_uuid(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
         &user.user_uuid,
     ))?;
@@ -33,7 +33,7 @@ pub async fn add_admin(
     if group_name == "nda" {
         subscribe_nda(&user_profile.email)
     }
-    internal::admin::add_admin(&connection, &group_name, host, user)?;
+    internal::admin::add_admin(&connection, group_name, host, user)?;
     drop(connection);
     send_groups_to_cis(pool, cis_client, &user.user_uuid).await
 }
@@ -49,7 +49,7 @@ pub fn demote(
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let connection = pool.get()?;

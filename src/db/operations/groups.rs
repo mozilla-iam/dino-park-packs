@@ -29,11 +29,11 @@ fn add_new_group_db(
     new_group: NewGroup,
     creator: User,
 ) -> Result<(), Error> {
-    let new_group = internal::group::add_group(&creator.user_uuid, &connection, new_group)?;
+    let new_group = internal::group::add_group(&creator.user_uuid, connection, new_group)?;
     let log_ctx = LogContext::with(new_group.id, creator.user_uuid);
-    internal::admin::add_admin_role(&log_ctx, &connection, new_group.id)?;
-    internal::member::add_member_role(&creator.user_uuid, &connection, new_group.id)?;
-    internal::admin::add_admin(&connection, &new_group.name, &User::default(), &creator)?;
+    internal::admin::add_admin_role(&log_ctx, connection, new_group.id)?;
+    internal::member::add_member_role(&creator.user_uuid, connection, new_group.id)?;
+    internal::admin::add_admin(connection, &new_group.name, &User::default(), &creator)?;
     Ok(())
 }
 
@@ -67,7 +67,7 @@ pub async fn delete_group(
     HOST_IS_GROUP_ADMIN.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let bcc = internal::member::get_curator_emails_by_group_name(&connection, group_name)?;
@@ -81,17 +81,9 @@ pub async fn delete_group(
         Arc::clone(&cis_client),
     )
     .await?;
-    operations::members::remove(
-        &pool,
-        &scope_and_user,
-        &group_name,
-        &host,
-        &host,
-        cis_client,
-    )
-    .await?;
+    operations::members::remove(pool, scope_and_user, group_name, &host, &host, cis_client).await?;
     let connection = pool.get()?;
-    internal::group::delete_group(&host.user_uuid, &connection, &group_name)?;
+    internal::group::delete_group(&host.user_uuid, &connection, group_name)?;
     let host_profile = internal::user::slim_user_profile_by_uuid(&connection, &host.user_uuid)?;
     send_emails(
         bcc,

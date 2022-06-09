@@ -138,16 +138,10 @@ fn db_leave(
     force: bool,
     comment: Option<Value>,
 ) -> Result<(), Error> {
-    if !force && internal::admin::is_last_admin(&connection, group_name, &user.user_uuid)? {
+    if !force && internal::admin::is_last_admin(connection, group_name, &user.user_uuid)? {
         return Err(error::PacksError::LastAdmin.into());
     }
-    internal::member::remove_from_group(
-        host_uuid,
-        &connection,
-        &user.user_uuid,
-        group_name,
-        comment,
-    )
+    internal::member::remove_from_group(host_uuid, connection, &user.user_uuid, group_name, comment)
 }
 
 pub async fn transfer(
@@ -163,11 +157,11 @@ pub async fn transfer(
     ADMIN_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         &pool.clone(),
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
         &new_user.user_uuid,
     ))?;
-    internal::member::transfer_membership(&connection, &group_name, &host, &old_user, &new_user)?;
+    internal::member::transfer_membership(&connection, group_name, &host, old_user, new_user)?;
     if group_name == "nda" {
         let old_user_profile =
             internal::user::slim_user_profile_by_uuid(&connection, &old_user.user_uuid)?;
@@ -193,7 +187,7 @@ pub async fn add(
     ADMIN_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         &pool.clone(),
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
         &user.user_uuid,
     ))?;
@@ -203,7 +197,7 @@ pub async fn add(
     } else {
         expiration
     };
-    internal::member::add_to_group(&connection, &group_name, &host, &user, expiration)?;
+    internal::member::add_to_group(&connection, group_name, host, user, expiration)?;
     let user_profile = internal::user::slim_user_profile_by_uuid(&connection, &user.user_uuid)?;
     if group_name == "nda" {
         subscribe_nda(&user_profile.email)
@@ -224,7 +218,7 @@ pub async fn remove_members_silent(
     REMOVE_MEMBER.run(&RuleContext::minimal(
         pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     drop(connection);
@@ -234,11 +228,11 @@ pub async fn remove_members_silent(
             let user_uuid = user.user_uuid;
             log::debug!("removing {} for {}", &group_name, user_uuid);
             operations::members::remove_silent(
-                &pool,
-                &scope_and_user,
-                &group_name,
+                pool,
+                scope_and_user,
+                group_name,
                 &host,
-                &user,
+                user,
                 Arc::clone(&cis_client),
             )
             .map_ok(move |k| {
@@ -363,7 +357,7 @@ async fn _revoke_membership<'a>(
         if let Err(e) = db_leave(
             &host.user_uuid,
             &connection,
-            &group_name,
+            group_name,
             &user,
             force,
             comment.clone(),
@@ -400,9 +394,9 @@ pub async fn remove_silent(
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     REMOVE_MEMBER.run(&RuleContext::minimal(
-        &pool,
+        pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let remove_groups = RemoveGroups {
@@ -423,9 +417,9 @@ pub async fn remove(
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
     REMOVE_MEMBER.run(&RuleContext::minimal(
-        &pool,
+        pool,
         scope_and_user,
-        &group_name,
+        group_name,
         &host.user_uuid,
     ))?;
     let remove_groups = RemoveGroups {
@@ -498,7 +492,7 @@ pub fn get_curator_emails(
     ONLY_ADMINS.run(&RuleContext::minimal(
         &pool.clone(),
         scope_and_user,
-        &group_name,
+        group_name,
         &user.user_uuid,
     ))?;
 
@@ -515,7 +509,7 @@ pub fn get_member_emails(
     ONLY_ADMINS.run(&RuleContext::minimal(
         &pool.clone(),
         scope_and_user,
-        &group_name,
+        group_name,
         &user.user_uuid,
     ))?;
 

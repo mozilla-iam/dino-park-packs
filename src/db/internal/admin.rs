@@ -30,7 +30,7 @@ pub fn add_admin_role(
         .map(|role| {
             internal::log::db_log(
                 connection,
-                &log_ctx,
+                log_ctx,
                 LogTargetType::Role,
                 LogOperationType::Created,
                 log_comment_body("admin"),

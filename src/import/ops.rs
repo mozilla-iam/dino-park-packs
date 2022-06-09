@@ -123,10 +123,10 @@ pub fn import_group(
         group_expiration: Some(moz_group.expiration),
     };
     let creator = User::default();
-    let new_group = internal::group::add_group(&creator.user_uuid, &connection, new_group)?;
+    let new_group = internal::group::add_group(&creator.user_uuid, connection, new_group)?;
     let log_ctx = LogContext::with(new_group.id, creator.user_uuid);
-    internal::admin::add_admin_role(&log_ctx, &connection, new_group.id)?;
-    internal::member::add_member_role(&creator.user_uuid, &connection, new_group.id)?;
+    internal::admin::add_admin_role(&log_ctx, connection, new_group.id)?;
+    internal::member::add_member_role(&creator.user_uuid, connection, new_group.id)?;
     if !moz_group.terms.is_empty() {
         internal::terms::set_terms(&creator.user_uuid, connection, &group_name, moz_group.terms)?;
     }
@@ -146,7 +146,7 @@ async fn get_user_profile(
     user_id: &str,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<UserProfile, Error> {
-    if let Ok(user_profile) = internal::user::user_profile_by_user_id(&connection, user_id) {
+    if let Ok(user_profile) = internal::user::user_profile_by_user_id(connection, user_id) {
         Ok(user_profile)
     } else {
         warn!("no profile for {} → fetching", user_id);
@@ -174,7 +174,7 @@ async fn import_curator(
     if trust_for_profile(&user_profile.profile) < trust {
         return Ok(());
     }
-    internal::admin::add_admin(&connection, group_name, &User::default(), &user)?;
+    internal::admin::add_admin(connection, group_name, &User::default(), &user)?;
     let groups = internal::member::group_names_for_user(connection, &user.user_uuid)?;
     _send_groups_to_cis(cis_client, groups, user_profile.profile).await?;
     Ok(())

@@ -98,7 +98,7 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     )
     .map_err(|_| RuleError::UserNotFound)?;
     let group =
-        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+        internal::group::get_group(&connection, ctx.group).map_err(|_| RuleError::DBError)?;
     if trust >= group.trust {
         return Ok(());
     }
@@ -109,7 +109,7 @@ pub fn member_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     let group =
-        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+        internal::group::get_group(&connection, ctx.group).map_err(|_| RuleError::DBError)?;
     if TrustType::from(&ctx.scope_and_user.scope) >= group.trust {
         return Ok(());
     }
@@ -120,7 +120,7 @@ pub fn current_user_can_join(ctx: &RuleContext) -> Result<(), RuleError> {
 pub fn is_reviewed_group(ctx: &RuleContext) -> Result<(), RuleError> {
     let connection = ctx.pool.get().map_err(|_| RuleError::PoolError)?;
     let group =
-        internal::group::get_group(&connection, &ctx.group).map_err(|_| RuleError::DBError)?;
+        internal::group::get_group(&connection, ctx.group).map_err(|_| RuleError::DBError)?;
     match group.typ {
         GroupType::Reviewed => Ok(()),
         _ => Err(RuleError::NotReviewedGroup),
