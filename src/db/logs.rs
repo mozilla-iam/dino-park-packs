@@ -8,7 +8,7 @@ use serde_json::json;
 use serde_json::Value;
 use uuid::Uuid;
 
-#[derive(Identifiable, Associations, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Associations, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
 #[primary_key(group_id)]
 #[table_name = "logs"]
@@ -23,7 +23,7 @@ pub struct InsertLog {
     pub body: Option<Value>,
 }
 
-#[derive(Identifiable, Associations, Queryable, PartialEq, Debug, Serialize)]
+#[derive(Identifiable, Associations, Queryable, PartialEq, Eq, Debug, Serialize)]
 #[belongs_to(Group)]
 #[primary_key(group_id)]
 #[table_name = "logs"]

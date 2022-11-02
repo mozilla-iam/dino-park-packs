@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Rule_type"]
 pub enum RuleType {
     Staff,
@@ -15,7 +15,7 @@ pub enum RuleType {
     Custom,
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, PartialOrd, Serialize)]
 #[DieselType = "Trust_type"]
 pub enum TrustType {
     Public,
@@ -83,7 +83,7 @@ impl TryFrom<Display> for TrustType {
     }
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Permission_type"]
 pub enum PermissionType {
     InviteMember,
@@ -95,14 +95,14 @@ pub enum PermissionType {
     EditTerms,
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Capability_type"]
 pub enum CapabilityType {
     Gdrive,
     Discourse,
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Role_type"]
 pub enum RoleType {
     Admin,
@@ -134,7 +134,7 @@ impl RoleType {
     }
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Group_type"]
 pub enum GroupType {
     Open,
@@ -148,7 +148,7 @@ impl Default for GroupType {
     }
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Log_target_type"]
 pub enum LogTargetType {
     Group,
@@ -159,7 +159,7 @@ pub enum LogTargetType {
     Request,
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Log_operation_type"]
 pub enum LogOperationType {
     Created,

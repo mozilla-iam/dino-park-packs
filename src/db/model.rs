@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, AsChangeset, Serialize)]
+#[derive(Identifiable, Queryable, PartialEq, Eq, Debug, AsChangeset, Serialize)]
 #[table_name = "groups"]
 pub struct Group {
     pub id: i32,
@@ -19,7 +19,7 @@ pub struct Group {
     pub created: NaiveDateTime,
 }
 
-#[derive(Identifiable, Associations, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Associations, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
 #[primary_key(group_id)]
 #[table_name = "terms"]
@@ -28,7 +28,7 @@ pub struct Terms {
     pub text: String,
 }
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, PartialEq, Eq, Debug)]
 pub struct Role {
     pub id: i32,
     pub group_id: i32,
@@ -37,7 +37,7 @@ pub struct Role {
     pub permissions: Vec<PermissionType>,
 }
 
-#[derive(Serialize, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Serialize, Queryable, Associations, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
 pub struct Membership {
@@ -50,7 +50,7 @@ pub struct Membership {
 }
 
 #[derive(
-    Serialize, Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset,
+    Serialize, Identifiable, Queryable, Associations, PartialEq, Eq, Debug, Insertable, AsChangeset,
 )]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]
@@ -62,7 +62,7 @@ pub struct Invitation {
     pub added_by: Uuid,
 }
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Queryable, Associations, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[belongs_to(Group)]
 #[primary_key(group_id)]
 pub struct Invitationtext {
@@ -71,7 +71,7 @@ pub struct Invitationtext {
 }
 
 #[derive(
-    Serialize, Identifiable, Queryable, Associations, PartialEq, Debug, Insertable, AsChangeset,
+    Serialize, Identifiable, Queryable, Associations, PartialEq, Eq, Debug, Insertable, AsChangeset,
 )]
 #[belongs_to(Group)]
 #[primary_key(group_id, user_uuid)]

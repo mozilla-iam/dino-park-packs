@@ -13,7 +13,7 @@ use serde_json::Value;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
-#[derive(Deserialize, Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Deserialize, Identifiable, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_uuid)]
 #[table_name = "legacy_user_data"]
 pub struct LegacyUserData {
@@ -22,7 +22,7 @@ pub struct LegacyUserData {
     pub email: Option<String>,
 }
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset, Default)]
+#[derive(Identifiable, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset, Default)]
 #[primary_key(user_uuid)]
 #[table_name = "profiles"]
 pub struct UserProfileSlim {
@@ -33,7 +33,7 @@ pub struct UserProfileSlim {
     pub trust: TrustType,
 }
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_uuid)]
 #[table_name = "profiles"]
 pub struct UserProfileValue {
@@ -107,7 +107,7 @@ impl TryFrom<Profile> for UserProfile {
     }
 }
 
-#[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+#[derive(Identifiable, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset)]
 #[primary_key(user_id)]
 #[table_name = "user_ids"]
 pub struct UserIdUuid {
@@ -141,7 +141,7 @@ pub fn trust_for_profile(profile: &Profile) -> TrustType {
 
 macro_rules! user_t {
     ($user_typ:ident, $table:expr, $display:expr) => {
-        #[derive(Identifiable, Queryable, PartialEq, Debug, Insertable, AsChangeset)]
+        #[derive(Identifiable, Queryable, PartialEq, Eq, Debug, Insertable, AsChangeset)]
         #[primary_key(user_uuid)]
         #[changeset_options(treat_none_as_null = "true")]
         #[table_name = $table]
@@ -196,7 +196,7 @@ pub struct DisplayUser {
     pub trust: TrustType,
 }
 
-#[derive(Serialize, Queryable, PartialEq, Debug)]
+#[derive(Serialize, Queryable, PartialEq, Eq, Debug)]
 pub struct UserForGroup {
     pub user_uuid: Uuid,
     pub picture: Option<String>,

@@ -1,4 +1,4 @@
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Fail, Debug, PartialEq, Eq)]
 pub enum DBError {
     #[fail(display = "db_invalid_profile_v2")]
     InvalidProfile,
