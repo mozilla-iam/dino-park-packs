@@ -1,4 +1,4 @@
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Fail, Debug, PartialEq, Eq)]
 pub enum RuleError {
     #[fail(display = "rule_unknown_db_error")]
     DBError,

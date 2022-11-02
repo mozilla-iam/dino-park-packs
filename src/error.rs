@@ -1,4 +1,4 @@
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Fail, Debug, PartialEq, Eq)]
 
 pub enum PacksError {
     #[fail(display = "last_admin_of_group")]
