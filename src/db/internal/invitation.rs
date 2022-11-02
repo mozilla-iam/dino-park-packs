@@ -144,7 +144,7 @@ pub fn update(
             invitation_expiration.map(|e| schema::invitations::invitation_expiration.eq(e)),
             (group_expiration.map(|e| schema::invitations::group_expiration.eq(e))),
         ))
-        .execute(&*connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
                 connection,
@@ -169,7 +169,7 @@ pub fn delete(
     diesel::delete(schema::invitations::table)
         .filter(schema::invitations::user_uuid.eq(member.user_uuid))
         .filter(schema::invitations::group_id.eq(group.id))
-        .execute(&*connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
                 connection,
@@ -201,7 +201,7 @@ pub fn invite(
     let log_ctx = LogContext::with(group.id, host.user_uuid).with_user(member.user_uuid);
     diesel::insert_into(schema::invitations::table)
         .values(&invitation)
-        .execute(&*connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
                 connection,
@@ -251,7 +251,7 @@ pub fn accept(connection: &PgConnection, group_name: &str, member: &User) -> Res
         ))
         .do_update()
         .set(&membership)
-        .execute(&*connection)
+        .execute(connection)
         .map(|_| {
             internal::log::db_log(
                 connection,
@@ -310,7 +310,7 @@ pub fn get_invitation_text(
     let group = internal::group::get_group(connection, group_name)?;
     schema::invitationtexts::table
         .filter(schema::invitationtexts::group_id.eq(&group.id))
-        .first(&*connection)
+        .first(connection)
         .optional()
         .map_err(Error::from)
 }
@@ -326,7 +326,7 @@ pub fn update_invitation_text(
     if body.trim().is_empty() {
         diesel::delete(schema::invitationtexts::table)
             .filter(schema::invitationtexts::group_id.eq(&group.id))
-            .execute(&*connection)
+            .execute(connection)
             .map(|_| {
                 internal::log::db_log(
                     connection,
@@ -348,7 +348,7 @@ pub fn update_invitation_text(
             .on_conflict(schema::invitationtexts::group_id)
             .do_update()
             .set(schema::invitationtexts::body.eq(&invitation_text.body))
-            .get_result(&*connection)
+            .get_result(connection)
             .map(|r| {
                 internal::log::db_log(
                     connection,

@@ -102,7 +102,7 @@ pub fn request(
     let rows = diesel::insert_into(schema::requests::table)
         .values(&req)
         .on_conflict_do_nothing()
-        .execute(&*connection)
+        .execute(connection)
         .map(|r| {
             internal::log::db_log(
                 connection,
@@ -135,7 +135,7 @@ pub fn delete(
     diesel::delete(schema::requests::table)
         .filter(schema::requests::user_uuid.eq(user.user_uuid))
         .filter(schema::requests::group_id.eq(group.id))
-        .execute(&*connection)
+        .execute(connection)
         .map(|count| {
             if count > 0 {
                 internal::log::db_log(

@@ -25,7 +25,7 @@ pub fn add_admin_role(
     };
     diesel::insert_into(schema::roles::table)
         .values(admin)
-        .get_result(&*connection)
+        .get_result(connection)
         .map_err(Into::into)
         .map(|role| {
             internal::log::db_log(
