@@ -113,14 +113,14 @@ pub async fn populate(cis_client: &CisFakeClient) {
     for i in 1..11 {
         let user = basic_user(i, true);
         cis_client
-            .update_user(&user.user_id.value.clone().as_ref().unwrap(), user)
+            .update_user(user.user_id.value.clone().as_ref().unwrap(), user)
             .await
             .unwrap();
     }
     for i in 11..21 {
         let user = basic_user(i, false);
         cis_client
-            .update_user(&user.user_id.value.clone().as_ref().unwrap(), user)
+            .update_user(user.user_id.value.clone().as_ref().unwrap(), user)
             .await
             .unwrap();
     }
