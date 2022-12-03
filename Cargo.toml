@@ -38,7 +38,8 @@ diesel-derive-enum = { version = "1", features = ["postgres"] }
 futures = "0.3"
 r2d2 = "0.8"
 config = "0.10"
-chrono = "0.4"
+# chrono = "0.4" # TODO: resolve the deprecations in https://github.com/chronotope/chrono/releases/tag/v0.4.23
+chrono = "=0.4.22"
 rusoto_core = "0.45"
 rusoto_ses = "0.45"
 lazy_static = "1.4"
