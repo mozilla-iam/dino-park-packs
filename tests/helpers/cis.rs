@@ -75,6 +75,6 @@ impl AsyncCisClientTrait for CisFakeClient {
         unimplemented!()
     }
     fn get_secret_store(&self) -> &SecretStore {
-        &*self.secret_store
+        &self.secret_store
     }
 }

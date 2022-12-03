@@ -314,7 +314,7 @@ pub async fn revoke_membership<'a>(
     if remove_groups
         .group_names
         .iter()
-        .any(|group_name| is_nda_group(*group_name))
+        .any(|group_name| is_nda_group(group_name))
         && !is_staff
     {
         let comment = add_to_comment_body("trust", "nda revoked", comment);
