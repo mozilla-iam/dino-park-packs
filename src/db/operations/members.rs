@@ -167,8 +167,8 @@ pub async fn transfer(
             internal::user::slim_user_profile_by_uuid(&connection, &old_user.user_uuid)?;
         let new_user_profile =
             internal::user::slim_user_profile_by_uuid(&connection, &old_user.user_uuid)?;
-        unsubscribe_nda(&old_user_profile.email);
-        subscribe_nda(&new_user_profile.email);
+        unsubscribe_nda(old_user_profile.email);
+        subscribe_nda(new_user_profile.email);
     }
     drop(connection);
     send_groups_to_cis(pool, Arc::clone(&cis_client), &old_user.user_uuid).await?;
