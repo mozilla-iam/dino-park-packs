@@ -1,6 +1,6 @@
 [package]
 name = "dino-park-packs"
-version = "0.5.8"
+version = "0.5.9"
 authors = ["Florian Merz <flomerz@gmail.com>"]
 edition = "2018"
 
