@@ -49,6 +49,6 @@ basket = "0.0.4"
 url = { version = "2", features = ["serde"] }
 
 [dev-dependencies]
-tokio = "1.8"
+tokio = "1.24"
 uuid = { version = "0.8", features = ["v5"] }
 base64 = "0.12"
