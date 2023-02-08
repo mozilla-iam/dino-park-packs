@@ -3,9 +3,7 @@ use crate::mail::Message;
 fn invitation(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] You have been invited to join the '{group_name}' group",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] You have been invited to join the '{group_name}' group"
         ),
         body: format!(
             "\
@@ -14,9 +12,7 @@ you've been invited to join the access group '{group_name}'.
 Please visit https://{domain}/a/{group_name} to accept the invitation.
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -24,9 +20,7 @@ The Mozilla IAM Team",
 fn custom_invitation(group_name: &str, domain: &str, copy: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] You have been invited to join the '{group_name}' group",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] You have been invited to join the '{group_name}' group"
         ),
         body: format!(
             "\
@@ -39,10 +33,7 @@ The message from the curator is:
 Please visit https://{domain}/a/{group_name} to accept the invitation.
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain,
-            copy = copy
+The Mozilla IAM Team"
         ),
     }
 }
@@ -50,9 +41,7 @@ The Mozilla IAM Team",
 fn reject_request(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] Your invitation request for the '{group_name}' group has been rejected",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] Your invitation request for the '{group_name}' group has been rejected"
         ),
         body: format!(
             "\
@@ -61,9 +50,7 @@ your request to be invited to the '{group_name}' access group has been rejected.
 Please make sure to read the group description at https://{domain}/a/{group_name}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -71,9 +58,7 @@ The Mozilla IAM Team",
 fn delete_invitation(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] Your invitation for the '{group_name}' group has been revoked",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] Your invitation for the '{group_name}' group has been revoked"
         ),
         body: format!(
             "\
@@ -82,9 +67,7 @@ your invitation to the '{group_name}' access group has been revoked.
 Please make sure to read the group description at https://{domain}/a/{group_name}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -92,9 +75,7 @@ The Mozilla IAM Team",
 fn demote_curator(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] Your membership for the '{group_name}' group has been revoked",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] Your membership for the '{group_name}' group has been revoked"
         ),
         body: format!(
             "\
@@ -103,9 +84,7 @@ your curator status for the '{group_name}' access group has been revoked.
 You are still a member and can see your status here: https://{domain}/a/{group_name}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -113,9 +92,7 @@ The Mozilla IAM Team",
 fn delete_member(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] Your membership for the '{group_name}' group has been revoked",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] Your membership for the '{group_name}' group has been revoked"
         ),
         body: format!(
             "\
@@ -124,9 +101,7 @@ your membership to the '{group_name}' access group has been revoked.
 If you have any questions make sure to read the group description at https://{domain}/a/{group_name}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -134,10 +109,7 @@ The Mozilla IAM Team",
 fn first_host_expiration(group_name: &str, user: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] {user}'s membership of the '{group_name}' group is about to expire",
-            group_name = group_name,
-            user = user,
-            domain = domain
+            "[{domain}] {user}'s membership of the '{group_name}' group is about to expire"
         ),
         body: format!(
             "\
@@ -150,10 +122,7 @@ membership if applicable.
 Or visit {user}'s profile first: https://{domain}/p/{user}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            user = user,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -161,10 +130,7 @@ The Mozilla IAM Team",
 fn second_host_expiration(group_name: &str, user: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] {user}'s membership of the '{group_name}' group is about to expire",
-            group_name = group_name,
-            user = user,
-            domain = domain
+            "[{domain}] {user}'s membership of the '{group_name}' group is about to expire"
         ),
         body: format!(
             "\
@@ -177,10 +143,7 @@ membership if applicable.
 Or visit {user}'s profile first: https://{domain}/p/{user}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            user = user,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -188,9 +151,7 @@ The Mozilla IAM Team",
 fn member_expiration(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] Your membership of the '{group_name}' group is about to expire",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] Your membership of the '{group_name}' group is about to expire"
         ),
         body: format!(
             "\
@@ -204,9 +165,7 @@ membership renewal in the next 7 days.
 For more information visit the group page: https://{domain}/a/{group_name}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -214,14 +173,11 @@ The Mozilla IAM Team",
 fn pending_request(group_name: &str, count: usize, domain: &str) -> Message {
     let pending = match count {
         1 => String::from("is 1 pending request"),
-        c => format!("are {} pending requests", c),
+        c => format!("are {c} pending requests"),
     };
     Message {
         subject: format!(
-            "[{domain}] There {pending} in the '{group_name}' group",
-            group_name = group_name,
-            pending = pending,
-            domain = domain
+            "[{domain}] There {pending} in the '{group_name}' group"
         ),
         body: format!(
             "\
@@ -230,10 +186,7 @@ there are {pending} mozillians asking for invitation in the access group '{group
 For further action please visit: https://{domain}/a/{group_name}/edit?section=invitations
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            pending = pending,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -241,9 +194,7 @@ The Mozilla IAM Team",
 fn group_deleted(group_name: &str, user: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] The '{group_name}' group has been deleted",
-            group_name = group_name,
-            domain = domain
+            "[{domain}] The '{group_name}' group has been deleted"
         ),
         body: format!(
             "\
@@ -251,10 +202,7 @@ Dear Curator,
 the '{group_name}' group has been deleted by https://{domain}/p/{user}
 
 Cheers,
-The Mozilla IAM Team",
-            group_name = group_name,
-            user = user,
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }
@@ -262,8 +210,7 @@ The Mozilla IAM Team",
 fn anonymous_member(domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] mozillians.org decommissioning - PLEASE READ",
-            domain = domain
+            "[{domain}] mozillians.org decommissioning - PLEASE READ"
         ),
         body: format!(
             "\
@@ -310,8 +257,7 @@ to curators of the access groups you're part of, who will not extend your
 membership when it's due to expire.
 
 Thank you,
-The Mozilla IAM Team",
-            domain = domain
+The Mozilla IAM Team"
         ),
     }
 }

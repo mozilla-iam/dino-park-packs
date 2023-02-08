@@ -43,7 +43,7 @@ impl Email {
         Email {
             to: Some(to),
             bcc: None,
-            from: format!("no-reply@{}", domain),
+            from: format!("no-reply@{domain}"),
             message,
         }
     }
@@ -51,7 +51,7 @@ impl Email {
         Email {
             to: None,
             bcc: Some(bcc),
-            from: format!("no-reply@{}", domain),
+            from: format!("no-reply@{domain}"),
             message,
         }
     }

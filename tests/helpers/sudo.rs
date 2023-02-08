@@ -13,7 +13,7 @@ where
 {
     let res = post(
         &mut app,
-        &format!("/groups/api/v1/sudo/member/{}", group),
+        &format!("/groups/api/v1/sudo/member/{group}"),
         json!({ "user_uuid": user_uuid(user) }),
         &scope.clone().admin(),
     )

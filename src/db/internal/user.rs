@@ -335,7 +335,7 @@ pub fn search_curators_for_group(
     q: &str,
     limit: i64,
 ) -> Result<Vec<UserForGroup>, Error> {
-    let q: &str = &format!("{}%", q);
+    let q: &str = &format!("{q}%");
     let group_id = internal::group::get_group(connection, group_name)?.id;
     let trust = TrustType::Ndaed;
     match scope {
@@ -369,7 +369,7 @@ pub fn search_users_for_group(
     q: &str,
     limit: i64,
 ) -> Result<Vec<UserForGroup>, Error> {
-    let q: &str = &format!("{}%", q);
+    let q: &str = &format!("{q}%");
     let group_id = internal::group::get_group(connection, group_name)?.id;
     match scope {
         TrustType::Staff => {
@@ -402,7 +402,7 @@ pub fn search_users(
     q: &str,
     limit: i64,
 ) -> Result<Vec<DisplayUser>, Error> {
-    let q: &str = &format!("{}%", q);
+    let q: &str = &format!("{q}%");
     match scope {
         TrustType::Staff => {
             scoped_search_users!(users_staff, UsersStaff, q, trust, limit, connection)
