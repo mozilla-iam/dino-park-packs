@@ -2,9 +2,7 @@ use crate::mail::Message;
 
 fn invitation(group_name: &str, domain: &str) -> Message {
     Message {
-        subject: format!(
-            "[{domain}] You have been invited to join the '{group_name}' group"
-        ),
+        subject: format!("[{domain}] You have been invited to join the '{group_name}' group"),
         body: format!(
             "\
 Dear Mozillian,
@@ -19,9 +17,7 @@ The Mozilla IAM Team"
 
 fn custom_invitation(group_name: &str, domain: &str, copy: &str) -> Message {
     Message {
-        subject: format!(
-            "[{domain}] You have been invited to join the '{group_name}' group"
-        ),
+        subject: format!("[{domain}] You have been invited to join the '{group_name}' group"),
         body: format!(
             "\
 Dear Mozillian,
@@ -176,9 +172,7 @@ fn pending_request(group_name: &str, count: usize, domain: &str) -> Message {
         c => format!("are {c} pending requests"),
     };
     Message {
-        subject: format!(
-            "[{domain}] There {pending} in the '{group_name}' group"
-        ),
+        subject: format!("[{domain}] There {pending} in the '{group_name}' group"),
         body: format!(
             "\
 Dear Curator,
@@ -193,9 +187,7 @@ The Mozilla IAM Team"
 
 fn group_deleted(group_name: &str, user: &str, domain: &str) -> Message {
     Message {
-        subject: format!(
-            "[{domain}] The '{group_name}' group has been deleted"
-        ),
+        subject: format!("[{domain}] The '{group_name}' group has been deleted"),
         body: format!(
             "\
 Dear Curator,
@@ -209,9 +201,7 @@ The Mozilla IAM Team"
 
 fn anonymous_member(domain: &str) -> Message {
     Message {
-        subject: format!(
-            "[{domain}] mozillians.org decommissioning - PLEASE READ"
-        ),
+        subject: format!("[{domain}] mozillians.org decommissioning - PLEASE READ"),
         body: format!(
             "\
 Dear Mozillian,
