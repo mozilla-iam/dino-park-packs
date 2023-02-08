@@ -1,3 +1,6 @@
+// FIXME: this check is firing on pub struct "Log" for unknown reasons. [IAM-1072]
+#![allow(clippy::misnamed_getters)]
+
 use crate::db::model::Group;
 use crate::db::schema::*;
 use crate::db::types::*;
