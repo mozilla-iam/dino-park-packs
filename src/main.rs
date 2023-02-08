@@ -1,4 +1,3 @@
-#![warn(clippy::all)]
 #[macro_use]
 extern crate diesel_migrations;
 
