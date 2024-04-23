@@ -71,12 +71,12 @@ The Mozilla IAM Team"
 fn demote_curator(group_name: &str, domain: &str) -> Message {
     Message {
         subject: format!(
-            "[{domain}] Your membership for the '{group_name}' group has been revoked"
+            "[{domain}] Your curator status in the '{group_name}' group has been removed"
         ),
         body: format!(
             "\
 Dear Mozillian,
-your curator status for the '{group_name}' access group has been revoked.
+Your curator status in the '{group_name}' access group has removed.
 You are still a member and can see your status here: https://{domain}/a/{group_name}
 
 Cheers,
