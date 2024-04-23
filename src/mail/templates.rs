@@ -76,7 +76,7 @@ fn demote_curator(group_name: &str, domain: &str) -> Message {
         body: format!(
             "\
 Dear Mozillian,
-Your curator status in the '{group_name}' access group has removed.
+Your curator status in the '{group_name}' access group has been removed.
 You are still a member and can see your status here: https://{domain}/a/{group_name}
 
 Cheers,
