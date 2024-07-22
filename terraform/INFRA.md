@@ -1,4 +1,4 @@
-### Set up data base after terraform apply
+### Set up database after terraform apply
 
 ```
 kubectl run -i -t --rm --image=postgres --command debug1 -- /bin/bash
