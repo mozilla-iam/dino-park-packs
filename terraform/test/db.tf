@@ -11,6 +11,7 @@ resource "aws_db_instance" "dino_park_packs_db" {
   password                            = "oneTimePassword"
   db_subnet_group_name                = aws_db_subnet_group.dino_park_packs_db.id
   vpc_security_group_ids              = [aws_security_group.dino_park_packs_db.id]
+  iam_database_authentication_enabled = true
 }
 
 resource "aws_db_subnet_group" "dino_park_packs_db" {
