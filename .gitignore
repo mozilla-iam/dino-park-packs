@@ -5,3 +5,4 @@
 .dev.env
 secret-*.yaml
 .terraform
+terraform/**/plan
