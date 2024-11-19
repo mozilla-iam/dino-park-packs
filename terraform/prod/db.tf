@@ -14,13 +14,13 @@ resource "aws_db_instance" "dino_park_packs_db" {
 }
 
 resource "aws_db_subnet_group" "dino_park_packs_db" {
-  name = "dino-park-packs-db-${var.environment}-${var.region}"
+  name        = "dino-park-packs-db-${var.environment}-${var.region}"
   description = "Subnet for DinoPark prod DB"
   subnet_ids  = flatten([data.terraform_remote_state.vpc.outputs.private_subnets])
 }
 
 resource "aws_security_group" "dino_park_packs_db" {
-  name = "dino-park-packs-db-${var.environment}-${var.region}"
+  name   = "dino-park-packs-db-${var.environment}-${var.region}"
   vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress {
