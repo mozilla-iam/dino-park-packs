@@ -6,3 +6,6 @@ secret-*.yaml
 target/
 !target/release/dino-park-packs
 **/.terraform/*
+terraform/**/plan
+terraform/**/.tool-versions
+.envrc
