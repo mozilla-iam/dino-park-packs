@@ -4,7 +4,7 @@ resource "aws_db_instance" "dino_park_packs_db" {
   max_allocated_storage               = 100
   storage_type                        = "gp2"
   engine                              = "postgres"
-  engine_version                      = "11.22"
+  engine_version                      = "16.1"
   instance_class                      = "db.t3.micro"
   allow_major_version_upgrade         = true
   username                            = "dinopark"
