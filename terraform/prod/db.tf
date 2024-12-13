@@ -4,11 +4,34 @@ resource "aws_db_instance" "dino_park_packs_db" {
   max_allocated_storage       = 100
   storage_type                = "gp2"
   engine                      = "postgres"
-  engine_version              = "16.1"
+  engine_version              = "11.22"
   instance_class              = "db.t3.micro"
   allow_major_version_upgrade = true
   username                    = "dinopark"
   password                    = "oneTimePassword"
+  db_subnet_group_name        = aws_db_subnet_group.dino_park_packs_db.id
+  vpc_security_group_ids      = [aws_security_group.dino_park_packs_db.id]
+  # Saturdays, at 3:00 AM (UTC); 7:00 PM (PST); 10:00 PM (EST) to
+  #               5:00 AM (UTC); 9:00 PM (PST); 12:00 AM (EST), respectively.
+  maintenance_window = "Sat:03:00-Sat:05:00"
+  # Backup every day at 2:00 AM (UTC); 6:00 PM (PST); 9:00 PM (EST) to
+  #                     2:59 AM (UTC); 6:69 PM (PST); 9:59 PM (EST), respectively.
+  backup_window           = "02:00-02:59"
+  backup_retention_period = "15" # days
+  copy_tags_to_snapshot   = true
+}
+
+resource "aws_db_instance" "dino_park_packs_db_16_2" {
+  identifier                  = "dino-park-packs-db-${var.environment}-${var.region}-16-2"
+  allocated_storage           = 10
+  max_allocated_storage       = 100
+  storage_type                = "gp2"
+  engine                      = "postgres"
+  engine_version              = "16.2"
+  instance_class              = "db.t3.micro"
+  allow_major_version_upgrade = true
+  username                    = "dinopark"
+  snapshot_identifier         = "rds:dino-park-packs-db-prod-us-west-2-2024-12-13-02-07"
   db_subnet_group_name        = aws_db_subnet_group.dino_park_packs_db.id
   vpc_security_group_ids      = [aws_security_group.dino_park_packs_db.id]
   # Saturdays, at 3:00 AM (UTC); 7:00 PM (PST); 10:00 PM (EST) to
