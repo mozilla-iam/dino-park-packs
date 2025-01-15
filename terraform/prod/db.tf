@@ -21,17 +21,17 @@ resource "aws_db_instance" "dino_park_packs_db" {
   copy_tags_to_snapshot   = true
 }
 
-resource "aws_db_instance" "dino_park_packs_db_16_2" {
-  identifier                  = "dino-park-packs-db-${var.environment}-${var.region}-16-2"
+resource "aws_db_instance" "dino_park_packs_db_green" {
+  identifier                  = "dino-park-packs-db-${var.environment}-${var.region}-green"
   allocated_storage           = 10
   max_allocated_storage       = 100
   storage_type                = "gp2"
   engine                      = "postgres"
-  engine_version              = "16.2"
+  engine_version              = "16.1"
   instance_class              = "db.t3.micro"
   allow_major_version_upgrade = true
   username                    = "dinopark"
-  snapshot_identifier         = "rds:dino-park-packs-db-prod-us-west-2-2024-12-13-02-07"
+  snapshot_identifier         = "dino-park-packs-db-prod-us-west-2-2025-01-14-iam-1502"
   db_subnet_group_name        = aws_db_subnet_group.dino_park_packs_db.id
   vpc_security_group_ids      = [aws_security_group.dino_park_packs_db.id]
   # Saturdays, at 3:00 AM (UTC); 7:00 PM (PST); 10:00 PM (EST) to
