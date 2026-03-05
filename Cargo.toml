@@ -27,7 +27,7 @@ diesel_migrations = "1.4"
 
 actix-web = "4.10.2"
 actix-rt = "2.10.0"
-actix-multipart = "0.4"
+actix-multipart = "0.7"
 actix-http = "3.10.0"
 
 serde = { version = "1.0", features = ["derive"] }
