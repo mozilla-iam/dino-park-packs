@@ -68,7 +68,6 @@ pub fn subscribe_nda(_: impl Into<String>) {}
 #[cfg(any(test, feature = "local"))]
 pub fn unsubscribe_nda(_: impl Into<String>) {}
 
-#[derive(Clone)]
 pub struct MailMan<T: EmailSender> {
     pub arbiter: Arbiter,
     pub sender: T,
@@ -80,7 +79,7 @@ pub struct MailMan<T: EmailSender> {
 impl<T: EmailSender> MailMan<T> {
     pub fn new(domain: String, catcher: Option<String>, basket: Option<Basket>) -> Self {
         MailMan {
-            arbiter: Arbiter::default(),
+            arbiter: Arbiter::new(),
             sender: T::default(),
             template_man: TemplateManager::new(domain),
             catcher,
@@ -109,7 +108,9 @@ impl<T: EmailSender> MailMan<T> {
                 error!("Error sending email: {}", e);
             }
         });
-        self.arbiter.send(f)
+        if !self.arbiter.spawn(f) {
+            error!("arbiter died");
+        }
     }
 
     pub fn subscribe_nda(&self, email: impl Into<String>) {
@@ -128,7 +129,9 @@ impl<T: EmailSender> MailMan<T> {
                     error!("Error subscribing {} to nda-list: {}", email, e);
                 }
             });
-            self.arbiter.send(f)
+            if !self.arbiter.spawn(f) {
+                error!("arbiter died");
+            }
         }
     }
 
@@ -156,7 +159,9 @@ impl<T: EmailSender> MailMan<T> {
                     error!("Error unsubscribing {} to nda-list: {}", &email, e);
                 }
             });
-            self.arbiter.send(f)
+            if !self.arbiter.spawn(f) {
+                error!("arbiter died");
+            }
         }
     }
 }
