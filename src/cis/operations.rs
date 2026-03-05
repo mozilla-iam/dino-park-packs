@@ -38,7 +38,7 @@ fn update_groups_and_sign(
     }
     field.metadata.last_modified = *now;
     field.signature.publisher.name = PublisherAuthority::Mozilliansorg;
-    store.sign_attribute(field)
+    Ok(store.sign_attribute(field)?)
 }
 
 pub async fn _send_groups_to_cis(
