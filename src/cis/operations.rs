@@ -50,24 +50,20 @@ pub async fn _send_groups_to_cis(
     let mut update_profile = Profile::default();
     update_profile.access_information.mozilliansorg = profile.access_information.mozilliansorg;
     update_profile.active = profile.active;
-    match update_groups_and_sign(
+    update_groups_and_sign(
         &mut update_profile.access_information.mozilliansorg,
         groups,
         cis_client.get_secret_store(),
         now,
-    ) {
-        Ok(_) => {
-            if let Some(user_id) = profile.user_id.value.clone() {
-                cis_client
-                    .update_user(&user_id, update_profile)
-                    .map_ok(|_| ())
-                    .await
-            } else {
-                Err(format_err!("invalid user_id"))
-            }
-        }
-        Err(e) => Err(e),
-    }
+    )?;
+    let Some(user_id) = profile.user_id.value.clone() else {
+        return Err(format_err!("invalid user_id"));
+    };
+    cis_client
+        .update_user(&user_id, update_profile)
+        .await
+        .map(|_| ())
+        .map_err(Error::from)
 }
 
 pub async fn send_groups_to_cis(
