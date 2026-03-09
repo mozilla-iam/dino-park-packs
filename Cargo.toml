@@ -40,7 +40,7 @@ failure_derive = "0.1"
 diesel-derive-enum = { version = "1", features = ["postgres"] }
 futures = "0.3"
 r2d2 = "0.8"
-config = "0.10"
+config = "0.12"
 chrono = "0.4.38"
 rusoto_core = "0.45"
 rusoto_ses = "0.45"
