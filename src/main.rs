@@ -47,7 +47,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::internal::internal_app::<CisClient>())
             .service(import::api::import_app::<CisClient>())
             .service(
-                web::scope("/groups/api/v1/")
+                web::scope("/groups/api/v1")
                     .wrap(scope_middleware)
                     .service(api::groups::groups_app::<CisClient>())
                     .service(api::members::members_app::<CisClient>())

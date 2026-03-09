@@ -147,7 +147,7 @@ pub async fn test_app_and_cis() -> (impl HttpServiceFactory, CisFakeClient) {
             .service(api::internal::internal_app::<CisFakeClient>())
             .service(import::api::import_app::<CisFakeClient>())
             .service(
-                web::scope("/groups/api/v1/")
+                web::scope("/groups/api/v1")
                     .wrap_fn(|req, srv| {
                         req.extensions_mut()
                             .insert(scope_from_headers(req.headers()));
