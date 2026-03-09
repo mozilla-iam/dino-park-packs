@@ -13,12 +13,11 @@ use dino_park_gate::scope::ScopeAndUserAuth;
 use log::debug;
 use log::info;
 use std::io::Error;
-use std::io::ErrorKind;
 
 embed_migrations!();
 
 fn map_io_err(e: impl Into<failure::Error>) -> Error {
-    Error::new(ErrorKind::Other, e.into())
+    Error::other(e.into())
 }
 
 #[actix_web::main]
