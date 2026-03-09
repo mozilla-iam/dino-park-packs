@@ -1,0 +1,10 @@
+# This is used for local development only.
+
+services:
+  postgres:
+    image: postgres:18.3
+    ports:
+    - 127.0.0.1:5432:5432
+    environment:
+      POSTGRES_DB: dino-park-packs-test-local
+      POSTGRES_PASSWORD: localhost
