@@ -41,8 +41,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let scope_middleware = ScopeAndUserAuth::new(provider.clone());
         App::new()
-            .data(cis_client.clone())
-            .data(pool.clone())
+            .app_data(web::Data::new(cis_client.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .wrap(Logger::default().exclude("/healthz"))
             .service(healthz::healthz_app())
             .service(api::internal::internal_app::<CisClient>())

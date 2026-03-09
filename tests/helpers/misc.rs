@@ -6,6 +6,7 @@ use actix_web::http::header::HeaderMap;
 use actix_web::test;
 use actix_web::web;
 use actix_web::HttpMessage;
+use actix_web::body::MessageBody;
 use base64::decode;
 use base64::encode;
 use cis_client::AsyncCisClientTrait;
@@ -140,8 +141,8 @@ pub async fn test_app_and_cis() -> (impl HttpServiceFactory, CisFakeClient) {
     populate(&cis_client).await;
     (
         web::scope("")
-            .data(cis_client.clone())
-            .data(pool.clone())
+            .app_data(web::Data::new(cis_client.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .service(healthz::healthz_app())
             .service(api::internal::internal_app::<CisFakeClient>())
             .service(import::api::import_app::<CisFakeClient>())
