@@ -302,11 +302,7 @@ pub async fn revoke_membership<'a>(
     let is_staff =
         internal::user::user_trust(&connection, &remove_groups.user.user_uuid)? == TrustType::Staff;
     // are we dropping nda membership -> remove according groups and invitations
-    if remove_groups
-        .group_names
-        .iter()
-        .any(|group_name| *group_name == "nda")
-    {
+    if remove_groups.group_names.contains(&"nda") {
         let user_profile =
             internal::user::user_profile_by_uuid(&connection, &remove_groups.user.user_uuid)?;
         unsubscribe_nda(user_profile.email);
