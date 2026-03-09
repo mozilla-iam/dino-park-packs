@@ -103,15 +103,14 @@ pub fn request(
         .values(&req)
         .on_conflict_do_nothing()
         .execute(connection)
-        .map(|r| {
+        .inspect(|_| {
             internal::log::db_log(
                 connection,
                 &log_ctx,
                 LogTargetType::Request,
                 LogOperationType::Created,
                 None,
-            );
-            r
+            )
         })
         .map_err(Error::from)?;
     match rows {

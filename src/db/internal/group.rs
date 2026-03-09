@@ -84,7 +84,7 @@ pub fn add_group(
         .on_conflict_do_nothing()
         .get_result::<Group>(connection)
         .map_err(Into::into)
-        .map(|group| {
+        .inspect(|group| {
             let log_ctx = LogContext::with(group.id, *host_uuid);
             internal::log::db_log(
                 connection,
@@ -92,8 +92,7 @@ pub fn add_group(
                 LogTargetType::Group,
                 LogOperationType::Created,
                 None,
-            );
-            group
+            )
         })
 }
 
@@ -107,7 +106,7 @@ pub fn update_group_trust(
         .set((schema::groups::trust.eq(trust),))
         .get_result::<Group>(connection)
         .map_err(Into::into)
-        .map(move |group| {
+        .inspect(move |group| {
             let log_ctx = LogContext::with(group.id, *host_uuid);
             internal::log::db_log(
                 connection,
@@ -115,8 +114,7 @@ pub fn update_group_trust(
                 LogTargetType::Group,
                 LogOperationType::Updated,
                 log_comment_body("trust"),
-            );
-            group
+            )
         })
 }
 
@@ -143,7 +141,7 @@ pub fn update_group(
         ))
         .get_result::<Group>(connection)
         .map_err(Into::into)
-        .map(move |group| {
+        .inspect(move |group| {
             let log_ctx = LogContext::with(group.id, *host_uuid);
             internal::log::db_log(
                 connection,
@@ -151,8 +149,7 @@ pub fn update_group(
                 LogTargetType::Group,
                 LogOperationType::Updated,
                 log_comment_body(&log_comment),
-            );
-            group
+            )
         })
 }
 
