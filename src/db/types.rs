@@ -15,9 +15,12 @@ pub enum RuleType {
     Custom,
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, PartialOrd, Serialize)]
+#[derive(
+    Copy, Clone, DbEnum, Debug, Default, Deserialize, PartialEq, Eq, PartialOrd, Serialize,
+)]
 #[DieselType = "Trust_type"]
 pub enum TrustType {
+    #[default]
     Public,
     Authenticated,
     Vouched,
@@ -28,12 +31,6 @@ pub enum TrustType {
 impl TrustType {
     pub fn ndaed() -> Self {
         Self::Ndaed
-    }
-}
-
-impl Default for TrustType {
-    fn default() -> Self {
-        Self::Public
     }
 }
 
@@ -134,18 +131,13 @@ impl RoleType {
     }
 }
 
-#[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Copy, Clone, DbEnum, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
 #[DieselType = "Group_type"]
 pub enum GroupType {
     Open,
     Reviewed,
+    #[default]
     Closed,
-}
-
-impl Default for GroupType {
-    fn default() -> Self {
-        Self::Closed
-    }
 }
 
 #[derive(Copy, Clone, DbEnum, Debug, Deserialize, PartialEq, Eq, Serialize)]
