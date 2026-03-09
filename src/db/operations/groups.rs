@@ -133,7 +133,6 @@ pub fn update_group(
     ))?;
     internal::group::update_group(&host.user_uuid, &connection, group_name, group_update)
         .map(|_| ())
-        .map_err(Into::into)
 }
 
 pub fn get_group(pool: &Pool, group_name: &str) -> Result<Group, Error> {
