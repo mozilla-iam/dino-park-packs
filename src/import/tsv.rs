@@ -12,7 +12,7 @@ where
 }
 
 mod sql_date {
-    use chrono::{NaiveDateTime, DateTime, TimeZone, Utc};
+    use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
     use serde::{self, Deserialize, Deserializer};
 
     const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
