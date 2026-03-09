@@ -46,7 +46,7 @@ rusoto_core = "0.45"
 rusoto_ses = "0.45"
 lazy_static = "1.4"
 csv = "1.1"
-basket = "0.0.4"
+basket = "0.0.5"
 url = { version = "2", features = ["serde"] }
 
 [dev-dependencies]

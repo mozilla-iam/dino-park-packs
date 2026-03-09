@@ -353,16 +353,15 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "basket"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5906de5d80d548910cbd4404975ddae6405cb79382891a6096816464ad4dd825"
+checksum = "e2e9599ba7c07ce35f1e5e1f31b349c2c513c25193dae6016e71e22824b548f3"
 dependencies = [
- "failure",
- "failure_derive",
- "reqwest 0.10.10",
+ "reqwest",
  "serde 1.0.228",
  "serde_derive",
  "serde_json",
+ "thiserror",
  "url",
 ]
 
@@ -545,7 +544,7 @@ dependencies = [
  "futures",
  "log",
  "percent-encoding",
- "reqwest 0.11.27",
+ "reqwest",
  "serde 1.0.228",
  "serde_json",
  "shared-expiry-get",
@@ -565,7 +564,7 @@ dependencies = [
  "futures",
  "num-bigint",
  "openssl",
- "reqwest 0.11.27",
+ "reqwest",
  "ring",
  "rusoto_core 0.47.0",
  "rusoto_ssm",
@@ -926,7 +925,7 @@ dependencies = [
  "chrono",
  "futures",
  "log",
- "reqwest 0.11.27",
+ "reqwest",
  "serde 1.0.228",
  "serde_derive",
  "serde_json",
@@ -988,7 +987,7 @@ dependencies = [
  "env_logger 0.9.3",
  "futures",
  "log",
- "reqwest 0.11.27",
+ "reqwest",
  "serde 1.0.228",
  "serde_derive",
  "serde_json",
@@ -1843,16 +1842,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
-name = "mime_guess"
-version = "2.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4192263c238a5f0d0c6bfd21f336a313a4ce1c450542449ca191bb657b4642ef"
-dependencies = [
- "mime",
- "unicase",
-]
-
-[[package]]
 name = "miniz_oxide"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2498,42 +2487,6 @@ checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
 
 [[package]]
 name = "reqwest"
-version = "0.10.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0718f81a8e14c4dbb3b34cf23dc6aaf9ab8a0dfec160c534b3dbca1aaa21f47c"
-dependencies = [
- "base64 0.13.1",
- "bytes 0.5.6",
- "encoding_rs",
- "futures-core",
- "futures-util",
- "http",
- "http-body 0.3.1",
- "hyper 0.13.10",
- "hyper-tls 0.4.3",
- "ipnet",
- "js-sys",
- "lazy_static",
- "log",
- "mime",
- "mime_guess",
- "native-tls",
- "percent-encoding",
- "pin-project-lite 0.2.9",
- "serde 1.0.228",
- "serde_json",
- "serde_urlencoded 0.7.1",
- "tokio 0.2.25",
- "tokio-tls",
- "url",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "winreg 0.7.0",
-]
-
-[[package]]
-name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd67538700a17451e7cba03ac727fb961abb7607553461627b97de0b89cf4a62"
@@ -2569,7 +2522,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "winreg 0.50.0",
+ "winreg",
 ]
 
 [[package]]
@@ -3577,15 +3530,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "unicase"
-version = "2.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
-dependencies = [
- "version_check",
-]
-
-[[package]]
 name = "unicode-bidi"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3697,8 +3641,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eaf9f5aceeec8be17c128b2e93e031fb8a4d469bb9c4ae2d7dc1888b26887268"
 dependencies = [
  "cfg-if 1.0.0",
- "serde 1.0.228",
- "serde_json",
  "wasm-bindgen-macro",
 ]
 
@@ -4064,15 +4006,6 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
-
-[[package]]
-name = "winreg"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0120db82e8a1e0b9fb3345a539c478767c0048d842860994d96113d5b667bd69"
-dependencies = [
- "winapi 0.3.9",
-]
 
 [[package]]
 name = "winreg"
