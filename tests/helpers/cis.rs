@@ -56,7 +56,7 @@ impl AsyncCisClientTrait for CisFakeClient {
     }
     fn update_user(&self, id: &str, profile: Profile) -> CisFut<Value> {
         let mut store = self.store.write().unwrap();
-        let p = if let Some(mut p) = store.get_mut(id) {
+        let p = if let Some(p) = store.get_mut(id) {
             p.access_information.mozilliansorg = profile.access_information.mozilliansorg;
             p.clone()
         } else {
@@ -65,7 +65,17 @@ impl AsyncCisClientTrait for CisFakeClient {
         };
         match update_user_cache_unchecked(&self.pool, &p) {
             Ok(_) => Box::pin(ok(json!({}))),
-            Err(e) => Box::pin(err(e)),
+            Err(e) => {
+                // DEBT: `update_user_cache_unchecked` and it's ilk return a
+                // `failure::Error`.
+                // There's no nice way to coerce this into a `CisClientError`,
+                // which is what `CisFut` requires. The implementation, in
+                // `db::internal::user::update_user_cache` doesn't even use
+                // CIS!
+                // For the tests, we'll just always return that a profile could
+                // not be found, since we've already lost some information.
+                Box::pin(err(ProfileError::ProfileDoesNotExist.into()))
+            }
         }
     }
     fn update_users(&self, profiles: &[Profile]) -> CisFut<Value> {
