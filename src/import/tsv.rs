@@ -12,7 +12,7 @@ where
 }
 
 mod sql_date {
-    use chrono::{DateTime, TimeZone, Utc};
+    use chrono::{NaiveDateTime, DateTime, TimeZone, Utc};
     use serde::{self, Deserialize, Deserializer};
 
     const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
@@ -23,9 +23,13 @@ mod sql_date {
     {
         let s = String::deserialize(deserializer)?;
         if s == "NULL" {
-            return Ok(Utc.ymd(2011, 3, 22).and_hms(0, 0, 0));
+            // SAFETY: local time falls in a fold or gap in the local time, or
+            // if there was an error.
+            // https://docs.rs/chrono/latest/chrono/offset/type.MappedLocalTime.html#method.single
+            return Ok(Utc.with_ymd_and_hms(2011, 3, 22, 0, 0, 0).single().unwrap());
         }
-        Utc.datetime_from_str(&s, FORMAT)
+        NaiveDateTime::parse_from_str(&s, FORMAT)
+            .and_then(|d| Ok(d.and_utc()))
             .map_err(serde::de::Error::custom)
     }
 }
