@@ -29,7 +29,7 @@ mod sql_date {
             return Ok(Utc.with_ymd_and_hms(2011, 3, 22, 0, 0, 0).single().unwrap());
         }
         NaiveDateTime::parse_from_str(&s, FORMAT)
-            .and_then(|d| Ok(d.and_utc()))
+            .map(|d| d.and_utc())
             .map_err(serde::de::Error::custom)
     }
 }
