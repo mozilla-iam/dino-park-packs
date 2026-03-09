@@ -12,7 +12,6 @@ use cis_profile::schema::Profile;
 use cis_profile::schema::PublisherAuthority;
 use failure::format_err;
 use failure::Error;
-use futures::TryFutureExt;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use uuid::Uuid;

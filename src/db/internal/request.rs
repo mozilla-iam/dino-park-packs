@@ -200,7 +200,7 @@ pub fn new_pending(
     let pending = pending.into_iter().fold(
         HashMap::<i32, NewPendingRequest>::new(),
         |mut m, (group_id, group_name)| {
-            if let Some(mut npr) = m.get_mut(&group_id) {
+            if let Some(npr) = m.get_mut(&group_id) {
                 npr.count += 1;
             } else {
                 m.insert(
