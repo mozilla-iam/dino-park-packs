@@ -329,15 +329,14 @@ pub fn add_member_role(
     diesel::insert_into(schema::roles::table)
         .values(admin)
         .get_result(connection)
-        .map(|role| {
+        .inspect(|_| {
             internal::log::db_log(
                 connection,
                 &log_ctx,
                 LogTargetType::Role,
                 LogOperationType::Created,
                 log_comment_body("member"),
-            );
-            role
+            )
         })
         .map_err(Into::into)
 }

@@ -1,3 +1,7 @@
+// DEBT: See DEBT later in this file. Applying this to the struct did not
+// resolve the warning, so here we are.
+#![allow(clippy::misnamed_getters)]
+
 use crate::db::model::Group;
 use crate::db::schema::*;
 use crate::db::types::*;
@@ -23,11 +27,21 @@ pub struct InsertLog {
     pub body: Option<Value>,
 }
 
+// DEBT: `Identifiable` uses the `primary_key`. Quoting the docs:
+//
+//     This trait can be automatically derived by adding #[derive(Identifiable)] to
+//     your struct. By default, the “id” field is assumed to be a single field
+//     called id. If it’s not, you can put #[primary_key(your_id)] on your struct.
+//     If you have a composite primary key, the syntax is #[primary_key(id1, id2)].
+//
+// It's unclear why we _also_ specify an `id` field here. We can't remove it
+// without also generating a migration, which is out of scope for IAM-1908.
 #[derive(Identifiable, Associations, Queryable, PartialEq, Eq, Debug, Serialize)]
 #[belongs_to(Group)]
 #[primary_key(group_id)]
 #[table_name = "logs"]
 pub struct Log {
+    // DEBT: consider removing this in a later migration.
     pub id: i32,
     pub ts: NaiveDateTime,
     pub target: LogTargetType,

@@ -103,15 +103,14 @@ pub fn request(
         .values(&req)
         .on_conflict_do_nothing()
         .execute(connection)
-        .map(|r| {
+        .inspect(|_| {
             internal::log::db_log(
                 connection,
                 &log_ctx,
                 LogTargetType::Request,
                 LogOperationType::Created,
                 None,
-            );
-            r
+            )
         })
         .map_err(Error::from)?;
     match rows {
@@ -200,7 +199,7 @@ pub fn new_pending(
     let pending = pending.into_iter().fold(
         HashMap::<i32, NewPendingRequest>::new(),
         |mut m, (group_id, group_name)| {
-            if let Some(mut npr) = m.get_mut(&group_id) {
+            if let Some(npr) = m.get_mut(&group_id) {
                 npr.count += 1;
             } else {
                 m.insert(

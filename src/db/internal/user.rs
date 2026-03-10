@@ -49,7 +49,7 @@ pub fn user_profile_by_uuid(
         .filter(schema::profiles::user_uuid.eq(user_uuid))
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
-        .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
+        .and_then(UserProfile::try_from)
         .map_err(|err| PacksError::ProfileNotFound(user_uuid.to_string(), err.to_string()).into())
 }
 
@@ -95,7 +95,7 @@ pub fn user_profile_by_user_id(
         .filter(schema::profiles::user_id.eq(user_id))
         .first::<UserProfileValue>(connection)
         .map_err(Error::from)
-        .and_then(|p| UserProfile::try_from(p).map_err(Into::into))
+        .and_then(UserProfile::try_from)
         .map_err(|err| PacksError::ProfileNotFound(user_id.to_string(), err.to_string()).into())
 }
 

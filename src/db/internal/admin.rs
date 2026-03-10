@@ -27,15 +27,14 @@ pub fn add_admin_role(
         .values(admin)
         .get_result(connection)
         .map_err(Into::into)
-        .map(|role| {
+        .inspect(|_| {
             internal::log::db_log(
                 connection,
                 log_ctx,
                 LogTargetType::Role,
                 LogOperationType::Created,
                 log_comment_body("admin"),
-            );
-            role
+            )
         })
 }
 
@@ -72,15 +71,14 @@ pub fn demote_to_member(
     ))
     .get_result(connection)
     .map_err(Into::into)
-    .map(|membership| {
+    .inspect(|_| {
         internal::log::db_log(
             connection,
             &log_ctx,
             LogTargetType::Membership,
             LogOperationType::Updated,
             log_comment_body("demoted from admin to member"),
-        );
-        membership
+        )
     })
 }
 
@@ -109,15 +107,14 @@ pub fn add_admin(
         .do_update()
         .set(&admin_membership)
         .get_result(connection)
-        .map(|membership| {
+        .inspect(|_| {
             internal::log::db_log(
                 connection,
                 &log_ctx,
                 LogTargetType::Membership,
                 LogOperationType::Created,
                 log_comment_body("admin"),
-            );
-            membership
+            )
         })?;
     let deleted = diesel::delete(schema::invitations::table)
         .filter(schema::invitations::group_id.eq(group.id))

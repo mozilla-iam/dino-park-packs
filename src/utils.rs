@@ -31,7 +31,7 @@ pub fn to_utc<S>(naive: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error
 where
     S: Serializer,
 {
-    let dt = DateTime::<Utc>::from_utc(*naive, Utc);
+    let dt = naive.and_utc();
     dt.serialize(serializer)
 }
 
@@ -58,7 +58,7 @@ mod test {
         }
 
         let d = DateWrapper {
-            date: NaiveDateTime::from_timestamp(0, 0),
+            date: DateTime::from_timestamp(0, 0).unwrap().naive_utc(),
         };
         let v = serde_json::to_string(&d)?;
         assert_eq!(v, r#"{"date":"1970-01-01T00:00:00Z"}"#);
@@ -74,7 +74,7 @@ mod test {
         }
 
         let d = DateWrapper {
-            date: Some(NaiveDateTime::from_timestamp(0, 0)),
+            date: DateTime::from_timestamp(0, 0).map(|d| d.naive_utc()),
         };
         let v = serde_json::to_string(&d)?;
         assert_eq!(v, r#"{"date":"1970-01-01T00:00:00Z"}"#);

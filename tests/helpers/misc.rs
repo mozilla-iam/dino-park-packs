@@ -1,6 +1,7 @@
 use crate::helpers::cis::CisFakeClient;
 use crate::helpers::db::get_pool;
 use crate::helpers::users::basic_user;
+use actix_web::body::MessageBody;
 use actix_web::dev::*;
 use actix_web::http::header::HeaderMap;
 use actix_web::test;
@@ -140,13 +141,13 @@ pub async fn test_app_and_cis() -> (impl HttpServiceFactory, CisFakeClient) {
     populate(&cis_client).await;
     (
         web::scope("")
-            .data(cis_client.clone())
-            .data(pool.clone())
+            .app_data(web::Data::new(cis_client.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .service(healthz::healthz_app())
             .service(api::internal::internal_app::<CisFakeClient>())
             .service(import::api::import_app::<CisFakeClient>())
             .service(
-                web::scope("/groups/api/v1/")
+                web::scope("/groups/api/v1")
                     .wrap_fn(|req, srv| {
                         req.extensions_mut()
                             .insert(scope_from_headers(req.headers()));

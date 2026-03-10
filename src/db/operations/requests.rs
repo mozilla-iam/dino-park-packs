@@ -113,15 +113,21 @@ pub fn pending_requests_notification(pool: &Pool) -> Result<(), Error> {
     let lower = Utc::now()
         .checked_sub_signed(Duration::days(1))
         .unwrap()
-        .date()
-        .and_hms(0, 0, 0)
-        .naive_utc();
+        .date_naive()
+        // SAFETY: `.and_hms_opt` only returns `None` on invalid hour, minute,
+        // and second.
+        // https://docs.rs/chrono/latest/chrono/struct.NaiveDate.html#method.and_hms_opt
+        .and_hms_opt(0, 0, 0)
+        .unwrap();
     let upper = Utc::now()
         .checked_sub_signed(Duration::days(1))
         .unwrap()
-        .date()
-        .and_hms_nano(23, 59, 59, 999_999_999)
-        .naive_utc();
+        .date_naive()
+        // SAFETY: `.and_hms_nano_opt` only returns `None` on invalid hour,
+        // minute, second and/or nanosecond.
+        // https://docs.rs/chrono/latest/chrono/struct.NaiveDate.html#method.and_hms_nano_opt
+        .and_hms_nano_opt(23, 59, 59, 999_999_999)
+        .unwrap();
     let connection = pool.get()?;
     let pending = internal::request::new_pending(&connection, lower, upper)?;
     for (group_id, npr) in pending {

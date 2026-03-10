@@ -13,12 +13,11 @@ use dino_park_gate::scope::ScopeAndUserAuth;
 use log::debug;
 use log::info;
 use std::io::Error;
-use std::io::ErrorKind;
 
 embed_migrations!();
 
 fn map_io_err(e: impl Into<failure::Error>) -> Error {
-    Error::new(ErrorKind::Other, e.into())
+    Error::other(e.into())
 }
 
 #[actix_web::main]
@@ -41,14 +40,14 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let scope_middleware = ScopeAndUserAuth::new(provider.clone());
         App::new()
-            .data(cis_client.clone())
-            .data(pool.clone())
+            .app_data(web::Data::new(cis_client.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .wrap(Logger::default().exclude("/healthz"))
             .service(healthz::healthz_app())
             .service(api::internal::internal_app::<CisClient>())
             .service(import::api::import_app::<CisClient>())
             .service(
-                web::scope("/groups/api/v1/")
+                web::scope("/groups/api/v1")
                     .wrap(scope_middleware)
                     .service(api::groups::groups_app::<CisClient>())
                     .service(api::members::members_app::<CisClient>())

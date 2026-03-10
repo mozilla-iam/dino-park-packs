@@ -87,15 +87,21 @@ pub fn expiration_notification(pool: &Pool, first: bool) -> Result<usize, Error>
     let lower = Utc::now()
         .checked_add_signed(Duration::days(days))
         .unwrap()
-        .date()
-        .and_hms(0, 0, 0)
-        .naive_utc();
+        .date_naive()
+        .and_hms_opt(0, 0, 0)
+        // SAFETY: `.and_hms_opt` only returns `None` on invalid hour, minute,
+        // and second.
+        // https://docs.rs/chrono/latest/chrono/struct.NaiveDate.html#method.and_hms_opt
+        .unwrap();
     let upper = Utc::now()
         .checked_add_signed(Duration::days(days))
         .unwrap()
-        .date()
-        .and_hms_nano(23, 59, 59, 999_999_999)
-        .naive_utc();
+        .date_naive()
+        .and_hms_nano_opt(23, 59, 59, 999_999_999)
+        // SAFETY: `.and_hms_nano_opt` only returns `None` on invalid hour,
+        // minute, second and/or nanosecond.
+        // https://docs.rs/chrono/latest/chrono/struct.NaiveDate.html#method.and_hms_nano_opt
+        .unwrap();
     let connection = pool.get()?;
     let memberships = internal::member::get_memberships_expire_between(&connection, lower, upper)?;
     info!(

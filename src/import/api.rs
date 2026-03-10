@@ -3,9 +3,9 @@ use crate::db::types::TrustType;
 use crate::db::Pool;
 use crate::import::ops::*;
 use crate::import::tsv::*;
-use actix_http::http::header::DispositionParam;
 use actix_multipart::Multipart;
 use actix_web::dev::HttpServiceFactory;
+use actix_web::http::header::DispositionParam;
 use actix_web::web;
 use actix_web::web::Bytes;
 use actix_web::HttpResponse;
@@ -36,7 +36,7 @@ async fn legacy_user_data_import(
     let mut legacy_user_data = None;
     while let Some(Ok(field)) = multipart.next().await {
         let typ = if let Some(cd) = field.content_disposition() {
-            match cd.parameters.get(0) {
+            match cd.parameters.first() {
                 Some(DispositionParam::Name(n)) => n.clone(),
                 _ => return Err(ApiError::MultipartError),
             }
@@ -86,7 +86,7 @@ async fn full_group_import<T: AsyncCisClientTrait>(
     };
     while let Some(Ok(field)) = multipart.next().await {
         let typ = if let Some(cd) = field.content_disposition() {
-            match cd.parameters.get(0) {
+            match cd.parameters.first() {
                 Some(DispositionParam::Name(n)) => n.clone(),
                 _ => return Err(ApiError::MultipartError),
             }

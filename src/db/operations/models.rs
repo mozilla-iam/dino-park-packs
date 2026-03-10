@@ -33,33 +33,23 @@ pub struct NewPendingRequest {
     pub count: usize,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 pub enum SortGroupsBy {
     MemberCountAsc,
+    #[default]
     MemberCountDesc,
     NameAsc,
     NameDesc,
 }
 
-impl Default for SortGroupsBy {
-    fn default() -> Self {
-        Self::MemberCountDesc
-    }
-}
-
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 pub enum SortMembersBy {
+    #[default]
     None,
     RoleAsc,
     RoleDesc,
     ExpirationAsc,
     ExpirationDesc,
-}
-
-impl Default for SortMembersBy {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 pub struct MembersQueryOptions {
