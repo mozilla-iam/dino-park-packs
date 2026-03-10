@@ -1,0 +1,26 @@
+{
+  "auth": "https://dev.mozilla-dev.auth0.com",
+  "cis": {
+    "client_config": {
+      "client_id": "",
+      "client_secret": "",
+      "audience": "",
+      "token_endpoint": "https://idp",
+      "scopes": ""
+    },
+    "sign_keys": {
+      "source": "none"
+    },
+    "verify_keys": {
+      "source": "none"
+    },
+    "person_api_user_endpoint": "https://person-api.cis",
+    "person_api_users_endpoint": "https://person-api.cis",
+    "change_api_user_endpoint": "https://change-api.cis",
+    "change_api_users_endpoint": "https://change-api.cis"
+  },
+  "packs": {
+    "postgres_url": "postgres://postgres:localhost@postgres/dino-park-packs-test-local",
+    "domain": "0.0.0.0"
+  }
+}

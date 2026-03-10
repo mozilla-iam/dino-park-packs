@@ -8,3 +8,15 @@ services:
     environment:
       POSTGRES_DB: dino-park-packs-test-local
       POSTGRES_PASSWORD: localhost
+
+  packs:
+    image: dino-park-packs:development
+    build:
+      context: ../
+      dockerfile: Dockerfile.local
+    environment:
+      DPP_SETTINGS: /root/.settings
+    volumes:
+    - ../dev/settings.json:/root/.settings.json
+    ports:
+    - 127.0.0.1:8085:8085
