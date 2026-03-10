@@ -21,8 +21,7 @@ phases:
       - echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin 
   build:
     commands:
-      - if [ "$PR" = 1 ]; then ./do.sh package_local; fi
-      - if [ "$MASTER" = 1 ]; then ./do.sh package_local && ./do.sh push_image; fi
+      - if [ "$MASTER" = 1 ]; then ./do.sh docker_build && ./do.sh push_image; fi
   post_build:
     commands:
       - echo "Environment is ${DEPLOY_ENV}"
