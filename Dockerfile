@@ -9,6 +9,7 @@ FROM debian:13-slim
 RUN apt-get update && apt-get install -y \
     libpq5 ca-certificates \
  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /root/
 COPY --from=0 /usr/src/app/target/release/dino-park-packs .
 CMD ["./dino-park-packs"]
