@@ -9,13 +9,20 @@ services:
       POSTGRES_DB: dino-park-packs-test-local
       POSTGRES_PASSWORD: localhost
 
+  adminer:
+    image: adminer:5-standalone
+    ports:
+    - 127.0.0.1:9000:8080
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
   packs:
     image: dino-park-packs:development
     build:
       context: ../
       dockerfile: Dockerfile.local
     environment:
-      DPP_SETTINGS: /root/.settings
+      DPP_SETTINGS: /root/.settings.json
     volumes:
     - ../dev/settings.json:/root/.settings.json
     ports:

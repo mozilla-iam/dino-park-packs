@@ -30,7 +30,7 @@ impl Settings {
         let file = env::var("DPP_SETTINGS").unwrap_or_else(|_| String::from(".settings"));
         Config::builder()
             .add_source(File::with_name(&file))
-            .add_source(Environment::default().separator("__").prefix("dp"))
+            .add_source(Environment::with_prefix("DP").separator("__"))
             .build()
             .and_then(Config::try_deserialize::<Settings>)
     }
