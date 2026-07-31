@@ -47,7 +47,7 @@ async fn legacy_user_data_import(
             .try_fold(
                 Vec::<u8>::new(),
                 |mut acc: Vec<u8>, bytes: Bytes| async move {
-                    acc.extend(bytes.into_iter());
+                    acc.extend(bytes);
                     Ok(acc)
                 },
             )
@@ -97,7 +97,7 @@ async fn full_group_import<T: AsyncCisClientTrait>(
             .try_fold(
                 Vec::<u8>::new(),
                 |mut acc: Vec<u8>, bytes: Bytes| async move {
-                    acc.extend(bytes.into_iter());
+                    acc.extend(bytes);
                     Ok(acc)
                 },
             )
