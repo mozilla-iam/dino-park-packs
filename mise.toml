@@ -1,0 +1,9 @@
+[tools]
+"cargo:diesel_cli" = { version = "2.3.6", default-features = false, features = "postgres" }
+rust = "1.97.1"
+
+[env]
+# Use a mise.local.toml to override these depending on your operating system. A
+# sample one is provided in dev.
+#
+# cp dev/mise.local.toml.sample mise.local.toml
