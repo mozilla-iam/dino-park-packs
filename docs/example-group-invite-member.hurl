@@ -7,7 +7,7 @@
 #
 # Run with:
 # export PEOPLEMO_COOKIE=...
-# hurl --secret cookie="$PEOPLEMO_COOKIE" --variable group="dinopark-dev" --variable username="example" dev/example-group-invite-member.hurl
+# hurl --secret cookie="$PEOPLEMO_COOKIE" --variable group="dinopark-dev" --variable username="example" docs/example-group-invite-member.hurl
 
 # Get their uuid
 GET https://dev.people.allizom.org/groups/api/v1/users?q={{ username }}&g={{ group }}&c=false&a=true

@@ -5,7 +5,7 @@
 #
 # Run with:
 # export PEOPLEMO_COOKIE=...
-# hurl --secret cookie="$PEOPLEMO_COOKIE" dev/example-group-list.hurl
+# hurl --secret cookie="$PEOPLEMO_COOKIE" docs/example-group-list.hurl
 
 GET https://dev.people.allizom.org/groups/api/v1/members/dinopark-dev?s=20&by=RoleAsc&r=Any&p=false
 Cookie: {{ cookie }}
