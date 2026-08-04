@@ -74,9 +74,7 @@ pub fn add_group(
         capabilities: new_group.capabilities,
         typ: new_group.typ,
         trust: new_group.trust,
-        group_expiration: new_group
-            .group_expiration
-            .and_then(|i| if i < 1 { None } else { Some(i) }),
+        group_expiration: new_group.group_expiration.filter(|&i| i >= 1),
     };
 
     diesel::insert_into(schema::groups::table)
@@ -136,7 +134,7 @@ pub fn update_group(
             group_update.typ.map(|t| schema::groups::typ.eq(t)),
             group_update
                 .group_expiration
-                .map(|e| e.and_then(|i| if i < 1 { None } else { Some(i) }))
+                .map(|e| e.filter(|&i| i >= 1))
                 .map(|e| schema::groups::group_expiration.eq(e)),
         ))
         .get_result::<Group>(connection)

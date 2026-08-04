@@ -1,0 +1,24 @@
+[env]
+# You'll need to install `libpq`. Required for diesel.
+RUSTFLAGS = "-L/opt/homebrew/opt/libpq/lib"
+
+# Path to your settings.json file.
+DPP_SETTINGS = "local/settings.json"
+
+# Packs will run migrations on startup. Ensure it uses a user which can run
+# the statements in migrations/.
+
+# For compatibility with psql.
+# See also:
+#
+# * https://www.postgresql.org/docs/current/app-psql.html#:~:text=When%20the,information
+# * https://www.postgresql.org/docs/current/libpq-pgpass.html
+PGHOST = "127.0.0.1"
+PGPORT = "5432"
+PGDATABASE = "dino-park-packs-test-local"
+PGUSER = "postgres"
+
+# Unfortunately, we also need to specify the password here.
+PGPASSWORD = { value = "", redact = true }
+
+DPP_PG_URL = { value = "postgres://{{ env.PGUSER }}:{{ env.PGPASSWORD }}@{{env.PGHOST }}:{{env.PGPORT }}/{{env.PGDATABASE }}", redact = true }
