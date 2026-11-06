@@ -39,7 +39,7 @@ pub fn send_emails(to: Vec<String>, t: &Template) {
 
 #[cfg(all(not(test), not(feature = "local")))]
 pub fn send_email_raw(mut email: Email) {
-    email.from = format!("no-reply@{}", &MAIL_MAN.template_man.domain);
+    email.from = format!("no-reply@{}", MAIL_MAN.template_man.domain);
     MAIL_MAN.send(email);
 }
 
