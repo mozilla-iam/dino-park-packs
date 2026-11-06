@@ -20,6 +20,10 @@ pub const ADMIN_CAN_ADD_MEMBER: Engine = Engine {
     rules: &[&rule_only_admins, &member_can_join],
 };
 
+pub const CURATOR_CAN_ADD_MEMBER: Engine = Engine {
+    rules: &[&rule_host_is_curator, &member_can_join, &user_not_a_member],
+};
+
 pub const SEARCH_USERS: Engine = Engine {
     rules: &[&rule_host_can_invite],
 };

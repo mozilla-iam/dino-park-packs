@@ -15,6 +15,7 @@ use crate::mail::manager::subscribe_nda;
 use crate::mail::manager::unsubscribe_nda;
 use crate::mail::templates::Template;
 use crate::rules::engine::ADMIN_CAN_ADD_MEMBER;
+use crate::rules::engine::CURATOR_CAN_ADD_MEMBER;
 use crate::rules::engine::ONLY_ADMINS;
 use crate::rules::engine::REMOVE_MEMBER;
 use crate::rules::engine::RENEW_MEMBER;
@@ -175,6 +176,12 @@ pub async fn transfer(
     send_groups_to_cis(pool, cis_client, &new_user.user_uuid).await
 }
 
+/// There are two direct callers of this: admins and hosts. The conditions
+/// each of them use for adding a member is a bit different.
+///
+/// * Admins should be able to add whomever to the group.
+/// * Hosts should only be able to add members if they would normally be
+///   invited.
 pub async fn add(
     pool: &Pool,
     scope_and_user: &ScopeAndUser,
@@ -184,13 +191,21 @@ pub async fn add(
     expiration: Option<i32>,
     cis_client: Arc<impl AsyncCisClientTrait>,
 ) -> Result<(), Error> {
-    ADMIN_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
+    let admin_add_member = ADMIN_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
         &pool.clone(),
         scope_and_user,
         group_name,
         &host.user_uuid,
         &user.user_uuid,
-    ))?;
+    ));
+    let host_add_member = CURATOR_CAN_ADD_MEMBER.run(&RuleContext::minimal_with_member_uuid(
+        &pool.clone(),
+        scope_and_user,
+        group_name,
+        &host.user_uuid,
+        &user.user_uuid,
+    ));
+    admin_add_member.or(host_add_member)?;
     let connection = pool.get()?;
     let expiration = if expiration.is_none() {
         internal::group::get_group(&connection, group_name)?.group_expiration
