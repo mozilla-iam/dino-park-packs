@@ -1,5 +1,6 @@
 [tools]
 "cargo:diesel_cli" = { version = "2.3.6", default-features = false, features = "postgres" }
+"github:daveshanley/vacuum" = "latest"
 rust = "1.97.1"
 
 [env]
