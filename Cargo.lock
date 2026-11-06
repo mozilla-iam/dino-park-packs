@@ -911,7 +911,7 @@ dependencies = [
 
 [[package]]
 name = "dino-park-packs"
-version = "0.5.16"
+version = "0.5.17"
 dependencies = [
  "actix-http",
  "actix-multipart",
