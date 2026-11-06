@@ -37,6 +37,26 @@ pub fn user_by_id(connection: &PgConnection, user_id: &str) -> Result<User, Erro
         .map_err(Into::into)
 }
 
+/// Our data models don't enforce profiles must contain a unique email address,
+/// like we do for `user_uuid`s and `user_id`s.
+pub fn user_by_email(connection: &PgConnection, email: &str) -> Result<User, Error> {
+    let mut uuids = schema::profiles::table
+        .filter(schema::profiles::email.eq(email))
+        .select(schema::profiles::user_uuid)
+        .load::<Uuid>(connection)?;
+    if uuids.len() > 1 {
+        return Err(PacksError::ProfileNotFound(
+            email.to_string(),
+            "ambiguous user found".to_string(),
+        )
+        .into());
+    }
+    let user_uuid = uuids.pop().ok_or::<Error>(
+        PacksError::ProfileNotFound(email.to_string(), "ambiguous user found".to_string()).into(),
+    )?;
+    Ok(User { user_uuid })
+}
+
 pub fn user_profile_by_uuid(
     connection: &PgConnection,
     user_uuid: &Uuid,

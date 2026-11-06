@@ -16,6 +16,21 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
+pub struct AddMember {
+    group_expiration: Option<i32>,
+    #[serde(flatten)]
+    member: RefMember,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(untagged)]
+pub enum RefMember {
+    ByEmail { email: String },
+    ByUserId { user_id: String },
+    ByUserUuid { user_uuid: Uuid },
+}
+
+#[derive(Clone, Deserialize)]
 pub struct RenewMember {
     group_expiration: Option<i32>,
 }
@@ -125,9 +140,40 @@ async fn renew_member(
     }
 }
 
+#[guard(Staff, None, Medium)]
+async fn add_member<T: AsyncCisClientTrait>(
+    pool: web::Data<Pool>,
+    group_name: web::Path<String>,
+    scope_and_user: ScopeAndUser,
+    add_member: web::Json<AddMember>,
+    cis_client: web::Data<T>,
+) -> Result<HttpResponse, ApiError> {
+    let user = match add_member.0.member {
+        RefMember::ByEmail { email } => operations::users::user_by_email(&pool, &email)?,
+        RefMember::ByUserId { user_id } => operations::users::user_by_id(&pool, &user_id)?,
+        RefMember::ByUserUuid { user_uuid } => User { user_uuid },
+    };
+    let host = operations::users::user_by_id(&pool, &scope_and_user.user_id)?;
+    operations::members::add(
+        &pool,
+        &scope_and_user,
+        &group_name,
+        &host,
+        &user,
+        add_member.0.group_expiration,
+        Arc::clone(&*cis_client),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(""))
+}
+
 pub fn members_app<T: AsyncCisClientTrait + 'static>() -> impl HttpServiceFactory {
     web::scope("/members")
-        .service(web::resource("/{group_name}").route(web::get().to(get_members)))
+        .service(
+            web::resource("/{group_name}")
+                .route(web::get().to(get_members))
+                .route(web::post().to(add_member::<T>)),
+        )
         .service(
             web::resource("/{group_name}/{user_uuid}").route(web::delete().to(remove_member::<T>)),
         )

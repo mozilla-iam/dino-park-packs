@@ -163,6 +163,11 @@ pub fn user_by_id(pool: &Pool, user_id: &str) -> Result<User, Error> {
     internal::user::user_by_id(&connection, user_id)
 }
 
+pub fn user_by_email(pool: &Pool, email: &str) -> Result<User, Error> {
+    let connection = pool.get()?;
+    internal::user::user_by_email(&connection, email)
+}
+
 pub fn user_profile_by_uuid(pool: &Pool, user_uuid: &Uuid) -> Result<UserProfile, Error> {
     let connection = pool.get()?;
     internal::user::user_profile_by_uuid(&connection, user_uuid)

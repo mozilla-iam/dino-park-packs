@@ -8,6 +8,51 @@ backend = "cargo:diesel_cli"
 default-features = "false"
 features = "postgres"
 
+[[tools."github:daveshanley/vacuum"]]
+version = "0.36.2"
+backend = "github:daveshanley/vacuum"
+
+[tools."github:daveshanley/vacuum"."platforms.linux-arm64"]
+checksum = "sha256:751f3c6b8f1978deda3c1cec47cdafeeb150c29a9970267df8de26289a1c21c8"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624662"
+
+[tools."github:daveshanley/vacuum"."platforms.linux-arm64-musl"]
+checksum = "sha256:751f3c6b8f1978deda3c1cec47cdafeeb150c29a9970267df8de26289a1c21c8"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624662"
+
+[tools."github:daveshanley/vacuum"."platforms.linux-x64"]
+checksum = "sha256:5736f27a806888f7ed89fba6bb8a3a00e5da895f1ad870f699b3018b7c8bcb0d"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624665"
+
+[tools."github:daveshanley/vacuum"."platforms.linux-x64-musl"]
+checksum = "sha256:5736f27a806888f7ed89fba6bb8a3a00e5da895f1ad870f699b3018b7c8bcb0d"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624665"
+
+[tools."github:daveshanley/vacuum"."platforms.macos-arm64"]
+checksum = "sha256:7fb1666195a8fe2075fd4fb4076831f1152ef8257dfe087d343e71f17a389688"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624609"
+
+[tools."github:daveshanley/vacuum"."platforms.macos-x64"]
+checksum = "sha256:879cbc99179aebfa6c569e5e6672b60ed19647c15a9e948e3a644c97df69625a"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_darwin_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624607"
+
+[tools."github:daveshanley/vacuum"."platforms.windows-x64"]
+checksum = "sha256:758578f69b265955e17d5288959b4d96f76c1eb96374841f7627c54b573e0377"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.36.2/vacuum_0.36.2_windows_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/699624664"
+
 [[tools.rust]]
 version = "1.97.1"
 backend = "core:rust"
