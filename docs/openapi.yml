@@ -776,6 +776,55 @@ paths:
         "406":
           description: not acceptable
   "/groups/api/v1/members/{groupName}":
+    post:
+      operationId: groupAddMember
+      summary: add a member
+      description: |
+        add a member by email or user id
+      parameters:
+        - in: path
+          name: groupName
+          description: pass in the group name to interact with
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: |
+          Curators and admins are allowed to directly add a user to a group.
+          The caller must either be an administrator or a curator.
+
+          Note that there's a limitation with adding users by email: there
+          must be one user with the specified email in their profile.
+
+          If your request is rejected you must add them by user_uuid or user_id
+          instead.
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - required: [user_id]
+                - required: [email]
+                - required: [user_uuid]
+              properties:
+                user_id:
+                  type: string
+                  example: "ad|Mozilla-LDAP|jsmith"
+                email:
+                  type: string
+                  example: "jsmith@mozilla.com"
+                user_uuid:
+                  type: string
+                  example: 34a33a8e-d035-4051-acac-497a79235e73
+                group_expiration:
+                  type: integer
+                  example: 90
+                  description: group expiration for membership
+      responses:
+        "200":
+          description: "member added"
+        "404":
+          description: "either the group wasn't found or the user's email was ambiguous"
     get:
       summary: paginated members
       description: |
